@@ -1,0 +1,7 @@
+####### Decision-Making-requirements.txt #######
+
+flatbuffers == 1.12
+pyzmq
+paho-mqtt == 1.5.1
+rdflib
+numpy
