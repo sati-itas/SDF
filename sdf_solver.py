@@ -18,34 +18,36 @@ class Solver:
             List[Action]: plan
         """
         plan = []
-        visited_nodes = []
+        queue = []
         solution = False
-        while not GoalScene.scene_relations.items() <= CurrentScene.scene_relations.items():
-            visited_nodes.append(CurrentScene)
+
+        if GoalScene.scene_relations.items() <= CurrentScene.scene_relations.items():
+            solution = True
+            return [plan,solution]
+        
+        queue.append(SearchNode(None, CurrentScene, None))
+
+        while queue:
+            parent_node = queue.pop() # stack: last-in, first-out
             for action in action_list:
-                counter = 0
 
-                # if action.check_precondition(CurrentScene):
-                #     #print(f"\nPrecondition for action {action.name} is fulfilled!!!\n")
-                #     NextScene = action.execute()
+                next_scene=action.execute(parent_node.state)
+                if next_scene:
+                    new_node = SearchNode(action, next_scene, parent_node)
 
-                execution_return=action.execute(CurrentScene)
-                if isinstance(execution_return, Scene):
-                    NextScene=execution_return
-            
-                    for scenes in visited_nodes:
-                        if not check_identical_scenes(NextScene, scenes):
-                            counter = counter+1
-
-                    if counter == len(visited_nodes):
-                        CurrentScene = NextScene
-                        #print_scene(CurrentScene, f)
-                        plan.append(action)
-                        break 
-                # else:
-                #     print(f"Precondition for action {action.name} is not fullfilled")
-        solution = True
+                    if GoalScene.scene_relations.items() <= next_scene.scene_relations.items():
+                        solution = True
+                        # path = new_node.path()
+                        plan = new_node.act_sequence()
+                        return [plan,solution]
+                    # elif parent_node.in_path(next_scene): # pruning rule1: do not consider any path that visits the same state twice
+                    #     pass
+                    else:
+        
+                        queue.append(new_node)
         return [plan,solution]
+
+
 
     @staticmethod
     def simple_BFS(CurrentScene:Scene, GoalScene:Scene, action_list:List[Action], debug = False)->Union[List[Action],bool]:
@@ -64,12 +66,11 @@ class Solver:
         solution = False
         if GoalScene.scene_relations.items() <= CurrentScene.scene_relations.items():
             return [plan,solution]
-        #visited.append(CurrentScene)
+
         queue.append(SearchNode(None, CurrentScene, None))
 
-        while queue: #not GoalScene.scene_relations.items() <= CurrentScene.scene_relations.items() and 
-            parent_node = queue.pop(0) #first-in, first-out
-            new_child_states = []
+        while queue:
+            parent_node = queue.pop(0) # queue: first-in, first-out
 
             for action in action_list:
                 #start_execute_time = timeit.default_timer()
@@ -96,7 +97,6 @@ class Solver:
                     # elif next_scene in new_child_states: # pruning rule2: if multiple actions lead to the same state, consider only one of them
                     #     pass
                     else:
-                        new_child_states.append(next_scene)
                         queue.append(new_node)
         return [plan,solution]
     
@@ -272,7 +272,6 @@ class Solver:
 class SearchNode():
     """Represent each node in the tree as an instance of class SearchNode. For BFS
     """
-
     def __init__(self, action, state, parent=None):
         self.action = action
         self.state = state
@@ -293,7 +292,7 @@ class SearchNode():
             return [(self.action)]
         else: 
             return self.parent.act_sequence()+[(self.action)]
-        
+
     def in_path(self, state):
         """checks if next state is equal to parent state. for pruning reason: do not consider any path that visits the same state twice.
         """
@@ -320,24 +319,6 @@ class Node():
     def __eq__(self, other):
         return self.state == other.state
 
-
-def print_scene(Scene:Scene, file):
-    """prints scene relations to file 
-
-    Args:
-        Scene (Scene): scene, whos relations shell be written to file 
-        file (_type_): file
-    """
-    for key, value in Scene.scene_relations.items():
-        file.write(key.name+":")
-        for item in value:
-            if not isinstance(item, list): 
-                file.write(item.name+" ")
-            if isinstance(item, list): 
-                for itemitem in item:
-                    file.write(itemitem.name+" ")
-                file.write("\n")
-
 def check_identical_scenes(scene1:Scene, scene2:Scene)->bool:
     """checks if 2 scene descriptions (2 different "Scene" python objects) are identical in terms of their scene relations 
 
@@ -363,8 +344,6 @@ def check_subset_scenes(goal_scene:Scene, scene2:Scene)->bool:
     Returns:
         bool: True if scene1.relations:type[dict] is a subset or equal to scene2.relations:type[dict]
     """
-    #print(f'scene2.scene_relations {scene2.scene_relations}\n')
-    #print(f'goal_scene.scene_relations {goal_scene.scene_relations}\n')
     if goal_scene.scene_relations.items() <= scene2.scene_relations.items():
         return True 
     else:

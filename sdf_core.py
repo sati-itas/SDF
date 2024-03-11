@@ -5,6 +5,7 @@ from dict_helper import merge_dicts
 
 @unique
 class OType(Enum):
+    #TODO: the object type are specific to one domain. idea -> parse an ontology to enable different domain for sdf.
     NONE=0
     EGO=1
     LANE=2
@@ -13,7 +14,7 @@ class OType(Enum):
 
 @unique
 class ReferencePosition(Enum):
-    UNKNOWN_REF_POS=0
+    UNKNOWN_REF_POS = 0
     CENTER = 1
     REAR_MID = 2
     REAR_LEFT = 3
@@ -45,16 +46,23 @@ class MovingState(Enum):
     DYNAMIC = 4
     MOVABLE = 5
 
-# SDL
 class Thing:
     """base class 'Thing' for Object and Predicate class.
     name:str, ident:int are the (unique) key's to each Thing.
     """
     #TODO name:str, ident:int should be unique and to each name belongs one identification number (ident).
     #TODO But than action and scene class are not able to use name and ident
+
+    _id_counter = 0
+
     def __init__(self, name=None, ident=None):
+        type(self)._id_counter += 1
         self.name=name
-        self.ident=ident
+        self.__ident= type(self)._id_counter
+
+    @property
+    def id(self):
+        return self.__ident
 
 class SDL_Object(Thing):
     """Object class for creating dynamic and static objects in scene. 
@@ -64,9 +72,9 @@ class SDL_Object(Thing):
         object_type(enum): type of object corresponding to enum in OType class 
         position(int): position of object in environment (default=None)
     """
-    def __init__(self, object_name:str, object_ident:int , object_type=OType.EGO.value):
+    def __init__(self, object_name:str, object_type=OType.EGO.value):
         self.object_type=object_type
-        Thing.__init__(self, name=object_name, ident=object_ident)
+        Thing.__init__(self, name=object_name)
 
         self.course_angle=None
         self.object_length=None
@@ -102,44 +110,17 @@ class SDL_Object(Thing):
         self.Acc_y=None
 
     def __repr__(self)->str:
-        return (f"name: {self.name}")#\nid: {self.ident}\nobject type: {self.object_type}")#\n \
-                # ---\n \
-                # optional attributes:\n \
-                # course_angle={self.course_angle}\n \
-                # object_length={self.object_length}\n \
-                # object_width={self.object_width}\n \
-                # RelPos_x={self.RelPos_x}\n \
-                # RelPos_y={self.RelPos_y}\n \
-                # RelPos_z={self.RelPos_z}\n \
-                # RelAcc={self.RelAcc}\n \
-                # RelAcc_x={self.RelAcc_x}\n \
-                # RelAcc_y={self.RelAcc_y}\n \
-                # RelAcc_z={self.RelAcc_z}\n \
-                # AbsSpeed={self.AbsSpeed}\n \
-                # AbsSpeed_x={self.AbsSpeed_x}\n \
-                # AbsSpeed_y={self.AbsSpeed_y}\n \
-                # AbsSpeed_z={self.AbsSpeed_z}\n \
-                # RelSpeed={self.RelSpeed}\n \
-                # RelSpeed_x={self.RelSpeed_x}\n \
-                # RelSpeed_y={self.RelSpeed_y}\n \
-                # RelSpeed_z={self.RelSpeed_z}\n \
-                # MovingDirection={self.MovingDirection}\n \
-                # MovingState={self.MovingState}\n \
-                # RefPos={self.RefPos}\n \
-                # YawRate={self.YawRate}\n \
-                # Vel_x={self.Vel_x}\n \
-                # Vel_y={self.Vel_y}\n \
-                # Acc_x={self.Acc_x}\n \
-                # Acc_y={self.Acc_y}")
-    
-    def __eq__(self, other):
+        return (f"name: {self.name}") # id: {self.id} object type: {self.object_type}")#\n \
+
+    def __eq__(self, other): 
         if isinstance(other, self.__class__):
+            #TODO change to ident!!
             return self.name == other.name
         else:
             return False
-        
-    def __hash__(self):  # Diese Methode ist notwendig, um die Klasse als Schlüssel in einem Wörterbuch verwenden zu können
-        return hash(self.ident)
+
+    def __hash__(self):  # This method is necessary to be able to use the class as a key in a dictionary
+        return hash(self.id)
 
     def add_rel_speed(self, RelSpeed): self.RelSpeed=RelSpeed
     def add_rel_speed_x(self, RelSpeed_x): self.RelSpeed_x=RelSpeed_x
@@ -170,19 +151,6 @@ class SDL_Object(Thing):
     def add_acc_x(self, acc_x): self.Acc_x=acc_x
     def add_acc_y(self, acc_y): self.Acc_y=acc_y
 
-# class Object(Thing):
-#     """Object class for creating dynamic and static objects in scene. 
-
-#     Args:
-#         object_name (str): name of the object 
-#         object_type(enum): type of object corresponding to enum in OType class 
-#         position(int): position of object in environment (default=None)
-#     """
-#     def __init__(self, object_name:str, object_type=OType.EGO.value, position=None): 
-#         self.object_type=object_type
-#         self.position=position
-#         Thing.__init__(self, name=object_name)
-
 class Predicate(Thing):
     """Predicate class for defining predicates (properties or relations) of single or between several objects
     
@@ -192,22 +160,22 @@ class Predicate(Thing):
         o1type (enum): Type of object1. Distinguish only between object types (reference: OType class) for filter reasons
         o2type (enum): Type of object2. Distinguish only between object types (reference: OType class) for filter reasons
     """
-    def __init__(self, predicate_name:str, predicate_ident:int, o1type=OType.EGO.value, o2type=OType.LANE.value):
-        Thing.__init__(self, name=predicate_name, ident=predicate_ident)
+    def __init__(self, predicate_name:str, o1type=OType.EGO.value, o2type=OType.LANE.value):
+        Thing.__init__(self, name=predicate_name)
         self.o1type=o1type
         self.o2type=o2type
 
     def __repr__(self) -> str:
-        return (f"predicate name:{self.name}")#\nident={self.ident}\nobject 1 type: {self.o1type}\nobject 2 type: {self.o2type}")
+        return (f"predicate name:{self.name}\n ident={self.id}")#\n object 1 type: {self.o1type}\nobject 2 type: {self.o2type}")
     
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return self.ident == other.ident
+            return self.id == other.id
         else:
             return False
         
-    def __hash__(self):  # Diese Methode ist notwendig, um die Klasse als Schlüssel in einem Wörterbuch verwenden zu können
-        return hash(self.ident)
+    def __hash__(self):  # This method is necessary to be able to use the class as a key in a dictionary
+        return hash(self.id)
 
 class Scene(Thing): 
     """Scene class for creating scene from existing objects and predicates. 
@@ -218,8 +186,8 @@ class Scene(Thing):
         ident (int): identification of scene
         predciate_list ([Predicate]) : list of all instanciated predicates between objects in scene 
     """
-    def __init__(self, object_list:List[SDL_Object], scene_relations:Dict[Predicate,List[SDL_Object]], preds:List[Predicate], scene_ident:int):
-        Thing.__init__(self, ident=scene_ident)
+    def __init__(self, object_list:List[SDL_Object], scene_relations:Dict[Predicate,List[SDL_Object]], preds:List[Predicate]):
+        Thing.__init__(self)
         self.scene_relations=scene_relations
         self.pred_list=preds
         self.object_list=object_list
@@ -238,6 +206,10 @@ class Scene(Thing):
             str_to_print=str_to_print+"\n"
 
         return f"{str_to_print}"
+
+    def __hash__(self):  # This method is necessary to be able to use the class as a key in a dictionary
+        return hash(self.id)
+
     
     def search_relation(self, predicate:Predicate) -> List[SDL_Object]:
         """Search an SDL Objects with the given predicate and returns SDL Objects
@@ -251,7 +223,7 @@ class Scene(Thing):
         return self.scene_relations[predicate]
 
     def search_object(self, object_name:str) -> SDL_Object:
-        """Search an Object in the Ontology with the given name and returns the first matching Object
+        """Search an SDL_Object in Scene with the given name. Method returns the first matching SDL_Object in Scene.
 
         Args:
             object_name (str): name of scene object to be found 
@@ -284,7 +256,7 @@ class Scene(Thing):
         return _obj_list
 
 class Action(Thing):
-    """Action class for defining action template (reference: STRIPS and PDDL)
+    """Action class for defining action template
 
     Args:
             name (str): action name
@@ -301,10 +273,7 @@ class Action(Thing):
         self.select=select
 
     def __repr__(self) -> str:
-        return (f"\n #action name: {self.name}\n\
-                #preconditions: {self.precondition}\n\
-                #add list: {self.a_list}\n\
-                #delete list: {self.d_list}\n")
+        return (f"\n #action name: {self.name}")#\n #preconditions: {self.precondition}\n #add list: {self.a_list}\n #delete list: {self.d_list}\n")
 
     def check_precondition(self, scene:Scene, debug=False)->bool:
         """check if precondition is satisfied in current scene
@@ -328,7 +297,7 @@ class Action(Thing):
 
         sdl_rdf_dict=self.Wrapper.generateRDFDatabase()
         if debug:
-            print(f"\nWrapper.generateRDFDatabase() - mapping SDL to RDF. Key=SDL - Value=RDF\n")
+            print("\nWrapper.generateRDFDatabase() - mapping SDL to RDF. Key=SDL - Value=RDF\n")
             for key, value in sdl_rdf_dict.items():
                 try:
                     print(f"\tKeyName: {key.name} Value: {value}\n")
@@ -337,16 +306,16 @@ class Action(Thing):
 
         list_of_triplets=self.Wrapper.RDFTriplets()
         if debug:
-            print(f"\nWrapper.RDFTriplets - generate RDF-Triplets from SDL_Scene:")
+            print("\nWrapper.RDFTriplets - generate RDF-Triplets from SDL_Scene:")
             for item in list_of_triplets:
                 print(f"\t{item}\n")
-            print(f"\t\tTypes of triplet entries (given example: first triplet):")
+            print("\t\tTypes of triplet entries (given example: first triplet):")
             for triplet_item in list_of_triplets[0]:
                 print(f"\t\t\t{triplet_item}: {type(triplet_item)}\n")
 
         graph=self.Wrapper.RDF_graph()
         if debug:
-            print("\nWrapper.RDF_graph() - generate RDF-Graph from RDF triplet list (serialized): {}".format(graph.serialize(format="turtle")))
+            print(f"\nWrapper.RDF_graph() - generate RDF-Graph from RDF triplet list (serialized): {graph.serialize(format="turtle")}")
 
         # carry out SPARQL Query
         result = graph.query(self.precondition)
@@ -722,5 +691,5 @@ class RDF_Wrapper:
             except:
                 raise Exception("Error while creating new SDL scene relations")
 
-        new_scene=Scene(object_list=self.scene.object_list, scene_relations=new_sdl_relations, preds=self.scene.pred_list, scene_ident=...)
+        new_scene=Scene(object_list=self.scene.object_list, scene_relations=new_sdl_relations, preds=self.scene.pred_list)
         return new_scene
