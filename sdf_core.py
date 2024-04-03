@@ -1,3 +1,4 @@
+import timeit
 from enum import Enum, unique
 from typing import List, Dict
 from rdflib import Graph, Namespace
@@ -272,6 +273,10 @@ class Action(Thing):
         self.d_list=d_list
         self.select=select
 
+        # self.graph_processing_time = 0
+        # self.query_processing_time = 0
+        # self.effect_execute_processing_time = 0
+
     def __repr__(self) -> str:
         return (f"\n #action name: {self.name}")#\n #preconditions: {self.precondition}\n #add list: {self.a_list}\n #delete list: {self.d_list}\n")
 
@@ -285,40 +290,29 @@ class Action(Thing):
         Returns:
             Bool: whether precondition is satisfied in current scene or not 
         """
-        self.Wrapper=RDF_Wrapper(OType, scene)
+
+        self.graph_processing_time = 0
+        self.query_processing_time = 0
+
+
         self.select_dict={}
-        
-        namesp_list=self.Wrapper.gen_namespace(objects=scene.object_list)
-        if debug:
-            print("-------check precondition-------\n")
-            print(f"\nWrapper.gen_namespace() - generate all RDF namespaces: {namesp_list}\n")
-            for item in namesp_list:
-                print(f"\tTyp des Namespace {item}: {type(item)}\n")
 
-        sdl_rdf_dict=self.Wrapper.generateRDFDatabase()
-        if debug:
-            print("\nWrapper.generateRDFDatabase() - mapping SDL to RDF. Key=SDL - Value=RDF\n")
-            for key, value in sdl_rdf_dict.items():
-                try:
-                    print(f"\tKeyName: {key.name} Value: {value}\n")
-                except:
-                    print(f"\tKeyName: {key.name} Value: {value}\n")
-
-        list_of_triplets=self.Wrapper.RDFTriplets()
-        if debug:
-            print("\nWrapper.RDFTriplets - generate RDF-Triplets from SDL_Scene:")
-            for item in list_of_triplets:
-                print(f"\t{item}\n")
-            print("\t\tTypes of triplet entries (given example: first triplet):")
-            for triplet_item in list_of_triplets[0]:
-                print(f"\t\t\t{triplet_item}: {type(triplet_item)}\n")
-
+        # generate rdf data and rdf graph based on scene
+        start_generate_graph = timeit.default_timer()
+        self.Wrapper=RDF_Wrapper(OType, scene)
+        self.Wrapper.gen_namespace(objects=scene.object_list)
+        self.Wrapper.generateRDFDatabase()
+        self.Wrapper.RDFTriplets()
         graph=self.Wrapper.RDF_graph()
-        if debug:
-            print(f"\nWrapper.RDF_graph() - generate RDF-Graph from RDF triplet list (serialized): {graph.serialize(format="turtle")}")
+        end_generate_graph = timeit.default_timer()
+        self.graph_processing_time = end_generate_graph - start_generate_graph
+
 
         # carry out SPARQL Query
+        start_query = timeit.default_timer()
         result = graph.query(self.precondition)
+        end_query =timeit.default_timer()
+        self.query_processing_time = end_query - start_query
 
         # if query found at least 1 match 
         if len(result.bindings) > 0:
@@ -333,7 +327,8 @@ class Action(Thing):
             return False
 
     def execute(self, scene:Scene, debug = False):
-        """_summary_
+        """executes the action in a given scene if possible.
+        Therefor it checks the precondition first and estimates the follow-up scene
 
         Args:
             scene (Scene): scene, in which action shell by executed
@@ -344,15 +339,26 @@ class Action(Thing):
         Returns:
             Scene: new scene created by executing action | If preconditions for action not fullfilled return Bool:False
         """
+        self.effect_execute_processing_time = 0
         if self.check_precondition(scene, debug=debug):
+            start_effect_execute = timeit.default_timer()
             for item in self.d_list:
+                """
+                d_list: Dict {SDL_Predicate: [select param 1 (type: string), select param 2 (type: string)]}
+                1. map the SELECT parameter to RDF subjects and objects -> result: {SDL_Predicate: [RDF item 1, RDF item 2]}
+                2. map the RDF subjects and objects to SDL_Object instances -> result: {SDL_Predicate: [SDL_Object 1, SDL_Object 2]}
+                3. map the SDL relation to a RDF Tuple (RDF subject, RDF predicate, RDF object) 
+                4. remove the Triplet to the graph
+                """
+
                 if debug:
                     print("execute: --- delete list:")
-                # item: Dict {is_on: ["e","l1"]}
+
                 for key, value in item.items():
+                    # iterate over all elements in d_list (type of those elements: Dicts -> key: predicate, value: list of 2 SELECT parameters) 
+                    # and get the RDF equivalents of their values
+                    # self.select_dict: mapping of SELECT variables to corresponding RDF objects (= result of a successful SPARLQ query)  
                     for index in value:
-                        # iterate over all value entries in "item" Dict and look for RDF equivalents of value elemets in self.select_dict
-                        # self.select_dict: allocation of SELECT variables from SPARLQ Queries to corresponding / found RDF objects  
                         if not isinstance(index, list):
                             sub=self.select_dict[value[0]]
                             obj=self.select_dict[value[1]]
@@ -367,11 +373,13 @@ class Action(Thing):
                                     if debug:
                                         print(f"execute: \n\tsubject: {sub}\n\t object: {obj}\n")
                                     break
-
-                    # rdf_rel: Dict key: SDL Predicate, value: List of RDF Objects/Subjects
+                    # result at this point: dict with the same key as in the d_list but the value is now not a list of SELECT params but a list of the according RDF items (RDF mapping from the SELECT params) 
+                    #! caution: the key of the rdf_rel is currently still a SDL_predicate
                     rdf_rel={key:[sub, obj]}
                     sdl_rel={}
 
+                    # iterate over the rdf relations that have been build just before
+                    # and map the RDF subject/object pair in the value of rdf_rel to according SDL_Objects 
                     for key, item in rdf_rel.items():
                         # mapping of RDF subjects/objects to SDL objects
                         sdl_pred=key
@@ -381,20 +389,29 @@ class Action(Thing):
                             if item[1]==mapping_value:
                                 sdl_obj=mapping_key
                         try:
-                            # if all SDL subjects and objects were mapped from RDF subjects/objects: build RDF Triplets from SDL relations
+                            # if all SDL_Objects were mapped from their RDF subject/object equivilants: 
+                            # build an according RDF Triplet from the SDL relation
                             sdl_rel={sdl_pred:[sdl_sub, sdl_obj]}
-                            #print(f"SDL Relation: {sdl_rel}")
                             Triplet=self.Wrapper.Triplet_from_relation(sdl_rel)
 
-                            # remove all Triplets from given d_list in current RDF Database 
+                            # remove all mapped Triplets from the given d_list from the current RDF Database 
                             new_graph=self.Wrapper.remove_Triplets_from_RDFDatabase([Triplet])
                         except: 
                             raise Exception("Error while removing d_list from current scene")            
 
             for item in self.a_list:
+                """
+                do the same for the a_list as was done with the d_list (except don't remove the RDF Triplet from the graph but add it to the graph)
+                a_list: Dict {SDL_Predicate: [select param 1 (type: string), select param 2 (type: string)]}
+                1. map the SELECT parameter to RDF subjects and objects -> result: {SDL_Predicate: [RDF item 1, RDF item 2]}
+                2. map the RDF subjects and objects to SDL_Object instances -> result: {SDL_Predicate: [SDL_Object 1, SDL_Object 2]}
+                3. map the SDL relation to a RDF Tuple (RDF subject, RDF predicate, RDF object) 
+                4. add the Triplet to the graph
+                """
+
                 if debug:
                     print("execute: --- add list:")
-                # same procedure as with d_list
+
                 for key, value in item.items():
                     for index in value:
                         if not isinstance(index, list):
@@ -431,12 +448,32 @@ class Action(Thing):
                         except: 
                             raise Exception("Error while adding a_list to new scene")            
 
-            # mapp RDF Database in SDL scene
+            # map RDF Database in SDL scene
             new_scene=self.Wrapper.gen_SDL_scene_from_RDF_Database(new_graph)
-
+            end_effect_execute = timeit.default_timer()
+            self.effect_execute_processing_time = end_effect_execute -start_effect_execute
             return new_scene
         else:
             return False
+
+    def graph_processing_time(self):
+        """graph_processing_time time of rdf-graph generation
+        Returns (float): self.graph_processing_time
+        """
+        return self.graph_processing_time
+
+    def query_processing_time(self):
+        """processing time of query
+        Returns (float): self.query_processing_time
+        """
+        return self.query_processing_time
+
+    def effect_execute_processing_time(self):
+        """processing time effect execution
+        Returns (float): self.effect_execute_processing_time]
+        """
+        return self.effect_execute_processing_time
+
 
 
 class RDF_Wrapper:
@@ -461,7 +498,7 @@ class RDF_Wrapper:
         self.predicate_mapping_dict={}
         self.sdl_rdf_dict={}
 
-    def gen_namespace(self, objects):
+    def gen_namespace(self, objects, debug=False)->List:
         """generates unique Namespace instances from object and predicate lists
 
         Args:
@@ -479,13 +516,18 @@ class RDF_Wrapper:
         # generate one single predicate Namespace
         self.namespace_list.append(Namespace("predicate:"))
 
+        if debug:
+            print("-------check precondition-------\n")
+            print(f"\nWrapper.gen_namespace() - generate all RDF namespaces: {self.namespace_list}\n")
+            for item in self.namespace_list:
+                print(f"\tTyp des Namespace {item}: {type(item)}\n")
         return self.namespace_list
 
-    def generateRDFDatabase(self):
-        """mapping all SDL relations in RDF triplets 
-
+    def generateRDFDatabase(self, debug=False)-> Dict:
+        """mapping all SDL relations in RDF triplets
+        
         Args:
-            scene_dict (_type_): list of rdf triplets 
+            debug (bool): debugmode. Dafault is False
         """
 
         #iterate over all relations in current scene
@@ -521,7 +563,7 @@ class RDF_Wrapper:
                             self.subject_mapping_dict = {sdl_subject: item.term(sdl_subject.name)}
                             self.sdl_rdf_dict = {**self.sdl_rdf_dict, **self.subject_mapping_dict}
 
-                        if str(item) == "Predicate:":
+                        if str(item) == "predicate:":
                             # if Namespace is "Predicate:"
                             # generate RDF item and append mapping of RDF item and key from "scene_dict" to "sdl_rdf_dict" 
                             self.predicate_mapping_dict = {sdl_predicate: item.term(sdl_predicate.name)}
@@ -545,13 +587,19 @@ class RDF_Wrapper:
                                 self.subject_mapping_dict = {sdl_subject: item.term(sdl_subject.name)}
                                 self.sdl_rdf_dict = {**self.sdl_rdf_dict, **self.subject_mapping_dict}
 
-                            if str(item) == "Predicate:":
+                            if str(item) == "predicate:":
                                 self.predicate_mapping_dict = {sdl_predicate: item.term(sdl_predicate.name)}
                                 self.sdl_rdf_dict = {**self.sdl_rdf_dict, **self.predicate_mapping_dict}
-
+        if debug:
+            print(f"\nWrapper.generateRDFDatabase() - mapping SDL to RDF. Key=SDL - Value=RDF\n")
+            for key, value in self.sdl_rdf_dict.items():
+                try:
+                    print(f"\tKeyName: {key.name} Value: {value}\n")
+                except:
+                    print(f"\tKeyName: {key.name} Value: {value}\n")
         return self.sdl_rdf_dict
 
-    def RDFTriplets(self):
+    def RDFTriplets(self, debug=False)->List:
         """Generating RDF Triplets from scene dict, Namespaces and Database
 
         Returns:
@@ -605,11 +653,17 @@ class RDF_Wrapper:
                                 if triple not in self.list_of_triplets:
                                     self.list_of_triplets.append(triple)
                                 break
-
+        if debug:
+            print(f"\nWrapper.RDFTriplets - generate RDF-Triplets from SDL_Scene:")
+            for item in self.list_of_triplets:
+                print(f"\t{item}\n")
+            print(f"\t\tTypes of triplet entries (given example: first triplet):")
+            for triplet_item in self.list_of_triplets[0]:
+                print(f"\t\t\t{triplet_item}: {type(triplet_item)}\n")
         return self.list_of_triplets
 
-    def RDF_graph(self):
-        """builds up RDF ontology from RDF triplets
+    def RDF_graph(self, debug=False):
+        """builds up RDF graph from RDF triplets
 
         Args:
             triplets (list of tuples): RDF triplets (subject, predicate, object) 
@@ -636,11 +690,29 @@ class RDF_Wrapper:
                 return key
  
     def remove_Triplets_from_RDFDatabase(self, d_list):
+        """removes triplets from the RDF graph
+
+        Args:
+            d_list (_type_): _description_
+
+        Returns:
+            rdflib.graph.Graph: new RDF graph
+        """
         for triplet in d_list: 
             self.graph.remove(triplet)
         return self.graph
 
     def add_Triplets_to_RDFDatabase(self, a_list):
+        """adds triplets to the RDF graph
+
+        Args:
+            a_list (_type_): _description_
+
+
+        Returns:
+            rdflib.graph.Graph: new RDF graph
+        """
+
         for tuple in a_list:
             self.graph.add(tuple)
         return self.graph
@@ -652,7 +724,7 @@ class RDF_Wrapper:
             relation (Dict): Relation based on SDL Objects and Predicates 
 
         Returns:
-            RDF Triplet
+            Tuple: RDF triplet (RDF subject, RDF predicate, RDF object)
         """
         for sdl_rel_key, sdl_rel_value in relation.items():
             for mapping_key, mapping_value in self.sdl_rdf_dict.items():
@@ -667,11 +739,12 @@ class RDF_Wrapper:
             return triplet
 
     def gen_SDL_scene_from_RDF_Database(self, new_graph) -> Scene:
-        """generates new SDL scene from manipulated RDF Database (action manipulates RDF Database directly but not SDL scene). New SDL scene has to be generated based on RDF Database
-
+        """generates new SDL scene from manipulated RDF Database.
+        The action manipulates the RDF Database but not SDL scene itself in the first place.
+        The new SDL scene after the execution of the action has to be generated based on the manipulated RDF Database.
         Args:
-            new_graph (rdflib.graph.Graph): new RDF Database
-
+            new_graph (rdflib.graph.Graph): new RDF Database after the execution of the action
+            
         Returns:
             Scene: new SDL Scene
         """

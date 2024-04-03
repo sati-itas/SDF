@@ -27,13 +27,13 @@ def actions_simple(predicate_dict):
     # SPARQL Query according: https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QueryForms
     # prepared for rdflib in python: https://rdflib.readthedocs.io/en/stable/intro_to_sparql.html
     lc_right_precondition = """
-            PREFIX pre: <predicate:>
-            SELECT ?x ?y ?v ?e
-            WHERE {
-                    ?e pre:is_on_lane ?x .
-                    ?x pre:has_right_neighbour ?y .
-                    FILTER NOT EXISTS { ?v pre:is_on ?y}
-            }
+                PREFIX pre: <predicate:>
+                SELECT ?x ?y ?v ?e
+                WHERE {
+                        ?e pre:is_on_lane ?x .
+                        ?x pre:has_right_neighbour ?y .
+                        FILTER NOT EXISTS { ?v pre:is_on ?y}
+                }
             """
 
     lc_left_precondition = """
