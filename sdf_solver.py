@@ -27,7 +27,7 @@ class Solver:
         if GoalScene.scene_relations.items() <= CurrentScene.scene_relations.items():
             solution = True
             return [plan,solution]
-        
+
         queue.append(SearchNode(None, CurrentScene, None))
 
         while queue:
@@ -46,7 +46,7 @@ class Solver:
                     # elif parent_node.in_path(next_scene): # pruning rule1: do not consider any path that visits the same state twice
                     #     pass
                     else:
-        
+
                         queue.append(new_node)
         return [plan,solution]
 
@@ -132,9 +132,9 @@ class Solver:
                         queue.append(new_node)
             end_state_time = timeit.default_timer()
             data_simple_bfs.state_processing_time.append(end_state_time-start_state_time)
-            
+
         return [plan,solution]
-    
+
     @staticmethod
     def BFS_DP(CurrentScene:Scene, GoalScene:Scene, action_list:List[Action], data_logger:DataStorage = DataStorage('bfs_dp'), debug = False)->Union[List[Any],bool]:
         """Breadth First Search algorithm for finding path between CurrentScene and GoalScene in discrete state transition system (nodes: Scenes, transitions: actions)
@@ -160,7 +160,7 @@ class Solver:
         queue.append(SearchNode(None, CurrentScene, None))
         visited = {CurrentScene: True}
 
-        while queue: #not GoalScene.scene_relations.items() <= CurrentScene.scene_relations.items() and 
+        while queue: #not GoalScene.scene_relations.items() <= CurrentScene.scene_relations.items() and
             parent_node = queue.pop(0) #first-in, first-out
 
             for action in action_list:
@@ -188,15 +188,15 @@ class Solver:
                     else:
                         visited[next_scene] = True
                         queue.append(new_node)
-        return [plan,solution] 
-    
+        return [plan,solution]
+
     @staticmethod
     def simple_Astar(CurrentScene:Scene, GoalScene:Scene, action_list:List[Action])->Union[List[Action],bool]:
         """A* algorithm for finding path between CurrentScene and GoalScene in discrete state transition system (nodes: Scenes, transitions: actions)
 
         Args:
             CurrentScene (Scene): current scene
-            GoalScene (Scene): goal scene 
+            GoalScene (Scene): goal scene
             action_list (List[Action]): list of possible basic maneuver
 
         Returns:
@@ -252,14 +252,14 @@ class Solver:
             # Generate children: apply action and determine effects of actions
             children = []
             #print_scene(current_node.state,f)
-            for action in action_list: 
+            for action in action_list:
                 #if action.check_precondition(current_node.state):
                     #NextScene=action.execute()
                 execution_return=action.execute(current_node.state)
                 if isinstance(execution_return, Scene):
                     NextScene=execution_return
                     nextNode = Node(current_node, NextScene, action)
-                    children.append(nextNode) 
+                    children.append(nextNode)
 
             # Loop through children
             for child in children:
@@ -281,7 +281,7 @@ class Solver:
                         continue
                     else:
                         closed_list_counter=closed_list_counter+1
-                    
+
 
                 for open_node in open_list:
                     # if not check_identical_scenes(child.state, closed_node.state):
@@ -294,7 +294,7 @@ class Solver:
                         continue
                     else:
                         open_list_counter=open_list_counter+1
-                
+
                 # Add the child to the open list
                 if open_list_counter==len(open_list) and closed_list_counter==len(closed_list):
                     open_list.append(child)
@@ -327,13 +327,13 @@ class SearchNode():
         """
         if self.parent is None:
             return [(self.action)]
-        else: 
+        else:
             return self.parent.act_sequence()+[(self.action)]
 
     def in_path(self, state):
         """checks if next state is equal to parent state. for pruning reason: do not consider any path that visits the same state twice.
         """
-        if self.state.scene_relations.items() == state.scene_relations.items(): # 
+        if self.state.scene_relations.items() == state.scene_relations.items(): #
             return True
         elif self.parent is None:
             return False
@@ -357,7 +357,7 @@ class Node():
         return self.state == other.state
 
 def check_identical_scenes(scene1:Scene, scene2:Scene)->bool:
-    """checks if 2 scene descriptions (2 different "Scene" python objects) are identical in terms of their scene relations 
+    """checks if 2 scene descriptions (2 different "Scene" python objects) are identical in terms of their scene relations
 
     Args:
         scene1 (Scene): scene 1
@@ -367,12 +367,12 @@ def check_identical_scenes(scene1:Scene, scene2:Scene)->bool:
         bool: True if scenes are identical
     """
     if scene1.scene_relations.items() <= scene2.scene_relations.items() and scene2.scene_relations.items() <= scene1.scene_relations.items():
-        return True 
+        return True
     else:
         return False
 
 def check_subset_scenes(goal_scene:Scene, scene2:Scene)->bool:
-    """checks if scene1.relations:type[dict] is a subset or equal to scene2.relations:type[dict] in terms of their scene relations 
+    """checks if scene1.relations:type[dict] is a subset or equal to scene2.relations:type[dict] in terms of their scene relations
 
     Args:
         scene1 (Scene): scene 1
@@ -382,6 +382,6 @@ def check_subset_scenes(goal_scene:Scene, scene2:Scene)->bool:
         bool: True if scene1.relations:type[dict] is a subset or equal to scene2.relations:type[dict]
     """
     if goal_scene.scene_relations.items() <= scene2.scene_relations.items():
-        return True 
+        return True
     else:
         return False
