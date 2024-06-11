@@ -1,6 +1,6 @@
 # SDF
 
-SituationDescriptionFramework: class structure to describe environments and actions in context of automated driving and robotics. Environment is modeled via knowledge based approach and semantic representations. actions/action templates are inspired by PDDL.
+Situation Description Framework (SDF) a Framework to describe situations in context of cognitive robotics and automated driving. This includes a class structure to describe dynamic environment (scenes) and actions. Automated Planner like BFS ,DFS and A*. The knowledge based environment description is modeled via semantic representations and with the abbility of dynamic numeric measurement data. Action templates are inspired by PDDL and preconditions can be queried with SPARQL.
 
 ## Basic Usage
 
@@ -18,7 +18,3 @@ After the activation of your environment, install the requiered packages:
 ```
 pip install -r requirements.txt
 ```
-
-### MQTT Usage
-
-For using MQTT instead of ZeroMQ, you need to install a (local) MQTT broker - Mosquitto is suggested. Befor starting the `main.py` file you need to start up the broker. The communication is currently set up for a local Mosquitto broker but can easily adapted to any other broker by eventually changing the host and port of the `connect()` methods of each client.

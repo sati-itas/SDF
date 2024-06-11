@@ -7,7 +7,7 @@ from typing import List
 from rdflib import Graph
 from rdflib import Namespace
 
-from dict_helper import merge_dicts
+from core.utility.dict_helper import merge_dicts
 
 
 @unique
@@ -18,43 +18,6 @@ class OType(Enum):
     LANE = 2
     VEHICLE = 3
     SEGMENT = 4
-
-
-@unique
-class ReferencePosition(Enum):
-    UNKNOWN_REF_POS = 0
-    CENTER = 1
-    REAR_MID = 2
-    REAR_LEFT = 3
-    LEFT_MID = 4
-    FRONT_LEFT = 5
-    FRONT_MID = 6
-    FRONT_RIGHT = 7
-    RIGHT_MID = 8
-    REAR_RIGHT = 9
-
-
-@unique
-class MovingDirection(Enum):
-    UNKNOWN_MOVING_DIRECTION = 0
-    PROBABLE_SAME_DIRECTION = 1
-    SAME_DIRECTION = 2
-    PROBABLE_OPPOSITE_DIRECTION = 3
-    OPPOSITE_DIRECTION = 4
-    PROBABLE_LEFT_TO_RIGHT_CROSSING = 5
-    LEFT_TO_RIGHT_CROSSING = 6
-    PROBABLE_RIGHT_TO_LEFT_CROSSING = 7
-    RIGHT_TO_LEFT_CROSSING = 8
-
-
-@unique
-class MovingState(Enum):
-    UNKNOWN_MOVING_STATE = 0
-    PROBABLE_STATIC = 1
-    STATIC_OBJ = 2
-    PROBABLE_DYNAMIC = 3
-    DYNAMIC = 4
-    MOVABLE = 5
 
 
 class Thing:
@@ -86,7 +49,7 @@ class SDLObject(Thing):
         position(int): position of object in environment (default=None)
     """
 
-    def __init__(self, object_name: str, object_type=OType.EGO.value):
+    def __init__(self, object_name: str, object_type: OType):
         self.object_type = object_type
         Thing.__init__(self, name=object_name)
 
@@ -216,7 +179,7 @@ class Predicate(Thing):
         o2type (enum): Type of object2. Distinguish only between object types (reference: OType class) for filter reasons
     """
 
-    def __init__(self, predicate_name: str, o1type=OType.EGO.value, o2type=OType.LANE.value):
+    def __init__(self, predicate_name: str, o1type: OType, o2type: OType):
         Thing.__init__(self, name=predicate_name)
         self.o1type = o1type
         self.o2type = o2type
@@ -291,13 +254,14 @@ class Scene(Thing):
             Object: object instance with given name
         """
         counter = 0
-        for scene_object in self.object_list:
-            if scene_object.name == object_name:
-                return scene_object
-            else:
-                counter += 1
-        if counter == len(self.object_list):
-            return None
+        try:
+            for scene_object in self.object_list:
+                if scene_object.name == object_name:
+                    return scene_object
+                else:
+                    counter += 1
+        except:
+            print(f'Exception occured: {object_name} not an memeber of self.object_list')
 
     def search_all_individuals_of_class(self, o_type) -> List[SDLObject]:
         """gets all individuals of given class-object
@@ -351,8 +315,8 @@ class Action(Thing):
             Bool: whether precondition is satisfied in current scene or not
         """
 
-        self.graph_processing_time = 0
-        self.query_processing_time = 0
+        self.graph_processing_time = 0.0
+        self.query_processing_time = 0.0
 
         self.select_dict = {}
 

@@ -5,7 +5,7 @@ import yaml
 
 
 class DataStorage:
-    def __init__(self, test_loop=1, solver: str = '', file_path=None) -> None:
+    def __init__(self, solver: str = '', test_loop=1, file_path=None) -> None:
         self.file_path = file_path
         # domain
         self.domain = ''
