@@ -17,7 +17,8 @@ class Solver:
         action_list: List[Action],
         data_logger: DataStorage = DataStorage('simple_dfs'),
     ) -> Union[List[Any], bool]:
-        """Deep First Search algorithm for finding path between CurrentScene and GoalScene in discrete state transition system (nodes: Scenes, transitions: actions)
+        """Deep First Search algorithm for finding path between CurrentScene and GoalScene in discrete state transition
+            system (nodes: Scenes, transitions: actions)
 
         Args:
             CurrentScene (Scene): current scene
@@ -67,7 +68,8 @@ class Solver:
         data_logger: DataStorage = DataStorage('simple_bfs'),
         debug=False,
     ) -> Union[List[Any], bool]:
-        """Breadth First Search algorithm for finding path between CurrentScene and GoalScene in discrete state transition system (nodes: Scenes, transitions: actions)
+        """Breadth First Search algorithm for finding path between CurrentScene and GoalScene in discrete
+        state transition system (nodes: Scenes, transitions: actions)
 
         Args:
             CurrentScene (Scene): current scene
@@ -166,7 +168,8 @@ class Solver:
         data_logger: DataStorage = DataStorage('bfs_dp'),
         debug=False,
     ) -> Union[List[Any], bool]:
-        """Breadth First Search algorithm for finding path between CurrentScene and GoalScene in discrete state transition system (nodes: Scenes, transitions: actions)
+        """Breadth First Search algorithm for finding path between CurrentScene and GoalScene in
+        discrete state transition system (nodes: Scenes, transitions: actions)
 
         Args:
             CurrentScene (Scene): current scene
@@ -225,7 +228,8 @@ class Solver:
 
     @staticmethod
     def simple_Astar(CurrentScene: Scene, GoalScene: Scene, action_list: List[Action]) -> Union[List[Action], bool]:
-        """A* algorithm for finding path between CurrentScene and GoalScene in discrete state transition system (nodes: Scenes, transitions: actions)
+        """A* algorithm for finding path between CurrentScene and GoalScene in
+        discrete state transition system (nodes: Scenes, transitions: actions)
 
         Args:
             CurrentScene (Scene): current scene

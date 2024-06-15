@@ -266,9 +266,6 @@ def test_scenes(testloop):
         for item in plan_bfs_dp:
             print(item.name)
 
-    # plot_execute_statistic(data_simple_bfs)
-    plot_solver_statistic([data_simple_bfs, data_bfs_dp])
-
 
 def plot_execute_statistic(datastorage: List[DataStorage]):
 
