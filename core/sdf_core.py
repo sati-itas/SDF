@@ -370,7 +370,7 @@ class Action(Thing):
                 1. map the SELECT parameter to RDF subjects and objects -> result: {SDL_Predicate: [RDF item 1, RDF item 2]}
                 2. map the RDF subjects and objects to SDL_Object instances -> result: {SDL_Predicate: [SDL_Object 1, SDL_Object 2]}
                 3. map the SDL relation to a RDF Tuple (RDF subject, RDF predicate, RDF object)
-                4. remove the Triplet to the graph
+                4. remove the triplet to the graph
                 """
 
                 if debug:
@@ -412,23 +412,23 @@ class Action(Thing):
                                 sdl_obj = mapping_key
                         try:
                             # if all SDL_Objects were mapped from their RDF subject/object equivilants:
-                            # build an according RDF Triplet from the SDL relation
+                            # build an according RDF triplet from the SDL relation
                             sdl_rel = {sdl_pred: [sdl_sub, sdl_obj]}
-                            Triplet = self.Wrapper.triplet_from_relation(sdl_rel)
+                            triplet = self.Wrapper.triplet_from_relation(sdl_rel)
 
-                            # remove all mapped Triplets from the given d_list from the current RDF Database
-                            new_graph = self.Wrapper.remove_triplets_from_rdf_database([Triplet])
+                            # remove all mapped triplets from the given d_list from the current RDF Database
+                            new_graph = self.Wrapper.remove_triplets_from_rdf_database([triplet])
                         except:
                             raise Exception("Error while removing d_list from current scene")
 
             for item in self.a_list:
                 """
-                do the same for the a_list as was done with the d_list (except don't remove the RDF Triplet from the graph but add it to the graph)
+                do the same for the a_list as was done with the d_list (except don't remove the RDF triplet from the graph but add it to the graph)
                 a_list: Dict {SDL_Predicate: [select param 1 (type: string), select param 2 (type: string)]}
                 1. map the SELECT parameter to RDF subjects and objects -> result: {SDL_Predicate: [RDF item 1, RDF item 2]}
                 2. map the RDF subjects and objects to SDL_Object instances -> result: {SDL_Predicate: [SDL_Object 1, SDL_Object 2]}
                 3. map the SDL relation to a RDF Tuple (RDF subject, RDF predicate, RDF object)
-                4. add the Triplet to the graph
+                4. add the triplet to the graph
                 """
 
                 if debug:
@@ -463,10 +463,10 @@ class Action(Thing):
                                 sdl_obj = mapping_key
                         try:
                             sdl_rel = {sdl_pred: [sdl_sub, sdl_obj]}
-                            Triplet = self.Wrapper.triplet_from_relation(sdl_rel)
+                            triplet = self.Wrapper.triplet_from_relation(sdl_rel)
 
-                            # add all Triplets from a_list to current RDF Database
-                            new_graph = self.Wrapper.add_triplets_to_rdf_database([Triplet])
+                            # add all triplets from a_list to current RDF Database
+                            new_graph = self.Wrapper.add_triplets_to_rdf_database([triplet])
                         except:
                             raise Exception("Error while adding a_list to new scene")
 
@@ -622,10 +622,10 @@ class RDF_Wrapper:
         return self.sdl_rdf_dict
 
     def rdf_triplets(self, debug=False) -> List:
-        """Generating RDF Triplets from scene dict, Namespaces and Database
+        """Generating RDF triplets from scene dict, Namespaces and Database
 
         Returns:
-            List of Tuples: List of RDF Triplets
+            List of Tuples: List of RDF triplets
         """
 
         # iterate over all SDL relations in current scene
@@ -676,7 +676,7 @@ class RDF_Wrapper:
                                 self.list_of_triplets.append(triple)
                             break
         if debug:
-            print("\nWrapper.RDFTriplets - generate RDF-Triplets from SDL_Scene:")
+            print("\nWrapper.RDFTriplets - generate RDF-triplets from SDL_Scene:")
             for item in self.list_of_triplets:
                 print(f"\t{item}\n")
             print("\t\tTypes of triplet entries (given example: first triplet):")
@@ -740,7 +740,7 @@ class RDF_Wrapper:
         return self.graph
 
     def triplet_from_relation(self, relation):
-        """generates RDF Triplet from single SDL relation
+        """generates RDF triplet from single SDL relation
 
         Args:
             relation (Dict): Relation based on SDL Objects and Predicates
@@ -773,7 +773,7 @@ class RDF_Wrapper:
 
         new_sdl_relations = {}
         for triplet in new_graph:
-            # print(f"Triplet: {triplet}")
+            # print(f"triplet: {triplet}")
             for key, value in self.sdl_rdf_dict.items():
                 if triplet[0] == value:
                     new_sub = key
