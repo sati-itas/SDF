@@ -44,30 +44,30 @@ def test_scenes_vis_execute_statistic(testloop):
     current_scene_16, goal_scene_16, action_list_16 = scenario_15(predicates, actions)
     current_scene_20, goal_scene_20, action_list_20 = scenario_20(predicates, actions)
 
-    data_bfs_6 = DataStorage(test_loop=testloop, solver='BFS_DP')
+    data_bfs_6 = DataStorage(test_loop=testloop, solver='bfs_dp')
     data_bfs_6.domain = 'scenario_5'
-    data_bfs_10 = DataStorage(test_loop=testloop, solver='BFS_DP')
+    data_bfs_10 = DataStorage(test_loop=testloop, solver='bfs_dp')
     data_bfs_10.domain = 'scenario_10'
-    data_bfs_16 = DataStorage(test_loop=testloop, solver='BFS_DP')
+    data_bfs_16 = DataStorage(test_loop=testloop, solver='bfs_dp')
     data_bfs_16.domain = 'scenario_15'
-    data_bfs_20 = DataStorage(test_loop=testloop, solver='BFS_DP')
+    data_bfs_20 = DataStorage(test_loop=testloop, solver='bfs_dp')
     data_bfs_20.domain = 'scenario_20'
 
     loop_count = 0
     while loop_count < testloop:
 
-        simple_BFS = helper_timeit_decorator(Solver.simple_BFS)
+        simple_bfs = helper_timeit_decorator(Solver.simple_bfs)
 
-        plan_bfs_6, bfs_planning_step_processing_time_6 = simple_BFS(
+        plan_bfs_6, bfs_planning_step_processing_time_6 = simple_bfs(
             current_scene_6, goal_scene_6, action_list_6, data_logger=data_bfs_6
         )
-        plan_bfs_10, bfs_planning_step_processing_time_10 = simple_BFS(
+        plan_bfs_10, bfs_planning_step_processing_time_10 = simple_bfs(
             current_scene_10, goal_scene_10, action_list_10, data_logger=data_bfs_10
         )
-        plan_bfs_16, bfs_planning_step_processing_time_16 = simple_BFS(
+        plan_bfs_16, bfs_planning_step_processing_time_16 = simple_bfs(
             current_scene_16, goal_scene_16, action_list_16, data_logger=data_bfs_16
         )
-        plan_bfs_20, bfs_planning_step_processing_time_20 = simple_BFS(
+        plan_bfs_20, bfs_planning_step_processing_time_20 = simple_bfs(
             current_scene_20, goal_scene_20, action_list_20, data_logger=data_bfs_20
         )
 
@@ -121,20 +121,20 @@ def test_scenes_vis_solver_statistic(testloop):
     loop_count = 0
     while loop_count < testloop:
 
-        simple_dfs = helper_timeit_decorator(Solver.simple_DFS)
-        simple_BFS = helper_timeit_decorator(Solver.simple_BFS)
-        BFS_dp = helper_timeit_decorator(Solver.BFS_DP)
+        simple_dfs = helper_timeit_decorator(Solver.simple_dfs)
+        simple_bfs = helper_timeit_decorator(Solver.simple_bfs)
+        BFS_dp = helper_timeit_decorator(Solver.bfs_dp)
 
-        plan_bfs_6, bfs_planning_step_processing_time_6 = simple_BFS(
+        plan_bfs_6, bfs_planning_step_processing_time_6 = simple_bfs(
             current_scene_6, goal_scene_6, action_list_6, data_logger=DataStorage('simple_bfs')
         )
-        plan_bfs_10, bfs_planning_step_processing_time_10 = simple_BFS(
+        plan_bfs_10, bfs_planning_step_processing_time_10 = simple_bfs(
             current_scene_10, goal_scene_10, action_list_10, data_logger=DataStorage('simple_bfs')
         )
-        plan_bfs_16, bfs_planning_step_processing_time_16 = simple_BFS(
+        plan_bfs_16, bfs_planning_step_processing_time_16 = simple_bfs(
             current_scene_16, goal_scene_16, action_list_16, data_logger=DataStorage('simple_bfs')
         )
-        plan_bfs_20, bfs_planning_step_processing_time_20 = simple_BFS(
+        plan_bfs_20, bfs_planning_step_processing_time_20 = simple_bfs(
             current_scene_20, goal_scene_20, action_list_20, data_logger=DataStorage('simple_bfs')
         )
         bfs[0].append(bfs_planning_step_processing_time_6)
@@ -205,22 +205,22 @@ def test_scenes(testloop):
     # current_scene, goal_scene, action_list= scenario_20(predicates, actions)
 
     # data_simple_dfs = DataStorage(test_loop = testloop, solver='simple_dfs')
-    data_simple_bfs = DataStorage(test_loop=testloop, solver='simple_BFS')
-    data_bfs_dp = DataStorage(test_loop=testloop, solver='BFS_DP')
+    data_simple_bfs = DataStorage(test_loop=testloop, solver='simple_bfs')
+    data_bfs_dp = DataStorage(test_loop=testloop, solver='bfs_dp')
 
     loop_count = 0
     while loop_count < testloop:
 
-        # simple_dfs = helper_timeit_decorator(Solver.simple_DFS)
-        simple_BFS = helper_timeit_decorator(Solver.simple_BFS)
-        bfs_dp = helper_timeit_decorator(Solver.BFS_DP)
+        # simple_dfs = helper_timeit_decorator(Solver.simple_dfs)
+        simple_bfs = helper_timeit_decorator(Solver.simple_bfs)
+        bfs_dp = helper_timeit_decorator(Solver.bfs_dp)
 
         # data_simple_dfs = DataStorage(test_loop = testloop, solver='simple_dfs')
-        # data_simple_bfs = DataStorage(test_loop = testloop, solver='simple_BFS')
-        # data_bfs_dp = DataStorage(test_loop = testloop, solver='BFS_DP')
+        # data_simple_bfs = DataStorage(test_loop = testloop, solver='simple_bfs')
+        # data_bfs_dp = DataStorage(test_loop = testloop, solver='bfs_dp')
 
         # plan_dfs, dfs_planning_step_processing_time = simple_dfs(current_scene, goal_scene, action_list, data_logger = data_simple_dfs)
-        plan_bfs, bfs_planning_step_processing_time = simple_BFS(
+        plan_bfs, bfs_planning_step_processing_time = simple_bfs(
             current_scene, goal_scene, action_list, data_logger=data_simple_bfs
         )
         plan_bfs_dp, bfs_dp_planning_step_processing_time = bfs_dp(

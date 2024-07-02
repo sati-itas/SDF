@@ -11,34 +11,36 @@ from core.sdf_core import Scene
 class Solver:
 
     @staticmethod
-    def simple_DFS(
-        CurrentScene: Scene,
-        GoalScene: Scene,
+    def simple_dfs(
+        current_scene: Scene,
+        goal_scene: Scene,
         action_list: List[Action],
         data_logger: DataStorage = DataStorage('simple_dfs'),
     ) -> Union[List[Any], bool]:
-        """Deep First Search algorithm for finding path between CurrentScene and GoalScene in discrete state transition
+        """Deep First Search algorithm for finding path between current_scene and goal_scene in discrete state transition
             system (nodes: Scenes, transitions: actions)
 
         Args:
-            CurrentScene (Scene): current scene
-            GoalScene (Scene): goal scene
+            current_scene (Scene): current scene
+            goal_scene (Scene): goal scene
             action_list (List[Action]): list of possible basic maneuver
 
         Returns:
             List[Action]: plan
         """
+        # TODO setup data logger
+
         data_simple_dfs = data_logger
 
         plan = []
         queue = []
         solution = False
 
-        if GoalScene.scene_relations.items() <= CurrentScene.scene_relations.items():
+        if goal_scene.scene_relations.items() <= current_scene.scene_relations.items():
             solution = True
             return [plan, solution]
 
-        queue.append(SearchNode(None, CurrentScene, None))
+        queue.append(SearchNode(None, current_scene, None))
 
         while queue:
             parent_node = queue.pop()  # stack: last-in, first-out
@@ -48,7 +50,7 @@ class Solver:
                 if next_scene:
                     new_node = SearchNode(action, next_scene, parent_node)
 
-                    if GoalScene.scene_relations.items() <= next_scene.scene_relations.items():
+                    if goal_scene.scene_relations.items() <= next_scene.scene_relations.items():
                         solution = True
                         # path = new_node.path()
                         plan = new_node.act_sequence()
@@ -61,19 +63,19 @@ class Solver:
         return [plan, solution]
 
     @staticmethod
-    def simple_BFS(
-        CurrentScene: Scene,
-        GoalScene: Scene,
+    def simple_bfs(
+        current_scene: Scene,
+        goal_scene: Scene,
         action_list: List[Action],
         data_logger: DataStorage = DataStorage('simple_bfs'),
         debug=False,
     ) -> Union[List[Any], bool]:
-        """Breadth First Search algorithm for finding path between CurrentScene and GoalScene in discrete
+        """Breadth First Search algorithm for finding path between current_scene and goal_scene in discrete
         state transition system (nodes: Scenes, transitions: actions)
 
         Args:
-            CurrentScene (Scene): current scene
-            GoalScene (Scene): goal scene
+            current_scene (Scene): current scene
+            goal_scene (Scene): goal scene
             action_list (List[Action]): list of possible basic maneuver
 
         Returns:
@@ -84,12 +86,12 @@ class Solver:
         plan = []
         queue = []
         solution = False
-        if GoalScene.scene_relations.items() <= CurrentScene.scene_relations.items():
+        if goal_scene.scene_relations.items() <= current_scene.scene_relations.items():
             return [plan, solution]
 
-        queue.append(SearchNode(None, CurrentScene, None))
+        queue.append(SearchNode(None, current_scene, None))
 
-        # reset datalogger
+        # datalogger: reset
         data_simple_bfs.state_count = 0
         data_simple_bfs.graph_processing_time = []
         data_simple_bfs.query_processing_time = []
@@ -99,7 +101,10 @@ class Solver:
         while queue:
             start_state_time = timeit.default_timer()
             parent_node = queue.pop(0)  # queue: first-in, first-out
+
+            # datalogger: state count
             data_simple_bfs.state_count += 1
+
             for action in action_list:
                 start_execute_time = timeit.default_timer()
                 next_scene = action.execute(
@@ -107,6 +112,7 @@ class Solver:
                 )  # pruning of states (Scenes) -> which action is executable in Scene -> proof if executable and if excutable generate Scene
                 end_execute_time = timeit.default_timer()
 
+                # datalogger: log execute
                 data_simple_bfs.graph_processing_time.append(action.graph_processing_time)
                 data_simple_bfs.query_processing_time.append(action.query_processing_time)
                 data_simple_bfs.effect_execute_processing_time.append(action.effect_execute_processing_time)
@@ -121,20 +127,20 @@ class Solver:
                 # print(f'action.name: {action.name}')
                 # print(f' parent_Node.state: {parent_Node.state}\n')
                 # print(f' NextScene: {execution_return}')
-                # print(f' GoalScene: {GoalScene}')
+                # print(f' goal_scene: {goal_scene}')
 
                 if next_scene:
                     new_node = SearchNode(action, next_scene, parent_node)
-                    if GoalScene.scene_relations.items() <= next_scene.scene_relations.items():
+                    if goal_scene.scene_relations.items() <= next_scene.scene_relations.items():
                         solution = True
                         # path = new_node.path()
                         plan = new_node.act_sequence()
+                        end_state_time = timeit.default_timer()
 
+                        # datalogger: log solution
                         data_simple_bfs.solution.append(solution)
                         data_simple_bfs.state_count_per_testloop.append(data_simple_bfs.state_count)
-                        end_state_time = timeit.default_timer()
                         data_simple_bfs.state_processing_time.append(end_state_time - start_state_time)
-
                         data_simple_bfs.mean_graph_processing_time.append(
                             data_simple_bfs.mean_value(data_simple_bfs.graph_processing_time)
                         )
@@ -156,24 +162,25 @@ class Solver:
                     else:
                         queue.append(new_node)
             end_state_time = timeit.default_timer()
-            data_simple_bfs.state_processing_time.append(end_state_time - start_state_time)
 
+            # datalogger: log processing time
+            data_simple_bfs.state_processing_time.append(end_state_time - start_state_time)
         return [plan, solution]
 
     @staticmethod
-    def BFS_DP(
-        CurrentScene: Scene,
-        GoalScene: Scene,
+    def bfs_dp(
+        current_scene: Scene,
+        goal_scene: Scene,
         action_list: List[Action],
         data_logger: DataStorage = DataStorage('bfs_dp'),
         debug=False,
     ) -> Union[List[Any], bool]:
-        """Breadth First Search algorithm for finding path between CurrentScene and GoalScene in
+        """Breadth First Search algorithm for finding path between current_scene and goal_scene in
         discrete state transition system (nodes: Scenes, transitions: actions)
 
         Args:
-            CurrentScene (Scene): current scene
-            GoalScene (Scene): goal scene
+            current_scene (Scene): current scene
+            goal_scene (Scene): goal scene
             action_list (List[Action]): list of possible basic maneuver
 
         Returns:
@@ -186,13 +193,13 @@ class Solver:
         visited = {}
         solution = False
 
-        if GoalScene.scene_relations.items() <= CurrentScene.scene_relations.items():
+        if goal_scene.scene_relations.items() <= current_scene.scene_relations.items():
             return [plan, solution]
 
-        queue.append(SearchNode(None, CurrentScene, None))
-        visited = {CurrentScene: True}
+        queue.append(SearchNode(None, current_scene, None))
+        visited = {current_scene: True}
 
-        while queue:  # not GoalScene.scene_relations.items() <= CurrentScene.scene_relations.items() and
+        while queue:  # not goal_scene.scene_relations.items() <= current_scene.scene_relations.items() and
             parent_node = queue.pop(0)  # first-in, first-out
 
             for action in action_list:
@@ -207,12 +214,12 @@ class Solver:
                 # print(f'action.name: {action.name}')
                 # print(f' parent_Node.state: {parent_Node.state}\n')
                 # print(f' NextScene: {execution_return}')
-                # print(f' GoalScene: {GoalScene}')
+                # print(f' goal_scene: {goal_scene}')
 
                 if next_scene:
                     new_node = SearchNode(action, next_scene, parent_node)
                     # print(f'parent_node.in_path(next_scene): {parent_node.in_path(next_scene)}')
-                    if GoalScene.scene_relations.items() <= next_scene.scene_relations.items():
+                    if goal_scene.scene_relations.items() <= next_scene.scene_relations.items():
                         solution = True
                         # path = new_node.path()
                         plan = new_node.act_sequence()
@@ -227,13 +234,13 @@ class Solver:
         return [plan, solution]
 
     @staticmethod
-    def simple_Astar(CurrentScene: Scene, GoalScene: Scene, action_list: List[Action]) -> Union[List[Action], bool]:
-        """A* algorithm for finding path between CurrentScene and GoalScene in
+    def simple_Astar(current_scene: Scene, goal_scene: Scene, action_list: List[Action]) -> Union[List[Action], bool]:
+        """A* algorithm for finding path between current_scene and goal_scene in
         discrete state transition system (nodes: Scenes, transitions: actions)
 
         Args:
-            CurrentScene (Scene): current scene
-            GoalScene (Scene): goal scene
+            current_scene (Scene): current scene
+            goal_scene (Scene): goal scene
             action_list (List[Action]): list of possible basic maneuver
 
         Returns:
@@ -241,9 +248,9 @@ class Solver:
         """
 
         # Create start and end node
-        start_node = Node(None, CurrentScene)
+        start_node = Node(None, current_scene)
         start_node.g = start_node.h = start_node.f = 0
-        end_node = Node(None, GoalScene)
+        end_node = Node(None, goal_scene)
         end_node.g = end_node.h = end_node.f = 0
 
         # Initialize both open and closed list
