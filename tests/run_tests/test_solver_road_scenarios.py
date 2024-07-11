@@ -21,7 +21,7 @@ def test_DFS(loops: int):
     predicates = predicates_simple()
     actions = actions_simple(predicates)
 
-    CurrentScene, GoalScene, action_list = scenario_20(predicates, actions)
+    CurrentScene, GoalScene, action_list = scenario_5(predicates, actions)
     # print(CurrentScene)
 
     loop_count = 0
@@ -49,7 +49,7 @@ def test_BFS(loops: int):
     predicates = predicates_simple()
     actions = actions_simple(predicates)
 
-    CurrentScene, GoalScene, action_list = scenario_20(predicates, actions)
+    CurrentScene, GoalScene, action_list = scenario_5(predicates, actions)
     # print(CurrentScene)
 
     loop_count = 0
@@ -76,7 +76,7 @@ def test_BFS_DP(loops: int):
     predicates = predicates_simple()
     actions = actions_simple(predicates)
 
-    CurrentScene, GoalScene, action_list = scenario_20(predicates, actions)
+    CurrentScene, GoalScene, action_list = scenario_5(predicates, actions)
     # print(CurrentScene)
 
     loop_count = 0
@@ -101,6 +101,6 @@ def test_BFS_DP(loops: int):
 
 if __name__ == "__main__":
     loops = 1
+    test_DFS(loops)
     test_BFS(loops)
     test_BFS_DP(loops)
-    test_DFS(loops)

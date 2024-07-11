@@ -7,7 +7,7 @@ base_dir = os.path.join(parent_dir, '..')
 # append parent and base direction
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
-from core.sdf_core import SDLObject, Scene, OType
+from core.sdf_core import SDObject, Scene, OType
 from core.sdf_def_predicates_actions import actions_simple, predicates_simple
 
 from core.sdf_solver import check_subset_scenes, check_identical_scenes
@@ -16,10 +16,10 @@ from tests.env_sets.road_test_scenarios import *
 
 def test_goal_checker():
     # Instanziierung Objekte
-    Agent = SDLObject("ego", OType.EGO)
-    lane1 = SDLObject("lane1", OType.LANE)
-    lane2 = SDLObject("lane2", OType.LANE)
-    lane3 = SDLObject("lane3", OType.LANE)
+    Agent = SDObject("ego", OType.EGO)
+    lane1 = SDObject("lane1", OType.LANE)
+    lane2 = SDObject("lane2", OType.LANE)
+    lane3 = SDObject("lane3", OType.LANE)
 
     scn_1 = {Agent: [1, 2]}
 

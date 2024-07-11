@@ -7,20 +7,20 @@ base_dir = os.path.join(parent_dir, '..')
 # append parent and base direction
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
-from core.sdf_core import SDLObject, Scene, OType
+from core.sdf_core import SDObject, Scene, OType
 
 
 def scenario_5(predicates, actions):
 
-    # Instanziierung Objekte
-    Agent = SDLObject("ego", OType.EGO)
-    Car1 = SDLObject("car1", OType.VEHICLE)
-    lane1 = SDLObject("lane1", OType.LANE)
-    lane2 = SDLObject("lane2", OType.LANE)
-    lane3 = SDLObject("lane3", OType.LANE)
-    lane4 = SDLObject("lane4", OType.LANE)
-    lane5 = SDLObject("lane5", OType.LANE)
-    lane6 = SDLObject("lane6", OType.LANE)
+    # instantiate sdf objects
+    Agent = SDObject("ego", OType.EGO)
+    Car1 = SDObject("car1", OType.VEHICLE)
+    lane1 = SDObject("lane1", OType.LANE)
+    lane2 = SDObject("lane2", OType.LANE)
+    lane3 = SDObject("lane3", OType.LANE)
+    lane4 = SDObject("lane4", OType.LANE)
+    lane5 = SDObject("lane5", OType.LANE)
+    lane6 = SDObject("lane6", OType.LANE)
 
     object_list = [Agent, Car1, lane1, lane2, lane3, lane4, lane5, lane6]
 
@@ -38,7 +38,7 @@ def scenario_5(predicates, actions):
         has_bottom_left_neighbour,
     ) = predicate_list
 
-    # Erzeugung Relationen Init-Szene
+    # generate init-scene
     rel_is_on_lane = {is_on_lane: [Agent, lane1]}
     rel_is_on = {is_on: [Car1, lane3]}
 
@@ -70,19 +70,19 @@ def scenario_5(predicates, actions):
 
 def scenario_10(predicates, actions):
 
-    # Instanziierung Objekte
-    Agent = SDLObject("ego", OType.EGO)
-    Car1 = SDLObject("car1", OType.VEHICLE)
-    lane1 = SDLObject("lane1", OType.LANE)
-    lane2 = SDLObject("lane2", OType.LANE)
-    lane3 = SDLObject("lane3", OType.LANE)
-    lane4 = SDLObject("lane4", OType.LANE)
-    lane5 = SDLObject("lane5", OType.LANE)
-    lane6 = SDLObject("lane6", OType.LANE)
-    lane7 = SDLObject("lane7", OType.LANE)
-    lane8 = SDLObject("lane8", OType.LANE)
-    lane9 = SDLObject("lane9", OType.LANE)
-    lane10 = SDLObject("lane10", OType.LANE)
+    # instantiate sdf objects
+    Agent = SDObject("ego", OType.EGO)
+    Car1 = SDObject("car1", OType.VEHICLE)
+    lane1 = SDObject("lane1", OType.LANE)
+    lane2 = SDObject("lane2", OType.LANE)
+    lane3 = SDObject("lane3", OType.LANE)
+    lane4 = SDObject("lane4", OType.LANE)
+    lane5 = SDObject("lane5", OType.LANE)
+    lane6 = SDObject("lane6", OType.LANE)
+    lane7 = SDObject("lane7", OType.LANE)
+    lane8 = SDObject("lane8", OType.LANE)
+    lane9 = SDObject("lane9", OType.LANE)
+    lane10 = SDObject("lane10", OType.LANE)
 
     object_list = [Agent, Car1, lane1, lane2, lane3, lane4, lane5, lane6, lane7, lane8, lane9, lane10]
 
@@ -100,7 +100,7 @@ def scenario_10(predicates, actions):
         has_bottom_left_neighbour,
     ) = predicate_list
 
-    # Erzeugung Relationen Init-Szene
+    # generate init-scene
     rel_is_on_lane = {is_on_lane: [Agent, lane1]}
     rel_is_on = {is_on: [Car1, lane5]}
 
@@ -158,25 +158,25 @@ def scenario_10(predicates, actions):
 
 def scenario_15(predicates, actions):
 
-    # Instanziierung Objekte
-    Agent = SDLObject("ego", OType.EGO)
-    Car1 = SDLObject("car1", OType.VEHICLE)
-    lane1 = SDLObject("lane1", OType.LANE)
-    lane2 = SDLObject("lane2", OType.LANE)
-    lane3 = SDLObject("lane3", OType.LANE)
-    lane4 = SDLObject("lane4", OType.LANE)
-    lane5 = SDLObject("lane5", OType.LANE)
-    lane6 = SDLObject("lane6", OType.LANE)
-    lane7 = SDLObject("lane7", OType.LANE)
-    lane8 = SDLObject("lane8", OType.LANE)
-    lane9 = SDLObject("lane9", OType.LANE)
-    lane10 = SDLObject("lane10", OType.LANE)
-    lane11 = SDLObject("lane11", OType.LANE)
-    lane12 = SDLObject("lane12", OType.LANE)
-    lane13 = SDLObject("lane13", OType.LANE)
-    lane14 = SDLObject("lane14", OType.LANE)
-    lane15 = SDLObject("lane15", OType.LANE)
-    lane16 = SDLObject("lane16", OType.LANE)
+    # instantiate sdf objects
+    Agent = SDObject("ego", OType.EGO)
+    Car1 = SDObject("car1", OType.VEHICLE)
+    lane1 = SDObject("lane1", OType.LANE)
+    lane2 = SDObject("lane2", OType.LANE)
+    lane3 = SDObject("lane3", OType.LANE)
+    lane4 = SDObject("lane4", OType.LANE)
+    lane5 = SDObject("lane5", OType.LANE)
+    lane6 = SDObject("lane6", OType.LANE)
+    lane7 = SDObject("lane7", OType.LANE)
+    lane8 = SDObject("lane8", OType.LANE)
+    lane9 = SDObject("lane9", OType.LANE)
+    lane10 = SDObject("lane10", OType.LANE)
+    lane11 = SDObject("lane11", OType.LANE)
+    lane12 = SDObject("lane12", OType.LANE)
+    lane13 = SDObject("lane13", OType.LANE)
+    lane14 = SDObject("lane14", OType.LANE)
+    lane15 = SDObject("lane15", OType.LANE)
+    lane16 = SDObject("lane16", OType.LANE)
 
     object_list = [
         Agent,
@@ -213,7 +213,7 @@ def scenario_15(predicates, actions):
         has_bottom_left_neighbour,
     ) = predicate_list
 
-    # Erzeugung Relationen Init-Szene
+    # generate init-scene
     rel_is_on_lane = {is_on_lane: [Agent, lane1]}
     rel_is_on = {is_on: [Car1, lane5]}
 
@@ -301,29 +301,29 @@ def scenario_15(predicates, actions):
 
 def scenario_20(predicates, actions):
 
-    # Instanziierung Objekte
-    Agent = SDLObject("ego", OType.EGO)
-    Car1 = SDLObject("car1", OType.VEHICLE)
-    lane1 = SDLObject("lane1", OType.LANE)
-    lane2 = SDLObject("lane2", OType.LANE)
-    lane3 = SDLObject("lane3", OType.LANE)
-    lane4 = SDLObject("lane4", OType.LANE)
-    lane5 = SDLObject("lane5", OType.LANE)
-    lane6 = SDLObject("lane6", OType.LANE)
-    lane7 = SDLObject("lane7", OType.LANE)
-    lane8 = SDLObject("lane8", OType.LANE)
-    lane9 = SDLObject("lane9", OType.LANE)
-    lane10 = SDLObject("lane10", OType.LANE)
-    lane11 = SDLObject("lane11", OType.LANE)
-    lane12 = SDLObject("lane12", OType.LANE)
-    lane13 = SDLObject("lane13", OType.LANE)
-    lane14 = SDLObject("lane14", OType.LANE)
-    lane15 = SDLObject("lane15", OType.LANE)
-    lane16 = SDLObject("lane16", OType.LANE)
-    lane17 = SDLObject("lane17", OType.LANE)
-    lane18 = SDLObject("lane18", OType.LANE)
-    lane19 = SDLObject("lane19", OType.LANE)
-    lane20 = SDLObject("lane20", OType.LANE)
+    # instantiate sdf objects
+    Agent = SDObject("ego", OType.EGO)
+    Car1 = SDObject("car1", OType.VEHICLE)
+    lane1 = SDObject("lane1", OType.LANE)
+    lane2 = SDObject("lane2", OType.LANE)
+    lane3 = SDObject("lane3", OType.LANE)
+    lane4 = SDObject("lane4", OType.LANE)
+    lane5 = SDObject("lane5", OType.LANE)
+    lane6 = SDObject("lane6", OType.LANE)
+    lane7 = SDObject("lane7", OType.LANE)
+    lane8 = SDObject("lane8", OType.LANE)
+    lane9 = SDObject("lane9", OType.LANE)
+    lane10 = SDObject("lane10", OType.LANE)
+    lane11 = SDObject("lane11", OType.LANE)
+    lane12 = SDObject("lane12", OType.LANE)
+    lane13 = SDObject("lane13", OType.LANE)
+    lane14 = SDObject("lane14", OType.LANE)
+    lane15 = SDObject("lane15", OType.LANE)
+    lane16 = SDObject("lane16", OType.LANE)
+    lane17 = SDObject("lane17", OType.LANE)
+    lane18 = SDObject("lane18", OType.LANE)
+    lane19 = SDObject("lane19", OType.LANE)
+    lane20 = SDObject("lane20", OType.LANE)
 
     object_list = [
         Agent,
@@ -364,7 +364,7 @@ def scenario_20(predicates, actions):
         has_bottom_left_neighbour,
     ) = predicate_list
 
-    # Erzeugung Relationen Init-Szene
+    # generate init-scene
     rel_is_on_lane = {is_on_lane: [Agent, lane1]}
     rel_is_on = {is_on: [Car1, lane6]}
 
@@ -464,39 +464,39 @@ def scenario_20(predicates, actions):
 
 def scenario_30(predicates, actions):
 
-    # Instanziierung Objekte
-    Agent = SDLObject("ego", OType.EGO)
-    Car1 = SDLObject("car1", OType.VEHICLE)
-    lane1 = SDLObject("lane1", OType.LANE)
-    lane2 = SDLObject("lane2", OType.LANE)
-    lane3 = SDLObject("lane3", OType.LANE)
-    lane4 = SDLObject("lane4", OType.LANE)
-    lane5 = SDLObject("lane5", OType.LANE)
-    lane6 = SDLObject("lane6", OType.LANE)
-    lane7 = SDLObject("lane7", OType.LANE)
-    lane8 = SDLObject("lane8", OType.LANE)
-    lane9 = SDLObject("lane9", OType.LANE)
-    lane10 = SDLObject("lane10", OType.LANE)
-    lane11 = SDLObject("lane11", OType.LANE)
-    lane12 = SDLObject("lane12", OType.LANE)
-    lane13 = SDLObject("lane13", OType.LANE)
-    lane14 = SDLObject("lane14", OType.LANE)
-    lane15 = SDLObject("lane15", OType.LANE)
-    lane16 = SDLObject("lane16", OType.LANE)
-    lane17 = SDLObject("lane17", OType.LANE)
-    lane18 = SDLObject("lane18", OType.LANE)
-    lane19 = SDLObject("lane19", OType.LANE)
-    lane20 = SDLObject("lane20", OType.LANE)
-    lane21 = SDLObject("lane21", OType.LANE)
-    lane22 = SDLObject("lane22", OType.LANE)
-    lane23 = SDLObject("lane23", OType.LANE)
-    lane24 = SDLObject("lane24", OType.LANE)
-    lane25 = SDLObject("lane25", OType.LANE)
-    lane26 = SDLObject("lane26", OType.LANE)
-    lane27 = SDLObject("lane27", OType.LANE)
-    lane28 = SDLObject("lane28", OType.LANE)
-    lane29 = SDLObject("lane29", OType.LANE)
-    lane30 = SDLObject("lane30", OType.LANE)
+    # instantiate sdf objects
+    Agent = SDObject("ego", OType.EGO)
+    Car1 = SDObject("car1", OType.VEHICLE)
+    lane1 = SDObject("lane1", OType.LANE)
+    lane2 = SDObject("lane2", OType.LANE)
+    lane3 = SDObject("lane3", OType.LANE)
+    lane4 = SDObject("lane4", OType.LANE)
+    lane5 = SDObject("lane5", OType.LANE)
+    lane6 = SDObject("lane6", OType.LANE)
+    lane7 = SDObject("lane7", OType.LANE)
+    lane8 = SDObject("lane8", OType.LANE)
+    lane9 = SDObject("lane9", OType.LANE)
+    lane10 = SDObject("lane10", OType.LANE)
+    lane11 = SDObject("lane11", OType.LANE)
+    lane12 = SDObject("lane12", OType.LANE)
+    lane13 = SDObject("lane13", OType.LANE)
+    lane14 = SDObject("lane14", OType.LANE)
+    lane15 = SDObject("lane15", OType.LANE)
+    lane16 = SDObject("lane16", OType.LANE)
+    lane17 = SDObject("lane17", OType.LANE)
+    lane18 = SDObject("lane18", OType.LANE)
+    lane19 = SDObject("lane19", OType.LANE)
+    lane20 = SDObject("lane20", OType.LANE)
+    lane21 = SDObject("lane21", OType.LANE)
+    lane22 = SDObject("lane22", OType.LANE)
+    lane23 = SDObject("lane23", OType.LANE)
+    lane24 = SDObject("lane24", OType.LANE)
+    lane25 = SDObject("lane25", OType.LANE)
+    lane26 = SDObject("lane26", OType.LANE)
+    lane27 = SDObject("lane27", OType.LANE)
+    lane28 = SDObject("lane28", OType.LANE)
+    lane29 = SDObject("lane29", OType.LANE)
+    lane30 = SDObject("lane30", OType.LANE)
 
     object_list = [
         Agent,
@@ -547,7 +547,7 @@ def scenario_30(predicates, actions):
         has_bottom_left_neighbour,
     ) = predicate_list
 
-    # Erzeugung Relationen Init-Szene
+    # generate init-scene
     rel_is_on_lane = {is_on_lane: [Agent, lane1]}
     rel_is_on = {is_on: [Car1, lane5]}
 
@@ -669,37 +669,37 @@ def scenario_30(predicates, actions):
 
 def scenario_3_lane(predicates, actions):
 
-    # Instanziierung Objekte
-    Agent = SDLObject("ego", OType.EGO)
-    Car1 = SDLObject("car1", OType.VEHICLE)
-    lane1 = SDLObject("lane1", OType.LANE)
-    lane2 = SDLObject("lane2", OType.LANE)
-    lane3 = SDLObject("lane3", OType.LANE)
-    lane4 = SDLObject("lane4", OType.LANE)
-    lane5 = SDLObject("lane5", OType.LANE)
-    lane6 = SDLObject("lane6", OType.LANE)
-    lane7 = SDLObject("lane7", OType.LANE)
-    lane8 = SDLObject("lane8", OType.LANE)
-    lane9 = SDLObject("lane9", OType.LANE)
-    lane10 = SDLObject("lane10", OType.LANE)
-    lane11 = SDLObject("lane11", OType.LANE)
-    lane12 = SDLObject("lane12", OType.LANE)
-    lane13 = SDLObject("lane13", OType.LANE)
-    lane14 = SDLObject("lane14", OType.LANE)
-    lane15 = SDLObject("lane15", OType.LANE)
-    lane16 = SDLObject("lane16", OType.LANE)
-    lane17 = SDLObject("lane17", OType.LANE)
-    lane18 = SDLObject("lane18", OType.LANE)
-    lane19 = SDLObject("lane19", OType.LANE)
-    lane20 = SDLObject("lane20", OType.LANE)
-    lane21 = SDLObject("lane21", OType.LANE)
-    lane22 = SDLObject("lane22", OType.LANE)
-    lane23 = SDLObject("lane23", OType.LANE)
-    lane24 = SDLObject("lane24", OType.LANE)
-    lane25 = SDLObject("lane25", OType.LANE)
-    lane26 = SDLObject("lane26", OType.LANE)
-    lane27 = SDLObject("lane27", OType.LANE)
-    lane28 = SDLObject("lane28", OType.LANE)
+    # instantiate sdf objects
+    Agent = SDObject("ego", OType.EGO)
+    Car1 = SDObject("car1", OType.VEHICLE)
+    lane1 = SDObject("lane1", OType.LANE)
+    lane2 = SDObject("lane2", OType.LANE)
+    lane3 = SDObject("lane3", OType.LANE)
+    lane4 = SDObject("lane4", OType.LANE)
+    lane5 = SDObject("lane5", OType.LANE)
+    lane6 = SDObject("lane6", OType.LANE)
+    lane7 = SDObject("lane7", OType.LANE)
+    lane8 = SDObject("lane8", OType.LANE)
+    lane9 = SDObject("lane9", OType.LANE)
+    lane10 = SDObject("lane10", OType.LANE)
+    lane11 = SDObject("lane11", OType.LANE)
+    lane12 = SDObject("lane12", OType.LANE)
+    lane13 = SDObject("lane13", OType.LANE)
+    lane14 = SDObject("lane14", OType.LANE)
+    lane15 = SDObject("lane15", OType.LANE)
+    lane16 = SDObject("lane16", OType.LANE)
+    lane17 = SDObject("lane17", OType.LANE)
+    lane18 = SDObject("lane18", OType.LANE)
+    lane19 = SDObject("lane19", OType.LANE)
+    lane20 = SDObject("lane20", OType.LANE)
+    lane21 = SDObject("lane21", OType.LANE)
+    lane22 = SDObject("lane22", OType.LANE)
+    lane23 = SDObject("lane23", OType.LANE)
+    lane24 = SDObject("lane24", OType.LANE)
+    lane25 = SDObject("lane25", OType.LANE)
+    lane26 = SDObject("lane26", OType.LANE)
+    lane27 = SDObject("lane27", OType.LANE)
+    lane28 = SDObject("lane28", OType.LANE)
 
     object_list = [
         Agent,
@@ -748,7 +748,7 @@ def scenario_3_lane(predicates, actions):
         has_bottom_left_neighbour,
     ) = predicate_list
 
-    # Erzeugung Relationen Init-Szene
+    # generate init-scene
     rel_is_on_lane = {is_on_lane: [Agent, lane1]}
     rel_is_on = {is_on: [Car1, lane6]}
 
@@ -879,14 +879,14 @@ def scenario_3_lane(predicates, actions):
 
 def Ramp_On(predicates, actions):
 
-    # Instanziierung Objekte
-    Agent = SDLObject("ego", OType.EGO)
-    Car1 = SDLObject("car1", OType.VEHICLE)
-    lane1 = SDLObject("lane1", OType.LANE)
-    lane2 = SDLObject("lane2", OType.LANE)
-    lane3 = SDLObject("lane3", OType.LANE)
-    lane4 = SDLObject("lane4", OType.LANE)
-    lane5 = SDLObject("lane5", OType.LANE)
+    # instantiate sdf objects
+    Agent = SDObject("ego", OType.EGO)
+    Car1 = SDObject("car1", OType.VEHICLE)
+    lane1 = SDObject("lane1", OType.LANE)
+    lane2 = SDObject("lane2", OType.LANE)
+    lane3 = SDObject("lane3", OType.LANE)
+    lane4 = SDObject("lane4", OType.LANE)
+    lane5 = SDObject("lane5", OType.LANE)
     object_list = [Agent, Car1, lane1, lane2, lane3, lane4, lane5]
 
     predicate_list = list(predicates.values())
@@ -903,7 +903,7 @@ def Ramp_On(predicates, actions):
         has_bottom_left_neighbour,
     ) = predicate_list
 
-    # Erzeugung Relationen Init-Szene
+    # generate init-scene
     rel_is_on_lane = {is_on_lane: [Agent, lane1]}
     rel_is_on = {is_on: [Car1, lane3]}
     rel_has_right_neighbour = {has_right_neighbour: [[lane4, lane2], [lane5, lane3]]}
@@ -932,14 +932,14 @@ def Ramp_On(predicates, actions):
 
 def Ramp_Off(predicates, actions):
 
-    # Instanziierung Objekte
-    Agent = SDLObject("ego", OType.EGO)
-    Car1 = SDLObject("car1", OType.VEHICLE)
-    lane1 = SDLObject("lane1", OType.LANE)
-    lane2 = SDLObject("lane2", OType.LANE)
-    lane3 = SDLObject("lane3", OType.LANE)
-    lane4 = SDLObject("lane4", OType.LANE)
-    lane5 = SDLObject("lane5", OType.LANE)
+    # instantiate sdf objects
+    Agent = SDObject("ego", OType.EGO)
+    Car1 = SDObject("car1", OType.VEHICLE)
+    lane1 = SDObject("lane1", OType.LANE)
+    lane2 = SDObject("lane2", OType.LANE)
+    lane3 = SDObject("lane3", OType.LANE)
+    lane4 = SDObject("lane4", OType.LANE)
+    lane5 = SDObject("lane5", OType.LANE)
     object_list = [Agent, Car1, lane1, lane2, lane3, lane4, lane5]
 
     predicate_list = list(predicates.values())
@@ -956,7 +956,7 @@ def Ramp_Off(predicates, actions):
         has_bottom_left_neighbour,
     ) = predicate_list
 
-    # Erzeugung Relationen Init-Szene
+    # generate init-scene
     rel_is_on_lane = {is_on_lane: [Agent, lane1]}
     rel_is_on = {is_on: [Car1, lane2]}
     rel_has_right_neighbour = {has_right_neighbour: [[lane1, lane2], [lane3, lane4], [lane4, lane5]]}
