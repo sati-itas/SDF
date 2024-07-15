@@ -10,7 +10,7 @@ base_dir = os.path.join(parent_dir, '..')
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
 from core.sdf_core import Action
-from core.sdf_def_predicates_actions import actions_simple, predicates_simple
+from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple
 
 from core.sdf_solver import Solver
 from tests.env_sets.road_test_scenarios import *

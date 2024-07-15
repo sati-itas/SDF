@@ -25,7 +25,7 @@ class Thing:
     name:str, ident:int are the (unique) key's to each Thing.
     '''
 
-    # TODO name:str, ident:int should be unique and to each name belongs one identification number (ident).
+    # name:str, ident:int should be unique and to each name belongs one identification number (ident).
     # TODO But than action and scene class are not able to use name and ident
 
     _id_counter = 0
