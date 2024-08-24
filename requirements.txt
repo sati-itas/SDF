@@ -1,0 +1,10 @@
+####### Decision-Making-requirements.txt #######
+
+rdflib
+
+numpy
+
+pyyaml
+
+matplotlib
+-r requirements-dev.txt
