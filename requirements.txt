@@ -1,4 +1,4 @@
-####### Decision-Making-requirements.txt #######
+####### requirements.txt #######
 
 rdflib
 
