@@ -17,7 +17,6 @@ from core.sdf_core import Action
 from analyse.data_storage import DataStorage
 from tests.env_sets.road_test_scenarios import *
 
-
 def helper_timeit_decorator(solver):
     # define the inner
     def time_solver(current_scene, goal_scene, action_list, data_logger):
@@ -190,7 +189,7 @@ def test_scenes_vis_solver_statistic(testloop):
         if isinstance(item, Action):
             print(item.name)
 
-    result = {'bfs': bfs, 'dfs': dfs, 'bfs_dp': bfs_dp}
+    result = {'dfs': dfs, 'bfs_dp': bfs_dp}
     plot_solver_statistic(result)
 
 
@@ -348,5 +347,5 @@ def plot_solver_statistic(datastorage: Dict):
 
 if __name__ == "__main__":
     # test_scenes(1) #Solution: LK,LL,LK
-    # test_scenes_vis_solver_statistic(1)
-    test_scenes_vis_execute_statistic(1)
+    test_scenes_vis_solver_statistic(1)
+    # test_scenes_vis_execute_statistic(1)

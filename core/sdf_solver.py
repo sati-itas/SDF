@@ -205,8 +205,10 @@ class Solver:
                             data_simple_bfs.mean_value(data_simple_bfs.execute_processing_time)
                         )
                         return (plan, solution)
-                    # elif parent_node.in_path(next_scene): # pruning rule1: do not consider any path that visits the same state twice
-                    #     pass
+                    elif parent_node.in_path(
+                        next_scene
+                    ):  # pruning rule1: do not consider any path that visits the same state twice
+                        pass
                     # elif next_scene in new_child_states: # pruning rule2: if multiple actions lead to the same state, consider only one of them
                     #     pass
                     else:
@@ -270,7 +272,7 @@ class Solver:
                         return (plan, solution)
                     elif (
                         visited_check
-                    ):  # pruning rule: do not consider any path that visits a state that you have already visited via some other path.
+                    ):  # only remember the first path we find from the start state to each other state.
                         visited_check = False
                         pass
                     else:

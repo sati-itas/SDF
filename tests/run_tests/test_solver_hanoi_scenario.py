@@ -1,7 +1,5 @@
 import os
 import sys
-import timeit
-import numpy as np
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -9,106 +7,37 @@ base_dir = os.path.join(parent_dir, '..')
 # append parent and base direction
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
-from core.sdf_core import Action
+
 from tests.env_sets.hanoi_predicates_actions import actions_simple, hanoi_predicates
 
 from core.sdf_solver import Solver
 from tests.env_sets.hanoi_sceanario import scenario_test
+from tests.run_tests.test_base import TestBase
 
 
-def test_BFS_DP(loops: int):
+
+
+def test_hanoi():
+    testbase = TestBase
+
+    loops = 1
+
     predicates = hanoi_predicates()
     actions = actions_simple(predicates)
 
-    CurrentScene, GoalScene, action_list = scenario_test(predicates, actions)
-    # print(CurrentScene)
-
-    loop_count = 0
-    planning_processing_time = []
-    while loop_count < loops:
-        start_planning_time = timeit.default_timer()
-        plan = Solver.bfs_dp(CurrentScene, GoalScene, action_list)
-        end_planning_time = timeit.default_timer()
-        print(f'planning step processing_time : {(end_planning_time-start_planning_time)*1000} [msec]')
-        loop_count += 1
-        planning_processing_time.append(end_planning_time - start_planning_time)
-    print(f'[mean_planning_processing_time :]: {np.mean(np.array(planning_processing_time))*1000} [msec]')
-
-    if not plan[1]:
-        print(f'bfs_dp: no solution found')
-        pass
-    else:
-        print(f'\nbfs_dp solution:')
-        print(plan)
-        for item in plan[0]:
-            if isinstance(item, Action):
-                print(f'{item.name}')
+    scene_tuple = scenario_test(predicates, actions)
 
 
-def test_BFS_DP_list(loops: int):
-    predicates = hanoi_predicates()
-    actions = actions_simple(predicates)
+    bfs_dp_list = Solver.bfs_dp_list
+    dfs_list = Solver.dfs_list
 
-    CurrentScene, GoalScene, action_list = scenario_test(predicates, actions)
-    # print(CurrentScene)
+    solver_list = [bfs_dp_list, dfs_list]
 
-    loop_count = 0
-    planning_processing_time = []
-    while loop_count < loops:
-        start_planning_time = timeit.default_timer()
-        plan = Solver.bfs_dp_list(CurrentScene, GoalScene, action_list)
-        end_planning_time = timeit.default_timer()
-        print(f'planning step processing_time : {(end_planning_time-start_planning_time)*1000} [msec]')
-        loop_count += 1
-        planning_processing_time.append(end_planning_time - start_planning_time)
-    print(f'[mean_planning_processing_time :]: {np.mean(np.array(planning_processing_time))*1000} [msec]')
+    for solver in solver_list:
+        testbase.test_solver(scene_tuple, solver, loops)
 
-    if not plan[1]:
-        print(f'bfs_dp_list: no solution found')
-        pass
-    else:
-        print(f'\nbfs_dp_ist solution:')
-        # print(plan)
-        for item in plan[0]:
-            if isinstance(item, Action):
-                print(f'{item.name}')
-            else:
-                print(f'{item}')
-
-
-def test_DFS_list(loops: int):
-    # Instanziierung Prädikate
-    predicates = hanoi_predicates()
-    actions = actions_simple(predicates)
-
-    CurrentScene, GoalScene, action_list = scenario_test(predicates, actions)
-    # print(CurrentScene)
-
-    loop_count = 0
-    planning_processing_time = []
-    while loop_count < loops:
-        start_planning_time = timeit.default_timer()
-        plan = Solver.dfs_list(CurrentScene, GoalScene, action_list)
-        end_planning_time = timeit.default_timer()
-        print(f'planning step processing_time : {(end_planning_time-start_planning_time)*1000} [msec]')
-        loop_count += 1
-        planning_processing_time.append(end_planning_time - start_planning_time)
-    print(f'[mean_planning_processing_time :]: {np.mean(np.array(planning_processing_time))*1000} [msec]')
-
-    if not plan[1]:
-        print(f'no solution found')
-        pass
-    else:
-        print(f'\ndfs solution:')
-        for item in plan[0]:
-            if isinstance(item, Action):
-                print(f'{item.name}')
-            else:
-                print(f'{item}')
 
 
 if __name__ == "__main__":
-    loops = 1
-    # test_BFS(loops)
-    test_BFS_DP_list(loops)
-    # test_DFS_list(loops)
+
+    test_hanoi()
