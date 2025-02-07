@@ -28,10 +28,10 @@ def test_hanoi():
     scene_tuple = scenario_test(predicates, actions)
 
 
-    bfs_dp_list = Solver.bfs_dp_list
+    bfs_list = Solver.bfs_list
     dfs_list = Solver.dfs_list
 
-    solver_list = [bfs_dp_list, dfs_list]
+    solver_list = [bfs_list, dfs_list]
 
     for solver in solver_list:
         testbase.test_solver(scene_tuple, solver, loops)

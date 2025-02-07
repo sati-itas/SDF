@@ -26,13 +26,10 @@ def test_scenario20():
 
     scene_tuple = scenario_20(predicates, actions)
 
-    simple_bfs = Solver.simple_bfs
-    bfs_dp = Solver.bfs_dp
-    simple_dfs = Solver.simple_dfs
-    bfs_dp_list = Solver.bfs_dp_list
+    bfs_list = Solver.bfs_list
     dfs_list = Solver.dfs_list
 
-    solver_list = [simple_bfs,bfs_dp,simple_dfs,bfs_dp_list, dfs_list]
+    solver_list = [dfs_list,bfs_list]
 
     for solver in solver_list:
         testbase.test_solver(scene_tuple, solver, loops)
@@ -40,19 +37,18 @@ def test_scenario20():
 def test_scenario30():
     testbase = TestBase
 
-    loops = 1
+    loops = 10
     predicates = predicates_simple()
     actions = actions_simple(predicates)
 
     scene_tuple = scenario_30(predicates, actions)
 
     simple_bfs = Solver.simple_bfs
-    bfs_dp = Solver.bfs_dp
     simple_dfs = Solver.simple_dfs
-    bfs_dp_list = Solver.bfs_dp_list
+    bfs_list = Solver.bfs_list
     dfs_list = Solver.dfs_list
 
-    solver_list = [simple_bfs,bfs_dp,simple_dfs,bfs_dp_list, dfs_list]
+    solver_list = [simple_bfs,simple_dfs,bfs_list, dfs_list]
 
     for solver in solver_list:
         testbase.test_solver(scene_tuple, solver, loops)

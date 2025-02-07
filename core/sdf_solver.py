@@ -1,9 +1,7 @@
-import timeit
 from typing import Any
 from typing import List
 from typing import Tuple
 
-from analyse.data_storage import DataStorage
 from core.sdf_core import Action
 from core.sdf_core import Scene
 
@@ -11,64 +9,11 @@ from core.sdf_core import Scene
 class Solver:
 
     @staticmethod
-    def simple_dfs(
-        current_scene: Scene,
-        goal_scene: Scene,
-        action_list: List[Action],
-        data_logger: DataStorage = DataStorage('simple_dfs'),
-    ) -> Tuple[List[Any], bool]:
-        """Deep First Search algorithm for finding path between current_scene and goal_scene
-            in discrete state transition system (nodes: Scenes, transitions: actions).
-            The execution method for actions is execute_select_dict_single().
-
-        Args:
-            current_scene (Scene): current scene
-            goal_scene (Scene): goal scene
-            action_list (List[Action]): list of possible actions
-
-        Returns:
-            plan, solution (Tuple[List[Any], bool]): returns a tupel with list of actions and a bool wich indicates if solution was found
-        """
-        # TODO setup data logger
-
-        data_simple_dfs = data_logger
-
-        plan = []
-        queue = []
-        solution = False
-
-        if goal_scene.scene_relations.items() <= current_scene.scene_relations.items():
-            solution = True
-            return (plan, solution)
-
-        queue.append(SearchNode(None, current_scene, None))
-
-        while queue:
-            parent_node = queue.pop()  # stack: last-in, first-out
-            for action in action_list:
-                next_scene, sd_rel = action.execute_select_dict_single(parent_node.state, debug=False)
-                if next_scene:
-                    new_node = SearchNode(action, next_scene, parent_node)
-                    if goal_scene.scene_relations.items() <= next_scene.scene_relations.items():
-                        solution = True
-                        # path = new_node.path()
-                        plan = new_node.act_sequence()
-                        return (plan, solution)
-                    elif parent_node.in_path(
-                        next_scene
-                    ):  # pruning rule1: do not consider any path that visits the same state twice
-                        pass
-                    else:
-                        queue.append(new_node)
-        return (plan, solution)
-
-    @staticmethod
     # TODO
     def dfs_list(
         current_scene: Scene,
         goal_scene: Scene,
         action_list: List[Action],
-        data_logger: DataStorage = DataStorage('simple_dfs'),
     ) -> Tuple[List[Any], bool]:
         """Deep First Search algorithm for finding path between current_scene and goal_scene in
             discrete state transition system (nodes: Scenes, transitions: actions).
@@ -82,10 +27,6 @@ class Solver:
         Returns:
             plan, solution (Tuple[List[Any], bool]): returns a tupel with list of actions and a bool wich indicates if solution was found
         """
-        # TODO setup data logger
-
-        data_simple_dfs = data_logger
-
         plan = []
         queue = []
         solution = False
@@ -104,6 +45,7 @@ class Solver:
                 if new_scene_action_dict:
                     for next_scene, action_eff in new_scene_action_dict.items():
                         new_node = SearchNode([action, action_eff], next_scene, parent_node)
+                        # new_node = SearchNode(action, next_scene, parent_node)
 
                         if goal_scene.scene_relations.items() <= next_scene.scene_relations.items():
                             solution = True
@@ -119,173 +61,10 @@ class Solver:
         return (plan, solution)
 
     @staticmethod
-    def simple_bfs(
+    def bfs_list(
         current_scene: Scene,
         goal_scene: Scene,
         action_list: List[Action],
-        data_logger: DataStorage = DataStorage('simple_bfs'),
-        debug=False,
-    ) -> Tuple[List[Any], bool]:
-        """Breadth First Search algorithm for finding path between current_scene and goal_scene in discrete
-            state transition system (nodes: Scenes, transitions: actions).
-            The execution method for actions is execute_select_dict_single().
-
-        Args:
-            current_scene (Scene): current scene
-            goal_scene (Scene): goal scene
-            action_list (List[Action]): list of possible actions
-
-        Returns:
-            plan, solution (Tuple[List[Any], bool]): returns a tupel with list of actions and a bool wich indicates if solution was found
-        """
-        data_simple_bfs = data_logger
-
-        plan = []
-        queue = []
-        solution = False
-        if goal_scene.scene_relations.items() <= current_scene.scene_relations.items():
-            return (plan, solution)
-
-        queue.append(SearchNode(None, current_scene, None))
-
-        # datalogger: reset
-        data_simple_bfs.state_count = 0
-        data_simple_bfs.graph_processing_time = []
-        data_simple_bfs.query_processing_time = []
-        data_simple_bfs.effect_execute_processing_time = []
-        data_simple_bfs.execute_processing_time = []
-
-        while queue:
-            start_state_time = timeit.default_timer()
-            parent_node = queue.pop(0)  # queue: first-in, first-out
-
-            # datalogger: state count
-            data_simple_bfs.state_count += 1
-
-            for action in action_list:
-                start_execute_time = timeit.default_timer()
-                next_scene, sd_rel = action.execute_select_dict_single(
-                    parent_node.state
-                )  # pruning of states (Scenes) -> which action is executable in Scene -> proof if executable and if excutable generate Scene
-                end_execute_time = timeit.default_timer()
-
-                # datalogger: log execute
-                data_simple_bfs.graph_processing_time.append(action.graph_processing_time)
-                data_simple_bfs.query_processing_time.append(action.query_processing_time)
-                data_simple_bfs.effect_execute_processing_time.append(action.effect_execute_processing_time)
-                data_simple_bfs.execute_processing_time.append(end_execute_time - start_execute_time)
-
-                # analyse
-                # print(f'graph_processing_time : {action.graph_processing_time*1000} [msec]')
-                # print(f'query_processing_time : {action.query_processing_time*1000} [msec]')
-                # print(f'effect_execute_processing_time : {action.effect_execute_processing_time*1000} [msec]')
-                # print(f'execute processing_time : {(end_execute_time-start_execute_time)*1000} [msec]')
-
-                if next_scene:
-                    new_node = SearchNode(action, next_scene, parent_node)
-                    if goal_scene.scene_relations.items() <= next_scene.scene_relations.items():
-                        solution = True
-                        plan = new_node.act_sequence()
-                        end_state_time = timeit.default_timer()
-
-                        # datalogger: log solution
-                        data_simple_bfs.solution.append(solution)
-                        data_simple_bfs.state_count_per_testloop.append(data_simple_bfs.state_count)
-                        data_simple_bfs.state_processing_time.append(end_state_time - start_state_time)
-                        data_simple_bfs.mean_graph_processing_time.append(
-                            data_simple_bfs.mean_value(data_simple_bfs.graph_processing_time)
-                        )
-                        data_simple_bfs.mean_query_processing_time.append(
-                            data_simple_bfs.mean_value(data_simple_bfs.query_processing_time)
-                        )
-                        data_simple_bfs.mean_effect_execute_processing_time.append(
-                            data_simple_bfs.mean_value(data_simple_bfs.effect_execute_processing_time)
-                        )
-                        data_simple_bfs.mean_execute_processing_time.append(
-                            data_simple_bfs.mean_value(data_simple_bfs.execute_processing_time)
-                        )
-                        return (plan, solution)
-                    elif parent_node.in_path(
-                        next_scene
-                    ):  # pruning rule1: do not consider any path that visits the same state twice
-                        pass
-                    # elif next_scene in new_child_states: # pruning rule2: if multiple actions lead to the same state, consider only one of them
-                    #     pass
-                    else:
-                        queue.append(new_node)
-            end_state_time = timeit.default_timer()
-            # datalogger: log processing time
-            data_simple_bfs.state_processing_time.append(end_state_time - start_state_time)
-        return (plan, solution)
-
-    @staticmethod
-    def bfs_dp(
-        current_scene: Scene,
-        goal_scene: Scene,
-        action_list: List[Action],
-        data_logger: DataStorage = DataStorage('bfs_dp'),
-        debug=False,
-    ) -> Tuple[List[Any], bool]:
-        """Breadth First Search algorithm for finding path between current_scene and goal_scene in
-            discrete state transition system (nodes: Scenes, transitions: actions).
-            The execution method for actions is execute_select_dict_single().
-
-        Args:
-            current_scene (Scene): current scene
-            goal_scene (Scene): goal scene
-            action_list (List[Action]): list of possible actions
-
-        Returns:
-            plan, solution (Tuple[List[Any], bool]): returns a tupel with list of actions and a bool wich indicates if solution was found
-        """
-        data_bfs_dp = data_logger
-
-        plan = []
-        queue = []
-        visited = {}
-        visited_check = False
-        solution = False
-
-        if goal_scene.scene_relations.items() <= current_scene.scene_relations.items():
-            return (plan, solution)
-
-        queue.append(SearchNode(None, current_scene, None))
-        visited = {current_scene: True}
-
-        while queue:  # not goal_scene.scene_relations.items() <= current_scene.scene_relations.items() and
-            parent_node = queue.pop(0)  # first-in, first-out
-
-            for action in action_list:
-                next_scene, sd_rel = action.execute_select_dict_single(
-                    parent_node.state
-                )  # pruning of states (Scenes): which action is executable in Scene, if executable generate Scene
-                if next_scene:
-                    new_node = SearchNode(action, next_scene, parent_node)
-                    # print(f'parent_node.in_path(next_scene): {parent_node.in_path(next_scene)}')
-                    for scene in visited:
-                        if check_identical_scenes(next_scene, scene):
-                            visited_check = True
-                            break
-                    if goal_scene.scene_relations.items() <= next_scene.scene_relations.items():
-                        solution = True
-                        plan = new_node.act_sequence()
-                        return (plan, solution)
-                    elif (
-                        visited_check
-                    ):  # only remember the first path we find from the start state to each other state.
-                        visited_check = False
-                        pass
-                    else:
-                        visited[next_scene] = True
-                        queue.append(new_node)
-        return (plan, solution)
-
-    @staticmethod
-    def bfs_dp_list(
-        current_scene: Scene,
-        goal_scene: Scene,
-        action_list: List[Action],
-        data_logger: DataStorage = DataStorage('bfs_dp'),
         debug=False,
     ) -> Tuple[List[Any], bool]:
         """Breadth First Search algorithm for finding path between current_scene and goal_scene in
@@ -300,7 +79,6 @@ class Solver:
         Returns:
             List[Action]: plan
         """
-        data_bfs_dp = data_logger
 
         plan = []
         queue = []
