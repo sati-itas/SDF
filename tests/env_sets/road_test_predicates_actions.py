@@ -8,28 +8,16 @@ from core.sdf_core import Predicate
 def predicates_simple() -> Dict[str, Predicate]:
 
     # Definition Predicates
-    is_on = Predicate("is_on", o1type=OType.EGO, o2type=OType.LANE)  # ego vehicle is on lane
-    is_on_lane = Predicate("is_on_lane", o1type=OType.VEHICLE, o2type=OType.LANE)  # vehicle is on lane
-    has_right_neighbour = Predicate(
-        "has_right_neighbour", o1type=OType.LANE, o2type=OType.LANE
-    )  # lane has right neighbour
-    has_left_neighbour = Predicate(
-        "has_left_neighbour", o1type=OType.LANE, o2type=OType.LANE
-    )  # lane hast left neighbour
-    has_successor = Predicate("has_successor", o1type=OType.LANE, o2type=OType.LANE)  # lane has successor lane
-    has_predecessor = Predicate("has_predecessor", o1type=OType.LANE, o2type=OType.LANE)  # lane has predecessor lane
-    has_top_right_neighbour = Predicate(
-        "has_top_right_neighbour", o1type=OType.LANE, o2type=OType.LANE
-    )  # lane has top right diagonal lane
-    has_top_left_neighbour = Predicate(
-        "has_top_left_neighbour", o1type=OType.LANE, o2type=OType.LANE
-    )  # lane has top left diagonal lane
-    has_bottom_right_neighbour = Predicate(
-        "has_bottom_right_neighbour", o1type=OType.LANE, o2type=OType.LANE
-    )  # lane has bottom right diagonal lane
-    has_bottom_left_neighbour = Predicate(
-        "has_bootom_left_neighbour", o1type=OType.LANE, o2type=OType.LANE
-    )  # lane has bottom left diagonal lane
+    is_on = Predicate("is_on")  # ego vehicle is on lane
+    is_on_lane = Predicate("is_on_lane")  # vehicle is on lane
+    has_right_neighbour = Predicate("has_right_neighbour")  # lane has right neighbour
+    has_left_neighbour = Predicate("has_left_neighbour")  # lane hast left neighbour
+    has_successor = Predicate("has_successor")  # lane has successor lane
+    has_predecessor = Predicate("has_predecessor")  # lane has predecessor lane
+    has_top_right_neighbour = Predicate("has_top_right_neighbour")  # lane has top right diagonal lane
+    has_top_left_neighbour = Predicate("has_top_left_neighbour")  # lane has top left diagonal lane
+    has_bottom_right_neighbour = Predicate("has_bottom_right_neighbour")  # lane has bottom right diagonal lane
+    has_bottom_left_neighbour = Predicate("has_bootom_left_neighbour")  # lane has bottom left diagonal lane
 
     predicate_dict = {
         'is_on': is_on,

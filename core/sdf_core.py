@@ -177,10 +177,8 @@ class Predicate(Thing):
         o2type (enum): (reference: OType class) for filter reasons
     '''
 
-    def __init__(self, predicate_name: str, o1type: OType = OType.NONE, o2type: OType = OType.NONE):
+    def __init__(self, predicate_name: str):
         Thing.__init__(self, name=predicate_name)
-        self.o1type = o1type
-        self.o2type = o2type
 
     def __repr__(self) -> str:
         return f"predicate | name={self.name}, ident={self.id}"
