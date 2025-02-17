@@ -7,9 +7,7 @@ from core.sdf_core import Scene
 
 
 class Solver:
-
     @staticmethod
-    # TODO
     def dfs_list(
         current_scene: Scene,
         goal_scene: Scene,

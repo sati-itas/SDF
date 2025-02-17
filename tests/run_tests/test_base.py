@@ -23,13 +23,16 @@ class TestBase:
         CurrentScene, GoalScene, action_list = scene
         loop_count = 0
         planning_processing_time = []
+
+        print(f'\n ------ SOLVER: {solver.__name__} ------')
+
         while loop_count < loops:
 
             start_planning_time = timeit.default_timer()
             plan = solver(CurrentScene, GoalScene, action_list)
             end_planning_time = timeit.default_timer()
 
-            print(f'planning step processing_time : {(end_planning_time-start_planning_time)*1000} [msec]')
+            print(f'\n planning step processing_time : {(end_planning_time-start_planning_time)*1000} [msec]')
 
             loop_count += 1
             planning_processing_time.append(end_planning_time - start_planning_time)
@@ -40,7 +43,7 @@ class TestBase:
             print(f'solver: no solution found')
             pass
         else:
-            print(f'\n solver solution:')
+            print(f'\n --solution--')
             # print(plan)
             for item in plan[0]:
                 if isinstance(item, Action):

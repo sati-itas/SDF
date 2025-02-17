@@ -9,27 +9,32 @@ base_dir = os.path.join(parent_dir, '..')
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
 
-from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple
-from core.sdf_core import OType, RDFWrapper
 
+from core.sdf_core import OType
+from core.rdf_wrapper import RDFWrapper
+
+# from tests.env_sets.hanoi_sceanario import *
+# from tests.env_sets.hanoi_predicates_actions import hanoi_predicates, actions_simple
 from tests.env_sets.road_test_scenarios import *
+from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple
 
 
 def test_gen_rdf_graph():
 
     predicates = predicates_simple()
     actions = actions_simple(predicates)
-    CurrentScene, GoalScene, action_list = scenario_5(predicates, actions)
+    CurrentScene, GoalScene, action_list = scenario_30(predicates, actions)
 
-    start_generate_graph = timeit.default_timer()
+
     print(CurrentScene)
-    Wrapper = RDFWrapper(OType, CurrentScene)
-    graph = Wrapper.gen_rdf_graph()
+    rdf_wrapper = RDFWrapper(OType, CurrentScene)
+    graph = rdf_wrapper.gen_rdf_graph()
+    print(graph)
+    rdf_wrapper.serialize_rdf_graph()
 
-    end_generate_graph = timeit.default_timer()
-    graph_processing_time = end_generate_graph - start_generate_graph
 
-    print(f'\ngraph_processing_time: {graph_processing_time*1000}ms')
+
+    print(f'\ngraph_processing_time: {rdf_wrapper.gen_rdf_graph_processing_time*1000}ms')
 
 
 if __name__ == "__main__":

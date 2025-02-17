@@ -23,7 +23,7 @@ def actions_simple(predicate_dict):
     # SPARQL Query according: https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QueryForms
     # prepared for rdflib in python: https://rdflib.readthedocs.io/en/stable/intro_to_sparql.html
     move_precondition0 = """
-                PREFIX pre: <predicate:>
+                PREFIX pre: <http://example.org/predicate/>
                 PREFIX attr: <NONE:>
                 SELECT ?disc ?from ?to
                 WHERE {
@@ -34,7 +34,7 @@ def actions_simple(predicate_dict):
                 }
             """
     move_precondition1 = """
-                PREFIX pre: <predicate:>
+                PREFIX pre: <http://example.org/predicate/>
                 SELECT ?disc ?from ?to ?clear
                 WHERE {
                         ?to pre:smaller ?disc .

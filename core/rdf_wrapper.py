@@ -39,6 +39,8 @@ class RDFWrapper:
         self.predicate_mapping_dict = {}
         self.sd_rdf_dict = {}
 
+        self.ex_base_uri = "http://example.org/"
+
     def gen_namespace(self, debug=False) -> List:
         '''generates unique Namespace instances from object and predicate lists
 
@@ -50,12 +52,17 @@ class RDFWrapper:
             list of rdflib.namespace.Namespace objects: list of unique Namespace objects for rdf
         '''
         for item in self.scene_objects:
-            test = Namespace(self.object_types(item.object_type).name + ":")
-            if test not in self.namespace_list:
-                self.namespace_list.append(test)
+            ns_uri = f"{self.ex_base_uri}{self.object_types(item.object_type).name}/"  # "http://example.org/{object_type}/"
+            ns = Namespace(ns_uri)
+            self.graph.bind(f'{self.object_types(item.object_type).name}', ns)
+            if ns not in self.namespace_list:
+                self.namespace_list.append(ns)
 
-        # generate one single predicate Namespace
-        self.namespace_list.append(Namespace("predicate:"))
+        # generate predicate namespace
+        ns_pred_uri = f'{self.ex_base_uri}predicate/'  # "http://example.org/predicate/"
+        self.PRED = Namespace(ns_pred_uri)
+        self.graph.bind("pred", self.PRED)
+        self.namespace_list.append(self.PRED)
 
         if debug:
             print(f"\nWrapper.gen_namespace() - generate all rdf namespaces: {self.namespace_list}\n")
@@ -77,11 +84,11 @@ class RDFWrapper:
             # "scene_relation_dict" data structure: {key=sd_predicate: value=[nested List of sd_object instances]}
             sd_predicate = key
 
-            # iterate over all generated Namespaces
+            # map sd_predicates to rdf predicate namespace
             for namespace in self.namespace_list:
-                if namespace == "predicate:":
-                    self.predicate_mapping_dict = {sd_predicate: namespace.term(sd_predicate.name)}
-                    # append all mappings of rdf instances with Namespace "predicate:"
+                if namespace == self.PRED:
+                    self.predicate_mapping_dict = {sd_predicate: namespace[sd_predicate.name]}  # TODO ersetze mit namespace.[sd_predicate.name]
+                    # append all mappings of rdf instances with Namespace self.PRED
                     # to SD Predicate instances to "sd_rdf_dict" mapping dict
                     self.sd_rdf_dict = {**self.sd_rdf_dict, **self.predicate_mapping_dict}
 
@@ -97,18 +104,18 @@ class RDFWrapper:
                     for namespace_item in self.namespace_list:
                         # iterate over namespaces
                         # if namespace name and object type is identical generate rdf item
-                        if str(namespace_item) == self.object_types(sd_subject.object_type).name + ":":
+                        if str(namespace_item) == f'{self.ex_base_uri}{self.object_types(sd_subject.object_type).name}/':
                             self.subject_mapping_dict = {
-                                sd_subject: namespace_item.term(sd_subject.name)
+                                sd_subject: namespace_item[sd_subject.name]
                             }  # generate rdf item
                             self.sd_rdf_dict = {**self.sd_rdf_dict, **self.subject_mapping_dict}
 
-                        if str(namespace_item) == self.object_types(sd_object.object_type).name + ":":
-                            self.object_mapping_dict = {sd_object: namespace_item.term(sd_object.name)}
+                        if str(namespace_item) == f'{self.ex_base_uri}{self.object_types(sd_object.object_type).name}/':
+                            self.object_mapping_dict = {sd_object: namespace_item[sd_object.name]}
                             self.sd_rdf_dict = {**self.sd_rdf_dict, **self.object_mapping_dict}
 
-                        if str(namespace_item) == "predicate:":
-                            self.predicate_mapping_dict = {sd_predicate: namespace_item.term(sd_predicate.name)}
+                        if str(namespace_item) == self.PRED:
+                            self.predicate_mapping_dict = {sd_predicate: namespace_item[sd_predicate.name]}
                             self.sd_rdf_dict = {**self.sd_rdf_dict, **self.predicate_mapping_dict}
 
                 else:  # else: value is nested list; iterate over all nested lists
@@ -122,16 +129,16 @@ class RDFWrapper:
                             sd_object = objects[1]
 
                             for namespace_item in self.namespace_list:
-                                if str(namespace_item) == self.object_types(sd_subject.object_type).name + ":":
-                                    self.subject_mapping_dict = {sd_subject: namespace_item.term(sd_subject.name)}
+                                if str(namespace_item) == f'{self.ex_base_uri}{self.object_types(sd_subject.object_type).name }/':
+                                    self.subject_mapping_dict = {sd_subject: namespace_item[sd_subject.name]}
                                     self.sd_rdf_dict = {**self.sd_rdf_dict, **self.subject_mapping_dict}
 
-                                if str(namespace_item) == self.object_types(sd_object.object_type).name + ":":
-                                    self.object_mapping_dict = {sd_object: namespace_item.term(sd_object.name)}
+                                if str(namespace_item) == f'{self.ex_base_uri}{self.object_types(sd_object.object_type).name}/':
+                                    self.object_mapping_dict = {sd_object: namespace_item[sd_object.name]}
                                     self.sd_rdf_dict = {**self.sd_rdf_dict, **self.object_mapping_dict}
 
-                                if str(namespace_item) == "predicate:":
-                                    self.predicate_mapping_dict = {sd_predicate: namespace_item.term(sd_predicate.name)}
+                                if str(namespace_item) == self.PRED:
+                                    self.predicate_mapping_dict = {sd_predicate: namespace_item[sd_predicate.name]}
                                     self.sd_rdf_dict = {**self.sd_rdf_dict, **self.predicate_mapping_dict}
 
         if debug:
@@ -211,7 +218,7 @@ class RDFWrapper:
         return self.list_of_triplets
 
     @time_tracker("gen_rdf_graph_processing_time")
-    def gen_rdf_graph(self):
+    def gen_rdf_graph(self, debug=False):
         '''builds up RDF graph from RDF triplets
 
         Args:
@@ -220,13 +227,18 @@ class RDFWrapper:
         Returns:
             rdflib.graph.Graph : RDF ontology
         '''
-        self.gen_namespace(debug=False)
-        self.gen_rdf_database(debug=False)
-        self.rdf_triplets(debug=False)
+        self.gen_namespace(debug=debug)
+        self.gen_rdf_database(debug=debug)
+        self.rdf_triplets(debug=debug)
 
         for item in self.list_of_triplets:
             self.graph.add(item)
         return self.graph
+
+    def serialize_rdf_graph(self):
+        """serialize to turtle per default"""
+        with open("graph_output.ttl", "wb") as f:
+            self.graph.serialize(f, format="turtle")
 
     @time_tracker("query_rdf_graph_processing_time")
     def query_rdf_graph(self, graph: Graph, preconditions: str):
