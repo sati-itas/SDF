@@ -7,7 +7,8 @@ base_dir = os.path.join(parent_dir, '..')
 # append parent and base direction
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
-from core.sdf_core import SDObject, Scene, OType
+from core.sdf_core import SDObject, Scene
+from data.otype import OType 
 
 
 def scenario_test(predicates, actions):

@@ -1,21 +1,7 @@
-from enum import Enum
-from enum import unique
 from typing import Dict
 from typing import List
 
 from core.utility.timing_utils import time_tracker
-
-
-@unique
-class OType(Enum):
-    # TODO: the object type are specific to one domain. idea -> parse an ontology to enable different domain for sdf.
-    NONE = 0
-    EGO = 1
-    LANE = 2
-    VEHICLE = 3
-    SEGMENT = 4
-    DISK = 5
-    PEG = 6
 
 
 class Thing:
@@ -43,11 +29,11 @@ class SDObject(Thing):
 
     Args:
         object_name (str): name of the object
-        object_type(enum): type of object corresponding to enum in OType class
+        object_type: type of object corresponding to domain
         position(int): position of object in environment (default=None)
     '''
 
-    def __init__(self, object_name: str, object_type: OType):
+    def __init__(self, object_name: str, object_type):
         self.object_type = object_type
         Thing.__init__(self, name=object_name)
 
@@ -173,8 +159,6 @@ class Predicate(Thing):
     Args:
         predicate_name (str): name of the object
         ident (int): identification of instance
-        o1type (enum): (reference: OType class) for filter reasons
-        o2type (enum): (reference: OType class) for filter reasons
     '''
 
     def __init__(self, predicate_name: str):
@@ -263,20 +247,18 @@ class Scene(Thing):
         except Exception as e:
             print(f'{e}: Exception occured: {object_name} not an member of self.object_list')
 
-    def search_all_individuals_of_class(self, o_type) -> List[SDObject]:
+    def search_all_individuals_of_class(self, otype) -> List[SDObject]:
         '''gets all individuals of given class-object
 
         Args:
-            o_type (LITERAL): Literal of OType class to be found
+            otype (LITERAL): Literal of object type to be found
 
         Returns:
             List[Object]: list of objects with given object type
         '''
-        _obj_list = []
-        for scene_object in self.object_list:
-            if scene_object.object_type == o_type:
-                _obj_list.append(scene_object)
-        return _obj_list
+        obj_list = \
+            [scene_object for scene_object in self.object_list if scene_object.object_type == otype]
+        return obj_list
 
 
 class Action(Thing):
@@ -293,12 +275,13 @@ class Action(Thing):
         select (List[str]): List of Variable names from SPARQL Query (?x etc.)
     '''
 
-    def __init__(self, action_name: str, precondition: str, a_list: List, d_list: List, select: List[str]):
+    def __init__(self, action_name: str, precondition: str, a_list: List, d_list: List, select: List[str], otypes=None):
         Thing.__init__(self, name=action_name)
         self.precondition = precondition
         self.a_list = a_list
         self.d_list = d_list
         self.select = select
+        self.otypes = otypes
 
     def __repr__(self) -> str:
         return f"action | name={self.name}"
@@ -325,7 +308,7 @@ class Action(Thing):
         # generate rdf data and rdf graph based on scene
         from core.rdf_wrapper import RDFWrapper
 
-        self.rdf_wrapper = RDFWrapper(OType, scene)
+        self.rdf_wrapper = RDFWrapper(object_types=self.otypes, scene=scene)
         rdf_graph = self.rdf_wrapper.gen_rdf_graph()
         self.graph_processing_time = self.rdf_wrapper.gen_rdf_graph_processing_time
 

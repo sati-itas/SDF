@@ -1,8 +1,9 @@
 from typing import Dict
 
 from core.sdf_core import Action
-from core.sdf_core import OType
 from core.sdf_core import Predicate
+
+from data.otype import OType
 
 
 def predicates_simple() -> Dict[str, Predicate]:
@@ -77,6 +78,7 @@ def actions_simple(predicate_dict):
         [{is_on_lane: ["e", "y"]}],
         [{is_on_lane: ["e", "x"]}],
         ["e", "y", "x", "v"],
+        OType,
     )
     lc_left = Action(
         'LANE_CHANGE_LEFT',
@@ -84,6 +86,7 @@ def actions_simple(predicate_dict):
         [{is_on_lane: ["e", "y"]}],
         [{is_on_lane: ["e", "x"]}],
         ["e", "y", "x", "v"],
+        OType,
     )
     lc_keep = Action(
         'LANE_KEEPING',
@@ -91,6 +94,7 @@ def actions_simple(predicate_dict):
         [{is_on_lane: ["e", "y"]}],
         [{is_on_lane: ["e", "x"]}],
         ["e", "y", "x", "v"],
+        OType,
     )
 
     action_list = [lc_right, lc_left, lc_keep]

@@ -2,6 +2,7 @@ from typing import Dict
 
 from core.sdf_core import Action
 from core.sdf_core import Predicate
+from data.otype import OType
 
 
 def hanoi_predicates() -> Dict[str, Predicate]:
@@ -50,6 +51,7 @@ def actions_simple(predicate_dict):
         [{is_on: ["disc", "to"]}, {clear: ["from", "o_clear"]}],
         [{is_on: ["disc", "from"]}, {clear: ["to", "o_clear"]}],
         ["disc", "from", "to"],
+        OType,
     )
 
     move1 = Action(
@@ -58,6 +60,7 @@ def actions_simple(predicate_dict):
         [{is_on: ["disc", "to"]}, {clear: ["from", "clear"]}],
         [{is_on: ["disc", "from"]}, {clear: ["to", "clear"]}],
         ["disc", "from", "to", "clear"],
+        OType,
     )
 
     action_list = [move1]
