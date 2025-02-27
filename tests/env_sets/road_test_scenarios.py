@@ -62,8 +62,8 @@ def scenario_5(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene, predicate_list)
-    GoalScene = Scene(object_list, goal_scene, predicate_list)
+    InitScene = Scene(object_list, init_scene)
+    GoalScene = Scene(object_list, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions
@@ -150,8 +150,8 @@ def scenario_10(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene, predicate_list)
-    GoalScene = Scene(object_list, goal_scene, predicate_list)
+    InitScene = Scene(object_list, init_scene)
+    GoalScene = Scene(object_list, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions
@@ -293,8 +293,8 @@ def scenario_15(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene, predicate_list)
-    GoalScene = Scene(object_list, goal_scene, predicate_list)
+    InitScene = Scene(object_list, init_scene)
+    GoalScene = Scene(object_list, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions
@@ -456,8 +456,8 @@ def scenario_20(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene, predicate_list)
-    GoalScene = Scene(object_list, goal_scene, predicate_list)
+    InitScene = Scene(object_list, init_scene)
+    GoalScene = Scene(object_list, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions
@@ -661,8 +661,8 @@ def scenario_30(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene, predicate_list)
-    GoalScene = Scene(object_list, goal_scene, predicate_list)
+    InitScene = Scene(object_list, init_scene)
+    GoalScene = Scene(object_list, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions
@@ -871,8 +871,8 @@ def scenario_3_lane(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene, predicate_list)
-    GoalScene = Scene(object_list, goal_scene, predicate_list)
+    InitScene = Scene(object_list, init_scene)
+    GoalScene = Scene(object_list, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions
@@ -923,8 +923,8 @@ def Ramp_On(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene, predicate_list)
-    GoalScene = Scene(object_list, goal_scene, predicate_list)
+    InitScene = Scene(object_list, init_scene)
+    GoalScene = Scene(object_list, goal_scene)
 
     InitScene
 
@@ -976,8 +976,8 @@ def Ramp_Off(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene, predicate_list)
-    GoalScene = Scene(object_list, goal_scene, predicate_list)
+    InitScene = Scene(object_list, init_scene)
+    GoalScene = Scene(object_list, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions

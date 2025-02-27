@@ -10,7 +10,6 @@ sys.path.append(parent_dir)
 sys.path.append(base_dir)
 
 from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple
-from core.sdf_core import OType, RDFWrapper
 
 from tests.env_sets.road_test_scenarios import *
 

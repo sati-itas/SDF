@@ -78,7 +78,6 @@ def actions_simple(predicate_dict):
         [{is_on_lane: ["e", "y"]}],
         [{is_on_lane: ["e", "x"]}],
         ["e", "y", "x", "v"],
-        OType,
     )
     lc_left = Action(
         'LANE_CHANGE_LEFT',
@@ -86,7 +85,6 @@ def actions_simple(predicate_dict):
         [{is_on_lane: ["e", "y"]}],
         [{is_on_lane: ["e", "x"]}],
         ["e", "y", "x", "v"],
-        OType,
     )
     lc_keep = Action(
         'LANE_KEEPING',
@@ -94,7 +92,6 @@ def actions_simple(predicate_dict):
         [{is_on_lane: ["e", "y"]}],
         [{is_on_lane: ["e", "x"]}],
         ["e", "y", "x", "v"],
-        OType,
     )
 
     action_list = [lc_right, lc_left, lc_keep]

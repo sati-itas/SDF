@@ -55,8 +55,8 @@ def scenario_test(predicates, actions):
     goal_scene = {**goal_rel_is_on}
 
     init_scene = {**rel_smaller, **rel_is_on, **rel_clear}
-    InitScene = Scene(object_list, init_scene, predicate_list)
-    GoalScene = Scene(object_list, goal_scene, predicate_list)
+    InitScene = Scene(object_list, init_scene)
+    GoalScene = Scene(object_list, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions

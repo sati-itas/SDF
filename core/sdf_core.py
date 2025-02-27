@@ -188,11 +188,9 @@ class Scene(Thing):
     '''
 
     def __init__(
-        self, object_list: List[SDObject], scene_relations: Dict[Predicate, List[SDObject]], preds: List[Predicate]
-    ):
+        self, object_list: List[SDObject], scene_relations: Dict[Predicate, List[SDObject]]):
         Thing.__init__(self)
         self.scene_relations = scene_relations
-        self.pred_list = preds
         self.object_list = object_list
 
     def __repr__(self) -> str:
@@ -275,13 +273,12 @@ class Action(Thing):
         select (List[str]): List of Variable names from SPARQL Query (?x etc.)
     '''
 
-    def __init__(self, action_name: str, precondition: str, a_list: List, d_list: List, select: List[str], otypes=None):
+    def __init__(self, action_name: str, precondition: str, a_list: List, d_list: List, select: List[str]):
         Thing.__init__(self, name=action_name)
         self.precondition = precondition
         self.a_list = a_list
         self.d_list = d_list
         self.select = select
-        self.otypes = otypes
 
     def __repr__(self) -> str:
         return f"action | name={self.name}"
@@ -308,7 +305,7 @@ class Action(Thing):
         # generate rdf data and rdf graph based on scene
         from core.rdf_wrapper import RDFWrapper
 
-        self.rdf_wrapper = RDFWrapper(object_types=self.otypes, scene=scene)
+        self.rdf_wrapper = RDFWrapper(scene=scene)
         rdf_graph = self.rdf_wrapper.gen_rdf_graph()
         self.graph_processing_time = self.rdf_wrapper.gen_rdf_graph_processing_time
 
