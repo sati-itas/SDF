@@ -18,7 +18,7 @@ from tests.run_tests.test_base import TestBase
 
 
 def test_hanoi():
-    testbase = TestBase
+    testbase = TestBase()
 
     loops = 1
 
