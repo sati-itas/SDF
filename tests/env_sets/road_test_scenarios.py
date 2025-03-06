@@ -10,7 +10,6 @@ sys.path.append(base_dir)
 from core.sdf_core import SDObject, Scene
 from data.otype import OType
 
-
 def scenario_5(predicates, actions):
 
     # instantiate sdf objects
@@ -25,33 +24,19 @@ def scenario_5(predicates, actions):
 
     object_list = [Agent, Car1, lane1, lane2, lane3, lane4, lane5, lane6]
 
-    predicate_list = list(predicates.values())
-    (
-        is_on,
-        is_on_lane,
-        has_right_neighbour,
-        has_left_neighbour,
-        has_successor,
-        has_predecessor,
-        has_top_right_neighbour,
-        has_top_left_neighbour,
-        has_bottom_right_neighbour,
-        has_bottom_left_neighbour,
-    ) = predicate_list
-
     # generate init-scene
-    rel_is_on_lane = {is_on_lane: [Agent, lane1]}
-    rel_is_on = {is_on: [Car1, lane3]}
+    rel_is_on_lane = {predicates['is_on_lane']: [[Agent, lane1]]}
+    rel_is_on = {predicates['is_on']: [[Car1, lane3]]}
 
-    rel_has_right_neighbour = {has_right_neighbour: [[lane2, lane1], [lane4, lane3], [lane6, lane5]]}
+    rel_has_right_neighbour = {predicates['has_right_neighbour']: [[lane2, lane1], [lane4, lane3], [lane6, lane5]]}
 
-    rel_has_left_neighbour = {has_left_neighbour: [[lane1, lane2], [lane3, lane4], [lane5, lane6]]}
+    rel_has_left_neighbour = {predicates['has_left_neighbour']: [[lane1, lane2], [lane3, lane4], [lane5, lane6]]}
 
-    rel_has_successor = {has_successor: [[lane1, lane3], [lane3, lane5], [lane2, lane4], [lane4, lane6]]}
+    rel_has_successor = {predicates['has_successor']: [[lane1, lane3], [lane3, lane5], [lane2, lane4], [lane4, lane6]]}
 
-    rel_has_predecessor = {has_predecessor: [[lane3, lane1], [lane5, lane3], [lane4, lane2], [lane6, lane4]]}
+    rel_has_predecessor = {predicates['has_predecessor']: [[lane3, lane1], [lane5, lane3], [lane4, lane2], [lane6, lane4]]}
 
-    goal_rel_is_on = {is_on_lane: [Agent, lane5]}
+    goal_rel_is_on = {predicates['is_on_lane']: [[Agent, lane5]]}
     goal_scene = {**goal_rel_is_on}
 
     init_scene = {
@@ -87,34 +72,22 @@ def scenario_10(predicates, actions):
 
     object_list = [Agent, Car1, lane1, lane2, lane3, lane4, lane5, lane6, lane7, lane8, lane9, lane10]
 
-    predicate_list = list(predicates.values())
-    (
-        is_on,
-        is_on_lane,
-        has_right_neighbour,
-        has_left_neighbour,
-        has_successor,
-        has_predecessor,
-        has_top_right_neighbour,
-        has_top_left_neighbour,
-        has_bottom_right_neighbour,
-        has_bottom_left_neighbour,
-    ) = predicate_list
+
 
     # generate init-scene
-    rel_is_on_lane = {is_on_lane: [Agent, lane1]}
-    rel_is_on = {is_on: [Car1, lane5]}
+    rel_is_on_lane = {predicates['is_on_lane']: [[Agent, lane1]]}
+    rel_is_on = {predicates['is_on']: [[Car1, lane5]]}
 
     rel_has_right_neighbour = {
-        has_right_neighbour: [[lane2, lane1], [lane4, lane3], [lane6, lane5], [lane8, lane7], [lane10, lane9]]
+        predicates['has_right_neighbour']: [[lane2, lane1], [lane4, lane3], [lane6, lane5], [lane8, lane7], [lane10, lane9]]
     }
 
     rel_has_left_neighbour = {
-        has_left_neighbour: [[lane1, lane2], [lane3, lane4], [lane5, lane6], [lane7, lane8], [lane9, lane10]]
+        predicates['has_left_neighbour']: [[lane1, lane2], [lane3, lane4], [lane5, lane6], [lane7, lane8], [lane9, lane10]]
     }
 
     rel_has_successor = {
-        has_successor: [
+        predicates['has_successor']: [
             [lane1, lane3],
             [lane3, lane5],
             [lane5, lane7],
@@ -127,7 +100,7 @@ def scenario_10(predicates, actions):
     }
 
     rel_has_predecessor = {
-        has_predecessor: [
+        predicates['has_predecessor']: [
             [lane3, lane1],
             [lane5, lane3],
             [lane7, lane5],
@@ -139,7 +112,7 @@ def scenario_10(predicates, actions):
         ]
     }
 
-    goal_rel_is_on = {is_on_lane: [Agent, lane9]}
+    goal_rel_is_on = {predicates['is_on_lane']: [[Agent, lane9]]}
     goal_scene = {**goal_rel_is_on}
 
     init_scene = {
@@ -200,26 +173,14 @@ def scenario_15(predicates, actions):
         lane16,
     ]
 
-    predicate_list = list(predicates.values())
-    (
-        is_on,
-        is_on_lane,
-        has_right_neighbour,
-        has_left_neighbour,
-        has_successor,
-        has_predecessor,
-        has_top_right_neighbour,
-        has_top_left_neighbour,
-        has_bottom_right_neighbour,
-        has_bottom_left_neighbour,
-    ) = predicate_list
+
 
     # generate init-scene
-    rel_is_on_lane = {is_on_lane: [Agent, lane1]}
-    rel_is_on = {is_on: [Car1, lane5]}
+    rel_is_on_lane = {predicates['is_on_lane']: [[Agent, lane1]]}
+    rel_is_on = {predicates['is_on']: [[Car1, lane5]]}
 
     rel_has_right_neighbour = {
-        has_right_neighbour: [
+        predicates['has_right_neighbour']: [
             [lane2, lane1],
             [lane4, lane3],
             [lane6, lane5],
@@ -232,7 +193,7 @@ def scenario_15(predicates, actions):
     }
 
     rel_has_left_neighbour = {
-        has_left_neighbour: [
+        predicates['has_left_neighbour']: [
             [lane1, lane2],
             [lane3, lane4],
             [lane5, lane6],
@@ -245,7 +206,7 @@ def scenario_15(predicates, actions):
     }
 
     rel_has_successor = {
-        has_successor: [
+        predicates['has_successor']: [
             [lane1, lane3],
             [lane3, lane5],
             [lane5, lane7],
@@ -264,7 +225,7 @@ def scenario_15(predicates, actions):
     }
 
     rel_has_predecessor = {
-        has_predecessor: [
+        predicates['has_predecessor']: [
             [lane3, lane1],
             [lane5, lane3],
             [lane7, lane5],
@@ -282,7 +243,7 @@ def scenario_15(predicates, actions):
         ]
     }
 
-    goal_rel_is_on = {is_on_lane: [Agent, lane15]}
+    goal_rel_is_on = {predicates['is_on_lane']: [[Agent, lane15]]}
     goal_scene = {**goal_rel_is_on}
 
     init_scene = {
@@ -351,26 +312,14 @@ def scenario_20(predicates, actions):
         lane20,
     ]
 
-    predicate_list = list(predicates.values())
-    (
-        is_on,
-        is_on_lane,
-        has_right_neighbour,
-        has_left_neighbour,
-        has_successor,
-        has_predecessor,
-        has_top_right_neighbour,
-        has_top_left_neighbour,
-        has_bottom_right_neighbour,
-        has_bottom_left_neighbour,
-    ) = predicate_list
+
 
     # generate init-scene
-    rel_is_on_lane = {is_on_lane: [Agent, lane1]}
-    rel_is_on = {is_on: [Car1, lane6]}
+    rel_is_on_lane = {predicates['is_on_lane']: [[Agent, lane1]]}
+    rel_is_on = {predicates['is_on']: [[Car1, lane6]]}
 
     rel_has_right_neighbour = {
-        has_right_neighbour: [
+        predicates['has_right_neighbour']: [
             [lane20, lane1],
             [lane3, lane2],
             [lane5, lane4],
@@ -385,7 +334,7 @@ def scenario_20(predicates, actions):
     }
 
     rel_has_left_neighbour = {
-        has_left_neighbour: [
+        predicates['has_left_neighbour']: [
             [lane1, lane20],
             [lane2, lane3],
             [lane4, lane5],
@@ -400,7 +349,7 @@ def scenario_20(predicates, actions):
     }
 
     rel_has_successor = {
-        has_successor: [
+        predicates['has_successor']: [
             [lane20, lane3],
             [lane1, lane2],
             [lane2, lane4],
@@ -423,7 +372,7 @@ def scenario_20(predicates, actions):
     }
 
     rel_has_predecessor = {
-        has_predecessor: [
+        predicates['has_predecessor']: [
             [lane3, lane20],
             [lane2, lane1],
             [lane4, lane2],
@@ -445,7 +394,7 @@ def scenario_20(predicates, actions):
         ]
     }
 
-    goal_rel_is_on = {is_on_lane: [Agent, lane18]}
+    goal_rel_is_on = {predicates['is_on_lane']: [[Agent, lane18]]}
     goal_scene = {**goal_rel_is_on}
 
     init_scene = {
@@ -534,26 +483,14 @@ def scenario_30(predicates, actions):
         lane30,
     ]
 
-    predicate_list = list(predicates.values())
-    (
-        is_on,
-        is_on_lane,
-        has_right_neighbour,
-        has_left_neighbour,
-        has_successor,
-        has_predecessor,
-        has_top_right_neighbour,
-        has_top_left_neighbour,
-        has_bottom_right_neighbour,
-        has_bottom_left_neighbour,
-    ) = predicate_list
+
 
     # generate init-scene
-    rel_is_on_lane = {is_on_lane: [Agent, lane1]}
-    rel_is_on = {is_on: [Car1, lane5]}
+    rel_is_on_lane = {predicates['is_on_lane']: [[Agent, lane1]]}
+    rel_is_on = {predicates['is_on']: [[Car1, lane5]]}
 
     rel_has_right_neighbour = {
-        has_right_neighbour: [
+        predicates['has_right_neighbour']: [
             [lane2, lane1],
             [lane4, lane3],
             [lane6, lane5],
@@ -573,7 +510,7 @@ def scenario_30(predicates, actions):
     }
 
     rel_has_left_neighbour = {
-        has_left_neighbour: [
+        predicates['has_left_neighbour']: [
             [lane1, lane2],
             [lane3, lane4],
             [lane5, lane6],
@@ -593,7 +530,7 @@ def scenario_30(predicates, actions):
     }
 
     rel_has_successor = {
-        has_successor: [
+        predicates['has_successor']: [
             [lane1, lane3],
             [lane3, lane5],
             [lane5, lane7],
@@ -622,7 +559,7 @@ def scenario_30(predicates, actions):
     }
 
     rel_has_predecessor = {
-        has_predecessor: [
+        predicates['has_predecessor']: [
             [lane3, lane1],
             [lane5, lane3],
             [lane7, lane5],
@@ -650,7 +587,7 @@ def scenario_30(predicates, actions):
         ]
     }
 
-    goal_rel_is_on = {is_on_lane: [Agent, lane29]}
+    goal_rel_is_on = {predicates['is_on_lane']: [[Agent, lane29]]}
     goal_scene = {**goal_rel_is_on}
 
     init_scene = {
@@ -735,26 +672,14 @@ def scenario_3_lane(predicates, actions):
         lane28,
     ]
 
-    predicate_list = list(predicates.values())
-    (
-        is_on,
-        is_on_lane,
-        has_right_neighbour,
-        has_left_neighbour,
-        has_successor,
-        has_predecessor,
-        has_top_right_neighbour,
-        has_top_left_neighbour,
-        has_bottom_right_neighbour,
-        has_bottom_left_neighbour,
-    ) = predicate_list
+
 
     # generate init-scene
-    rel_is_on_lane = {is_on_lane: [Agent, lane1]}
-    rel_is_on = {is_on: [Car1, lane6]}
+    rel_is_on_lane = {predicates['is_on_lane']: [[Agent, lane1]]}
+    rel_is_on = {predicates['is_on']: [[Car1, lane6]]}
 
     rel_has_right_neighbour = {
-        has_right_neighbour: [
+        predicates['has_right_neighbour']: [
             [lane3, lane2],
             [lane5, lane4],
             [lane7, lane6],
@@ -777,7 +702,7 @@ def scenario_3_lane(predicates, actions):
     }
 
     rel_has_left_neighbour = {
-        has_left_neighbour: [
+        predicates['has_left_neighbour']: [
             [lane2, lane3],
             [lane4, lane5],
             [lane6, lane7],
@@ -800,7 +725,7 @@ def scenario_3_lane(predicates, actions):
     }
 
     rel_has_successor = {
-        has_successor: [
+        predicates['has_successor']: [
             [lane1, lane2],
             [lane2, lane4],
             [lane4, lane6],
@@ -831,7 +756,7 @@ def scenario_3_lane(predicates, actions):
     }
 
     rel_has_predecessor = {
-        has_predecessor: [
+        predicates['has_predecessor']: [
             [lane2, lane1],
             [lane4, lane2],
             [lane6, lane4],
@@ -860,7 +785,7 @@ def scenario_3_lane(predicates, actions):
         ]
     }
 
-    goal_rel_is_on = {is_on_lane: [Agent, lane18]}
+    goal_rel_is_on = {predicates['is_on_lane']: [[Agent, lane18]]}
     goal_scene = {**goal_rel_is_on}
 
     init_scene = {
@@ -890,29 +815,17 @@ def Ramp_On(predicates, actions):
     lane5 = SDObject("lane5", OType.LANE)
     object_list = [Agent, Car1, lane1, lane2, lane3, lane4, lane5]
 
-    predicate_list = list(predicates.values())
-    (
-        is_on,
-        is_on_lane,
-        has_right_neighbour,
-        has_left_neighbour,
-        has_successor,
-        has_predecessor,
-        has_top_right_neighbour,
-        has_top_left_neighbour,
-        has_bottom_right_neighbour,
-        has_bottom_left_neighbour,
-    ) = predicate_list
+
 
     # generate init-scene
-    rel_is_on_lane = {is_on_lane: [Agent, lane1]}
-    rel_is_on = {is_on: [Car1, lane3]}
-    rel_has_right_neighbour = {has_right_neighbour: [[lane4, lane2], [lane5, lane3]]}
-    rel_has_left_neighbour = {has_left_neighbour: [[lane2, lane4], [lane3, lane5]]}
-    rel_has_successor = {has_successor: [[lane1, lane2], [lane2, lane3], [lane4, lane5]]}
-    rel_has_predecessor = {has_predecessor: [[lane2, lane1], [lane3, lane2], [lane5, lane4]]}
+    rel_is_on_lane = {predicates['is_on_lane']: [[Agent, lane1]]}
+    rel_is_on = {predicates['is_on']: [[Car1, lane3]]}
+    rel_has_right_neighbour = {predicates['has_right_neighbour']: [[lane4, lane2], [lane5, lane3]]}
+    rel_has_left_neighbour = {predicates['has_left_neighbour']: [[lane2, lane4], [lane3, lane5]]}
+    rel_has_successor = {predicates['has_successor']: [[lane1, lane2], [lane2, lane3], [lane4, lane5]]}
+    rel_has_predecessor = {predicates['has_predecessor']: [[lane2, lane1], [lane3, lane2], [lane5, lane4]]}
 
-    goal_rel_is_on = {is_on_lane: [Agent, lane5]}
+    goal_rel_is_on = {predicates['is_on_lane']: [[Agent, lane5]]}
     goal_scene = {**goal_rel_is_on}
 
     init_scene = {
@@ -943,29 +856,17 @@ def Ramp_Off(predicates, actions):
     lane5 = SDObject("lane5", OType.LANE)
     object_list = [Agent, Car1, lane1, lane2, lane3, lane4, lane5]
 
-    predicate_list = list(predicates.values())
-    (
-        is_on,
-        is_on_lane,
-        has_right_neighbour,
-        has_left_neighbour,
-        has_successor,
-        has_predecessor,
-        has_top_right_neighbour,
-        has_top_left_neighbour,
-        has_bottom_right_neighbour,
-        has_bottom_left_neighbour,
-    ) = predicate_list
+
 
     # generate init-scene
-    rel_is_on_lane = {is_on_lane: [Agent, lane1]}
-    rel_is_on = {is_on: [Car1, lane2]}
-    rel_has_right_neighbour = {has_right_neighbour: [[lane1, lane2], [lane3, lane4], [lane4, lane5]]}
-    rel_has_left_neighbour = {has_left_neighbour: [[lane2, lane1], [lane4, lane3], [lane5, lane4]]}
-    rel_has_successor = {has_successor: [[lane1, lane3], [lane2, lane4]]}
-    rel_has_predecessor = {has_predecessor: [[lane3, lane1], [lane4, lane2]]}
+    rel_is_on_lane = {predicates['is_on_lane']: [[Agent, lane1]]}
+    rel_is_on = {predicates['is_on']: [[Car1, lane2]]}
+    rel_has_right_neighbour = {predicates['has_right_neighbour']: [[lane1, lane2], [lane3, lane4], [lane4, lane5]]}
+    rel_has_left_neighbour = {predicates['has_left_neighbour']: [[lane2, lane1], [lane4, lane3], [lane5, lane4]]}
+    rel_has_successor = {predicates['has_successor']: [[lane1, lane3], [lane2, lane4]]}
+    rel_has_predecessor = {predicates['has_predecessor']: [[lane3, lane1], [lane4, lane2]]}
 
-    goal_rel_is_on = {is_on_lane: [Agent, lane5]}
+    goal_rel_is_on = {predicates['is_on_lane']: [[Agent, lane5]]}
     goal_scene = {**goal_rel_is_on}
 
     init_scene = {

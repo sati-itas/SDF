@@ -42,7 +42,7 @@ def actions_simple(predicate_dict):
     # SPARQL Query according: https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QueryForms
     # prepared for rdflib in python: https://rdflib.readthedocs.io/en/stable/intro_to_sparql.html
     lc_right_precondition = """
-                PREFIX pre: <http://example.org/predicate/>
+                PREFIX pre: <http://example.org/predicate#>
                 SELECT ?x ?y ?v ?e
                 WHERE {
                         ?e pre:is_on_lane ?x .
@@ -52,7 +52,7 @@ def actions_simple(predicate_dict):
             """
 
     lc_left_precondition = """
-                PREFIX pre: <http://example.org/predicate/>
+                PREFIX pre: <http://example.org/predicate#>
                 SELECT ?y ?x ?v ?e
                 WHERE {
                         ?e pre:is_on_lane ?x .
@@ -62,7 +62,7 @@ def actions_simple(predicate_dict):
             """
 
     l_keep_precondition = """
-                PREFIX pre: <http://example.org/predicate/>
+                PREFIX pre: <http://example.org/predicate#>
                 SELECT ?y ?x ?v ?e
                 WHERE {
                         ?e pre:is_on_lane ?x .

@@ -420,7 +420,7 @@ class RDFWrapper:
                 if triplet[2] == value:
                     new_obj = key
             try:
-                new_sd_relations = merge_dicts(new_sd_relations, {new_pred: [new_sub, new_obj]})
+                new_sd_relations = merge_dicts(new_sd_relations, {new_pred: [[new_sub, new_obj]]})
             except Exception as e:
                 print(f'{e}:Error while creating new SD scene relations')
 

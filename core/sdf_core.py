@@ -1,5 +1,7 @@
 from typing import Dict
 from typing import List
+from typing import Tuple
+from typing import Union
 
 from core.utility.timing_utils import time_tracker
 
@@ -75,13 +77,13 @@ class SDObject(Thing):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            # TODO change to ident!!
+            # return self.id == other.id
             return self.name == other.name
         else:
             return False
 
     def __hash__(self):  # This method is necessary to be able to use the class as a key in a dictionary
-        return hash(self.id)
+        return hash(self.name)
 
     def add_rel_speed(self, rel_speed):
         self.RelSpeed = rel_speed
@@ -183,20 +185,29 @@ class Scene(Thing):
     Args:
         object_list ([Object]): list of all existing objects in scene
         scene_relations (Dict): dict of all related objects (key: predicate, value: (nested) list of linked objects)
-        ident (int): identification of scene
-        predciate_list ([Predicate]) : list of all instanciated predicates between objects in scene
     '''
 
     def __init__(
-        self, object_list: List[SDObject], scene_relations: Dict[Predicate, List[SDObject]]):
+        self, object_list: List[SDObject], scene_relations: Dict[Predicate, List[Union[List[int], Tuple[int, int]]]]):
         Thing.__init__(self)
+
+        # validate scene_relations
+        if not isinstance(scene_relations, dict):
+            raise TypeError("scene_relations have to be a dictionary")
+
+        for key, value in scene_relations.items():
+            if not isinstance(value, list):
+                raise TypeError(f"The value for key '{key}' must be a list")
+
+            for item in value:
+                if not isinstance(item, (list, tuple)) or len(item) != 2 or not all(isinstance(i, SDObject) for i in item):
+                    raise ValueError(f"Invalid element {item} under key '{key}'. Expected (SDObject, SDObject) or [SDObject, SDObject].")
+
         self.scene_relations = scene_relations
         self.object_list = object_list
 
     def __repr__(self) -> str:
-        return f"scene | name={self.name}, ident={self.id}"
-
-    def __str__(self):
+        """call with repr()"""
         str_to_print = ""
         for key, value in self.scene_relations.items():
             str_to_print = str_to_print + key.name + ":" + " "
@@ -208,8 +219,11 @@ class Scene(Thing):
                         str_to_print = str_to_print + itemitem.name + " "
                     str_to_print = str_to_print + "\n"
             str_to_print = str_to_print + "\n"
-
         return f"scene | name={self.name}, ident={self.id}\n\n{str_to_print}"
+
+    def __str__(self):
+        """call with print() or str()"""
+        return f"scene | name={self.name}, ident={self.id}"
 
     def __hash__(self):  # This method is necessary to be able to use the class as a key in a dictionary
         return hash(self.id)
@@ -283,7 +297,7 @@ class Action(Thing):
     def __repr__(self) -> str:
         return f"action | name={self.name}"
 
-    def check_precondition(self, scene: Scene, debug=True) -> bool:
+    def check_precondition(self, scene: Scene, debug=False) -> bool:
         '''check if action precondition is satisfied in current scene.
         If precondition is satified the function generates:
         a dict (self.select_dict) or a list of dicts (self.select_dict_list) with the possible SELECT variables.
@@ -326,14 +340,54 @@ class Action(Thing):
                     #     print(f'\t var: {var}, selected: {selected} ')
                     self.select_dict.update({var: selected})
                 if debug:
-                    print(f'Action.check_precondition(): select_dict={self.select_dict}\n')
+                    print(f'{self.name}.check_precondition(): select_dict={self.select_dict}\n')
                 self.select_dict_list.append(self.select_dict)
             if debug:
-                print(f'Action.check_precondition(): self.select_dict_list={self.select_dict_list}\n')
+                print(f'{self.name}.check_precondition(): self.select_dict_list={self.select_dict_list}\n')
+                print(f'scene database: {scene!r}')
             return True
         else:
             if debug:
-                print("Action.check_precondition(): precondition not satisfied")
+                print(f'{self.name}.check_precondition(): precondition not satisfied')
+            return False
+
+    @time_tracker("effect_execute_processing_time")
+    def execute_select_dict_list(self, scene: Scene, debug=False):
+        '''executes the action in a given scene if possible.
+        This includes action precondition checks and generating the follow-up scenes.
+        If the precondition check generate a list of possible actions, all follow-up scenes will be build.
+
+        Args:
+            scene (Scene): scene, in which action shell by executed
+            debug (bool, optional): _description_. Defaults to False.
+
+        Returns:
+            new_scene_action_dict (Dict[Scene:{Predicate:[SD subject,SD object]}):
+            A List includes new scene list created by executing actions
+            and a list of Dicts of the effects by executing actions.
+            If preconditions for action not fullfilled return Bool:False
+        '''
+
+        if self.check_precondition(scene, debug=debug):
+
+            new_graph_list = self.execute_dlist()
+            new_graph_list, sd_rel_action_effect_list = self.execute_alist(new_graph_list)
+
+            # map RDF Database in SD scene
+            new_scene_list = []
+
+            for graph in new_graph_list:
+                new_scene = self.rdf_wrapper.gen_sd_scene_from_rdf_database(graph)
+                new_scene_list.append(new_scene)
+            if len(new_scene_list) == len(sd_rel_action_effect_list):
+                new_scene_action_dict = dict(zip(new_scene_list, sd_rel_action_effect_list, strict=False))
+                # for scene, predcates in new_scene_action_dict.items():
+                #     print(f'predcates {predcates}')
+                #     print(f'scene {scene}')
+            else:
+                raise Exception('Error: scene list and effect list are not coherent')
+            return new_scene_action_dict
+        else:
             return False
 
     def execute_dlist(self, debug=False):
@@ -459,47 +513,6 @@ class Action(Thing):
                 print(f'print_graph: alist after: \n {print_graph}')
             _new_graph_list.append(_new_graph)
         return [_new_graph_list, sd_rel_action_effect_list]
-
-    @time_tracker("effect_execute_processing_time")
-    def execute_select_dict_list(self, scene: Scene, debug=False):
-        '''executes the action in a given scene if possible.
-        This includes action precondition checks and generating the follow-up scenes.
-        If the precondition check generate a list of possible actions, all follow-up scenes will be build.
-
-        Args:
-            scene (Scene): scene, in which action shell by executed
-            debug (bool, optional): _description_. Defaults to False.
-
-        Returns:
-            new_scene_action_dict (Dict[Scene:{Predicate:[SD subject,SD object]}):
-            A List includes new scene list created by executing actions
-            and a list of Dicts of the effects by executing actions.
-            If preconditions for action not fullfilled return Bool:False
-        '''
-
-        if debug:
-            print(f'scene database: {scene}')
-        if self.check_precondition(scene, debug=False):
-
-            new_graph_list = self.execute_dlist()
-            new_graph_list, sd_rel_action_effect_list = self.execute_alist(new_graph_list)
-
-            # map RDF Database in SD scene
-            new_scene_list = []
-
-            for graph in new_graph_list:
-                new_scene = self.rdf_wrapper.gen_sd_scene_from_rdf_database(graph)
-                new_scene_list.append(new_scene)
-            if len(new_scene_list) == len(sd_rel_action_effect_list):
-                new_scene_action_dict = dict(zip(new_scene_list, sd_rel_action_effect_list, strict=False))
-                # for scene, predcates in new_scene_action_dict.items():
-                #     print(f'predcates {predcates}')
-                #     print(f'scene {scene}')
-            else:
-                raise Exception('Error: scene list and effect list are not coherent')
-            return new_scene_action_dict
-        else:
-            return False
 
     def graph_processing_time(self):
         '''graph_processing_time time of rdf-graph generation
