@@ -29,7 +29,7 @@ class Solver:
         queue = []
         solution = False
 
-        if goal_scene.scene_relations.items() <= current_scene.scene_relations.items():
+        if check_subset_pair(goal_scene, current_scene):
             solution = True
             return (plan, solution)
 
@@ -38,14 +38,17 @@ class Solver:
         while queue:
             parent_node = queue.pop()  # stack: last-in, first-out
             for action in action_list:
-
-                new_scene_action_dict = action.execute_select_dict_list(parent_node.state, debug=False)
+                new_scene_action_dict = action.execute_select_dict_list(
+                    parent_node.state, debug=False
+                )
                 if new_scene_action_dict:
                     for next_scene, action_eff in new_scene_action_dict.items():
-                        new_node = SearchNode([action, action_eff], next_scene, parent_node)
+                        new_node = SearchNode(
+                            [action, action_eff], next_scene, parent_node
+                        )
                         # new_node = SearchNode(action, next_scene, parent_node)
 
-                        if goal_scene.scene_relations.items() <= next_scene.scene_relations.items():
+                        if check_subset_pair(goal_scene, next_scene):
                             solution = True
                             # path = new_node.path()
                             plan = new_node.act_sequence()
@@ -63,7 +66,6 @@ class Solver:
         current_scene: Scene,
         goal_scene: Scene,
         action_list: List[Action],
-        debug=False,
     ) -> Tuple[List[Any], bool]:
         """Breadth First Search algorithm for finding path between current_scene and goal_scene in
             discrete state transition system (nodes: Scenes, transitions: actions).
@@ -84,7 +86,8 @@ class Solver:
         visited_check = False
         solution = False
 
-        if goal_scene.scene_relations.items() <= current_scene.scene_relations.items():
+        if check_subset_pair(goal_scene, current_scene):
+            solution = True
             return (plan, solution)
 
         queue.append(SearchNode(None, current_scene, None))
@@ -95,24 +98,23 @@ class Solver:
 
             for action in action_list:
                 new_scene_action_dict = action.execute_select_dict_list(
-                    parent_node.state
+                    parent_node.state, debug=False
                 )  # pruning Scenes: which action is executable in Scene, if executable generate Scene
 
                 if new_scene_action_dict:
                     for next_scene, action_eff in new_scene_action_dict.items():
-                        new_node = SearchNode([action, action_eff], next_scene, parent_node)
-                        # print(f'parent_node.in_path(next_scene): {parent_node.in_path(next_scene)}')
+                        new_node = SearchNode(
+                            [action, action_eff], next_scene, parent_node
+                        )
                         for scene in visited:
                             if check_identical_scenes(next_scene, scene):
                                 visited_check = True
                                 break
-                        if goal_scene.scene_relations.items() <= next_scene.scene_relations.items():
+                        if check_subset_pair(goal_scene, next_scene):
                             solution = True
                             plan = new_node.act_sequence()
                             return (plan, solution)
-                        elif (
-                            visited_check
-                        ):  # pruning rule: do not consider any path that visits a state that you have already visited via some other path.
+                        elif visited_check:  # pruning rule: do not consider any path that visits a state that you have already visited via some other path.
                             visited_check = False
                             pass
                         else:
@@ -134,19 +136,21 @@ class SearchNode:
         if self.parent is None:
             return [(self.action, self.state)]
         else:
-            return self.parent.path() + [(self.action, self.state)]
+            return [*self.parent.path(), (self.action, self.state)]
 
     def act_sequence(self):
         """returns a sequence of a action"""
         if self.parent is None:
             return [(self.action)]
         else:
-            return self.parent.act_sequence() + [(self.action)]
+            return [*self.parent.act_sequence(), self.action]
 
     def in_path(self, state):
         """checks if next state is equal to parent state.
         for pruning reason: do not consider any path that visits the same state twice."""
-        if self.state.scene_relations.items() == state.scene_relations.items():  #
+        if (
+            self.state.scene_relations.items() == state.scene_relations.items()
+        ):  # check_identical_scenes
             return True
         elif self.parent is None:
             return False
@@ -155,35 +159,48 @@ class SearchNode:
 
 
 def check_identical_scenes(scene1: Scene, scene2: Scene) -> bool:
-    """checks if 2 scene descriptions (2 different "Scene" python objects) are identical in terms of their scene relations
-
+    """checks if scene1.scene_relations is equal to scene2.scene_relations
     Args:
         scene1 (Scene): scene 1
         scene2 (Scene): scene 2
-
     Returns:
         bool: True if scenes are identical
     """
-    if (
-        scene1.scene_relations.items() <= scene2.scene_relations.items()
-        and scene2.scene_relations.items() <= scene1.scene_relations.items()
-    ):
-        return True
-    else:
-        return False
+    return scene1.scene_relations.items() == scene2.scene_relations.items()
 
 
-def check_subset_scenes(goal_scene: Scene, scene2: Scene) -> bool:
-    """checks if scene1.relations:type[dict] is a subset or equal to scene2.relations:type[dict] in terms of their scene relations
-
+def check_subset_scenes(goal_scene: Scene, scene: Scene) -> bool:
+    """checks if goal_scene.scene_relations is a subset or equal to scene.scene_relations
     Args:
-        scene1 (Scene): scene 1
-        scene2 (Scene): scene 2
-
+        goal_scene (Scene): goal scene
+        scene (Scene): scene
     Returns:
-        bool: True if scene1.relations:type[dict] is a subset or equal to scene2.relations:type[dict]
+        bool: True if goal_scene.scene_relations is a subset or equal to scene.scene_relations
     """
-    if goal_scene.scene_relations.items() <= scene2.scene_relations.items():
+    return goal_scene.scene_relations.items() <= scene.scene_relations.items()
+
+
+def check_common_keys(scene1: Scene, scene2: Scene) -> bool:
+    common_keys = scene1.scene_relations.keys() & scene2.scene_relations.keys()
+    return common_keys
+
+
+def check_subset_pair(goal: Scene, scene: Scene) -> bool:
+    """while with goal.scene_relations.items() <= scene.scene_relations.items() the individual values are compared,
+    now the comparison is done in pairs. This corresponds to the pairwise relationship"""
+    common_keys = goal.scene_relations.keys() & scene.scene_relations.keys()
+    if common_keys:
+        for key in common_keys:
+            # generate list of tuples
+            set1 = {tuple(sublist) for sublist in goal.scene_relations[key]}
+
+            set2 = {tuple(sublist) for sublist in scene.scene_relations[key]}
+
+            # set1 = set(dict1[key])  # TODO:Tupel direkt verwenden
+            # set2 = set(dict2[key])  # TODO:Tupel direkt verwenden
+
+            # calculate subset
+            # subset = set1.issubset(set2)
+            if not set1 <= set2:
+                return False
         return True
-    else:
-        return False

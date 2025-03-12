@@ -1,0 +1,215 @@
+@prefix : <http://example.org/Scene#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix scene: <http://example.org/Scene#> .
+@base <http://example.org/Scene#> .
+
+<http://example.org/Scene> rdf:type owl:Ontology .
+
+#################################################################
+#    Object Properties
+#################################################################
+
+###  http://example.org/Scene#has_lane_assignment
+scene:has_lane_assignment rdf:type owl:ObjectProperty ;
+                          rdfs:domain scene:DynamicObject ;
+                          rdfs:range scene:LaneSegment .
+
+
+###  http://example.org/Scene#has_left_neighbour
+scene:has_left_neighbour rdf:type owl:ObjectProperty ;
+                         rdfs:domain scene:LaneSegment .
+
+
+###  http://example.org/Scene#has_predecessor
+scene:has_predecessor rdf:type owl:ObjectProperty ;
+                      rdfs:domain scene:LaneSegment .
+
+
+###  http://example.org/Scene#has_right_neighbour
+scene:has_right_neighbour rdf:type owl:ObjectProperty ;
+                          rdfs:domain scene:LaneSegment .
+
+
+###  http://example.org/Scene#has_successor
+scene:has_successor rdf:type owl:ObjectProperty ;
+                    rdfs:domain scene:LaneSegment .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+###  http://example.org/Scene#Accident
+scene:Accident rdf:type owl:Class ;
+               rdfs:subClassOf scene:ObstacleType .
+
+
+###  http://example.org/Scene#Animal
+scene:Animal rdf:type owl:Class ;
+             rdfs:subClassOf scene:RoadUserType .
+
+
+###  http://example.org/Scene#Bus
+scene:Bus rdf:type owl:Class ;
+          rdfs:subClassOf scene:VehicleEntity .
+
+
+###  http://example.org/Scene#Car
+scene:Car rdf:type owl:Class ;
+          rdfs:subClassOf scene:VehicleEntity .
+
+
+###  http://example.org/Scene#DomainTypes
+scene:DomainTypes rdf:type owl:Class ;
+                  rdfs:subClassOf scene:Scene .
+
+
+###  http://example.org/Scene#Driver
+scene:Driver rdf:type owl:Class ;
+             rdfs:subClassOf scene:Human .
+
+
+###  http://example.org/Scene#DynamicObject
+scene:DynamicObject rdf:type owl:Class ;
+                    rdfs:subClassOf scene:Scene .
+
+
+###  http://example.org/Scene#Ego
+scene:Ego rdf:type owl:Class ;
+          rdfs:subClassOf scene:SelfRepresentation .
+
+
+###  http://example.org/Scene#Human
+scene:Human rdf:type owl:Class ;
+            rdfs:subClassOf scene:RoadUserType .
+
+
+###  http://example.org/Scene#LaneAssignment
+scene:LaneAssignment rdf:type owl:Class ;
+                     rdfs:subClassOf scene:Location .
+
+
+###  http://example.org/Scene#LaneSegment
+scene:LaneSegment rdf:type owl:Class ;
+                  rdfs:subClassOf scene:Scenery .
+
+
+###  http://example.org/Scene#LaneType
+scene:LaneType rdf:type owl:Class ;
+               rdfs:subClassOf scene:DomainTypes .
+
+
+###  http://example.org/Scene#Location
+scene:Location rdf:type owl:Class ;
+               rdfs:subClassOf scene:Scene .
+
+
+###  http://example.org/Scene#Obstacle
+scene:Obstacle rdf:type owl:Class ;
+               rdfs:subClassOf scene:DynamicObject .
+
+
+###  http://example.org/Scene#ObstacleType
+scene:ObstacleType rdf:type owl:Class ;
+                   rdfs:subClassOf scene:DomainTypes .
+
+
+###  http://example.org/Scene#Pedestrian
+scene:Pedestrian rdf:type owl:Class ;
+                 rdfs:subClassOf scene:Human .
+
+
+###  http://example.org/Scene#Rider
+scene:Rider rdf:type owl:Class ;
+            rdfs:subClassOf scene:Human .
+
+
+###  http://example.org/Scene#RoadUser
+scene:RoadUser rdf:type owl:Class ;
+               rdfs:subClassOf scene:DynamicObject .
+
+
+###  http://example.org/Scene#RoadUserType
+scene:RoadUserType rdf:type owl:Class ;
+                   rdfs:subClassOf scene:DomainTypes .
+
+
+###  http://example.org/Scene#Roadworks
+scene:Roadworks rdf:type owl:Class ;
+                rdfs:subClassOf scene:ObstacleType .
+
+
+###  http://example.org/Scene#Scene
+scene:Scene rdf:type owl:Class .
+
+
+###  http://example.org/Scene#Scenery
+scene:Scenery rdf:type owl:Class ;
+              rdfs:subClassOf scene:Scene .
+
+
+###  http://example.org/Scene#SelfRepresentation
+scene:SelfRepresentation rdf:type owl:Class ;
+                         rdfs:subClassOf scene:Scene .
+
+
+###  http://example.org/Scene#SlowVehicle
+scene:SlowVehicle rdf:type owl:Class ;
+                  rdfs:subClassOf scene:ObstacleType .
+
+
+###  http://example.org/Scene#StationaryVehicle
+scene:StationaryVehicle rdf:type owl:Class ;
+                        rdfs:subClassOf scene:ObstacleType .
+
+
+###  http://example.org/Scene#Truck
+scene:Truck rdf:type owl:Class ;
+            rdfs:subClassOf scene:VehicleEntity .
+
+
+###  http://example.org/Scene#VehicleEntity
+scene:VehicleEntity rdf:type owl:Class ;
+                    rdfs:subClassOf scene:RoadUserType .
+
+
+###  http://example.org/Scene#biking
+scene:biking rdf:type owl:Class ;
+             rdfs:subClassOf scene:LaneType .
+
+
+###  http://example.org/Scene#driving
+scene:driving rdf:type owl:Class ;
+              rdfs:subClassOf scene:LaneType .
+
+
+###  http://example.org/Scene#sidewalk
+scene:sidewalk rdf:type owl:Class ;
+               rdfs:subClassOf scene:LaneType .
+
+
+#################################################################
+#    General axioms
+#################################################################
+
+[ rdf:type owl:AllDisjointClasses ;
+  owl:members ( scene:Animal
+                scene:Pedestrian
+                scene:VehicleEntity
+              )
+] .
+
+
+[ rdf:type owl:AllDisjointClasses ;
+  owl:members ( scene:Bus
+                scene:Car
+                scene:Truck
+              )
+] .
+
+
+###  Generated by the OWL API (version 4.5.29.2024-05-13T12:11:03Z) https://github.com/owlcs/owlapi

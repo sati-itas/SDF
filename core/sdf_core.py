@@ -1,27 +1,15 @@
-from enum import Enum
-from enum import unique
 from typing import Dict
 from typing import List
+from typing import Tuple
+from typing import Union
 
 from core.utility.timing_utils import time_tracker
 
 
-@unique
-class OType(Enum):
-    # TODO: the object type are specific to one domain. idea -> parse an ontology to enable different domain for sdf.
-    NONE = 0
-    EGO = 1
-    LANE = 2
-    VEHICLE = 3
-    SEGMENT = 4
-    DISK = 5
-    PEG = 6
-
-
 class Thing:
-    '''base class 'Thing' for Object and Predicate class.
+    """base class 'Thing' for Object and Predicate class.
     name:str, ident:int are the (unique) key's to each Thing.
-    '''
+    """
 
     # name:str, ident:int should be unique and to each name belongs one identification number (ident).
     # TODO But than action and scene class are not able to use name and ident
@@ -39,15 +27,15 @@ class Thing:
 
 
 class SDObject(Thing):
-    '''Object class for creating dynamic and static objects in scene.
+    """Object class for creating dynamic and static objects in scene.
 
     Args:
         object_name (str): name of the object
-        object_type(enum): type of object corresponding to enum in OType class
+        object_type: type of object corresponding to domain
         position(int): position of object in environment (default=None)
-    '''
+    """
 
-    def __init__(self, object_name: str, object_type: OType):
+    def __init__(self, object_name: str, object_type):
         self.object_type = object_type
         Thing.__init__(self, name=object_name)
 
@@ -85,17 +73,19 @@ class SDObject(Thing):
         self.Acc_y = None
 
     def __repr__(self) -> str:
-        return f"object | name={self.name}"  # id: {self.id} object type: {self.object_type}")#\n \
+        return f'object | name={self.name}'  # id: {self.id} object type: {self.object_type}")#\n \
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            # TODO change to ident!!
+            # return self.id == other.id
             return self.name == other.name
         else:
             return False
 
-    def __hash__(self):  # This method is necessary to be able to use the class as a key in a dictionary
-        return hash(self.id)
+    def __hash__(
+        self,
+    ):  # This method is necessary to be able to use the class as a key in a dictionary
+        return hash(self.name)
 
     def add_rel_speed(self, rel_speed):
         self.RelSpeed = rel_speed
@@ -168,20 +158,18 @@ class SDObject(Thing):
 
 
 class Predicate(Thing):
-    '''Predicate class for defining predicates (properties or relations) of single or between several objects
+    """Predicate class for defining predicates (properties or relations) of single or between several objects
 
     Args:
         predicate_name (str): name of the object
         ident (int): identification of instance
-        o1type (enum): (reference: OType class) for filter reasons
-        o2type (enum): (reference: OType class) for filter reasons
-    '''
+    """
 
     def __init__(self, predicate_name: str):
         Thing.__init__(self, name=predicate_name)
 
     def __repr__(self) -> str:
-        return f"predicate | name={self.name}, ident={self.id}"
+        return f'predicate | name={self.name}, ident={self.id}'
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
@@ -189,69 +177,92 @@ class Predicate(Thing):
         else:
             return False
 
-    def __hash__(self):  # This method is necessary to be able to use the class as a key in a dictionary
+    def __hash__(
+        self,
+    ):  # This method is necessary to be able to use the class as a key in a dictionary
         return hash(self.id)
 
 
 class Scene(Thing):
-    '''Scene class for creating scenes from existing objects and predicates.
+    """Scene class for creating scenes from existing objects and predicates.
 
     Args:
         object_list ([Object]): list of all existing objects in scene
         scene_relations (Dict): dict of all related objects (key: predicate, value: (nested) list of linked objects)
-        ident (int): identification of scene
-        predciate_list ([Predicate]) : list of all instanciated predicates between objects in scene
-    '''
+    """
 
     def __init__(
-        self, object_list: List[SDObject], scene_relations: Dict[Predicate, List[SDObject]], preds: List[Predicate]
+        self,
+        object_list: List[SDObject],
+        scene_relations: Dict[Predicate, List[Union[List[int], Tuple[int, int]]]],
     ):
         Thing.__init__(self)
+
+        # validate scene_relations
+        if not isinstance(scene_relations, dict):
+            raise TypeError('scene_relations have to be a dictionary')
+
+        for key, value in scene_relations.items():
+            if not isinstance(value, list):
+                raise TypeError(f"The value for key '{key}' must be a list")
+
+            for item in value:
+                if (
+                    not isinstance(item, (list, tuple))
+                    or len(item) != 2
+                    or not all(isinstance(i, SDObject) for i in item)
+                ):
+                    raise ValueError(
+                        f"Invalid element {item} under key '{key}'. Expected (SDObject, SDObject) or [SDObject, SDObject]."
+                    )
+
         self.scene_relations = scene_relations
-        self.pred_list = preds
         self.object_list = object_list
 
     def __repr__(self) -> str:
-        return f"scene | name={self.name}, ident={self.id}"
-
-    def __str__(self):
-        str_to_print = ""
+        """call with repr()"""
+        str_to_print = ''
         for key, value in self.scene_relations.items():
-            str_to_print = str_to_print + key.name + ":" + " "
+            str_to_print = str_to_print + key.name + ':' + ' '
             for item in value:
                 if not isinstance(item, list):
-                    str_to_print = str_to_print + item.name + " "
+                    str_to_print = str_to_print + item.name + ' '
                 if isinstance(item, list):
                     for itemitem in item:
-                        str_to_print = str_to_print + itemitem.name + " "
-                    str_to_print = str_to_print + "\n"
-            str_to_print = str_to_print + "\n"
+                        str_to_print = str_to_print + itemitem.name + ' '
+                    str_to_print = str_to_print + '\n'
+            str_to_print = str_to_print + '\n'
+        return f'scene | name={self.name}, ident={self.id}\n\n{str_to_print}'
 
-        return f"scene | name={self.name}, ident={self.id}\n\n{str_to_print}"
+    def __str__(self):
+        """call with print() or str()"""
+        return f'scene | name={self.name}, ident={self.id}'
 
-    def __hash__(self):  # This method is necessary to be able to use the class as a key in a dictionary
+    def __hash__(
+        self,
+    ):  # This method is necessary to be able to use the class as a key in a dictionary
         return hash(self.id)
 
     def search_relation(self, predicate: Predicate) -> List[SDObject]:
-        '''Searching a SDObject in scene_relation with the given predicate and returns SDObject instance
+        """Searching a SDObject in scene_relation with the given predicate and returns SDObject instance
 
         Args:
             predicate (Predicate): predicate instance
 
         Returns:
             List[SD_Object]: _description_
-        '''
+        """
         return self.scene_relations[predicate]
 
     def search_object(self, object_name: str):
-        '''Searching a SDObject in a scene with the given name. Returns the first matching SDObject instance in scene.
+        """Searching a SDObject in a scene with the given name. Returns the first matching SDObject instance in scene.
 
         Args:
             object_name (str): name of scene object to be found
 
         Returns:
             Object: object instance with given name
-        '''
+        """
         counter = 0
         try:
             for scene_object in self.object_list:
@@ -261,26 +272,29 @@ class Scene(Thing):
                     counter += 1
 
         except Exception as e:
-            print(f'{e}: Exception occured: {object_name} not an member of self.object_list')
+            print(
+                f'{e}: Exception occured: {object_name} not an member of self.object_list'
+            )
 
-    def search_all_individuals_of_class(self, o_type) -> List[SDObject]:
-        '''gets all individuals of given class-object
+    def search_all_individuals_of_class(self, otype) -> List[SDObject]:
+        """gets all individuals of given class-object
 
         Args:
-            o_type (LITERAL): Literal of OType class to be found
+            otype (LITERAL): Literal of object type to be found
 
         Returns:
             List[Object]: list of objects with given object type
-        '''
-        _obj_list = []
-        for scene_object in self.object_list:
-            if scene_object.object_type == o_type:
-                _obj_list.append(scene_object)
-        return _obj_list
+        """
+        obj_list = [
+            scene_object
+            for scene_object in self.object_list
+            if scene_object.object_type == otype
+        ]
+        return obj_list
 
 
 class Action(Thing):
-    '''Action class for defining action template
+    """Action class for defining action template
 
     Args:
         name (str): action name
@@ -291,9 +305,16 @@ class Action(Thing):
             (e.g.: {is_on_lane: ["e", "x"]} | key (Predicate) = predicate, value (str) = List of variables representing
             selected values from query)
         select (List[str]): List of Variable names from SPARQL Query (?x etc.)
-    '''
+    """
 
-    def __init__(self, action_name: str, precondition: str, a_list: List, d_list: List, select: List[str]):
+    def __init__(
+        self,
+        action_name: str,
+        precondition: str,
+        a_list: List,
+        d_list: List,
+        select: List[str],
+    ):
         Thing.__init__(self, name=action_name)
         self.precondition = precondition
         self.a_list = a_list
@@ -301,10 +322,10 @@ class Action(Thing):
         self.select = select
 
     def __repr__(self) -> str:
-        return f"action | name={self.name}"
+        return f'action | name={self.name}'
 
-    def check_precondition(self, scene: Scene, debug=True) -> bool:
-        '''check if action precondition is satisfied in current scene.
+    def check_precondition(self, scene: Scene, debug=False) -> bool:
+        """check if action precondition is satisfied in current scene.
         If precondition is satified the function generates:
         a dict (self.select_dict) or a list of dicts (self.select_dict_list) with the possible SELECT variables.
 
@@ -314,7 +335,7 @@ class Action(Thing):
 
         Returns:
             bool: whether precondition in current scene is satisfied or not.
-        '''
+        """
 
         self.graph_processing_time = 0.0
         self.query_processing_time = 0.0
@@ -325,7 +346,7 @@ class Action(Thing):
         # generate rdf data and rdf graph based on scene
         from core.rdf_wrapper import RDFWrapper
 
-        self.rdf_wrapper = RDFWrapper(OType, scene)
+        self.rdf_wrapper = RDFWrapper(scene=scene)
         rdf_graph = self.rdf_wrapper.gen_rdf_graph()
         self.graph_processing_time = self.rdf_wrapper.gen_rdf_graph_processing_time
 
@@ -346,143 +367,25 @@ class Action(Thing):
                     #     print(f'\t var: {var}, selected: {selected} ')
                     self.select_dict.update({var: selected})
                 if debug:
-                    print(f'Action.check_precondition(): select_dict={self.select_dict}\n')
+                    print(
+                        f'{self.name}.check_precondition(): select_dict={self.select_dict}\n'
+                    )
                 self.select_dict_list.append(self.select_dict)
             if debug:
-                print(f'Action.check_precondition(): self.select_dict_list={self.select_dict_list}\n')
+                print(
+                    f'{self.name}.check_precondition(): self.select_dict_list={self.select_dict_list}\n'
+                )
+                print(f'scene database: {scene!r}')
             return True
         else:
             if debug:
-                print("Action.check_precondition(): precondition not satisfied")
+                print(f'{self.name}.check_precondition(): precondition not satisfied')
+                print(f'scene database: {scene!r}')
             return False
 
-    def execute_dlist(self, debug=False):
-        '''
-        remove the RDF triplet from the graph from d_list
-        d_list: Dict {SD_Predicate: [select param 1 (type: string), select param 2 (type: string)]}
-        1. map SELECT parameter to RDF subjects/objects-> result: rdf_rel={Predicate:[rdflib subject,rdflib object]}
-        2. map RDF subjects/objects to SD_Object instances-> result: sd_rel={Predicate:[SD subject,SD object]}
-        3. map SD relation to a RDF Tuple (RDF subject, RDF predicate, RDF object)
-        4. remove triplet from graph
-        '''
-        new_graph_list = []
-        for select_dict in self.select_dict_list:
-            _new_graph = self.rdf_wrapper.copy_rdf_graph()
-            if debug:
-                print(f'select_dict: {select_dict}')
-                print_graph = self.rdf_wrapper.gen_sd_scene_from_rdf_database(_new_graph)
-                print(f'print_graph: dlist before: \n {print_graph}')
-            for d_dictonary in self.d_list:
-                # iterate over all elements in d_list (Dict -> key: predicate, value: list of 2 SELECT parameters)
-                # and get the RDF equivalents of their values
-                # self.select_dict_list: mapping of SELECT variables to corresponding RDF objects (from SPARQL query)
-                for pred, select_parameters in d_dictonary.items():
-                    for item in select_parameters:
-                        if not isinstance(item, list):
-                            sub = select_dict[select_parameters[0]]
-                            obj = select_dict[select_parameters[1]]
-                            if debug:
-                                print(f'execute delete: \n\tsubject: {sub}\n\t object: {obj}\n')
-                            break
-                        else:
-                            for nested_index in item:
-                                if not isinstance(nested_index, list):
-                                    sub = select_dict[item[0]]
-                                    obj = select_dict[item[1]]
-                                    if debug:
-                                        print(f'execute delete: \n\tsubject: {sub}\n\t object: {obj}\n')
-                                    break
-                    rdf_rel = {pred: [sub, obj]}  # rdf_rel: dict = {Predicate:[rdflib subject, rdflib object]}
-                    sd_rel = {}
-
-                    # map the RDF subject/object pair of rdf_rel to according SD objects
-                    for sd_pred, rdf_sub_obj in rdf_rel.items():
-                        # mapping of RDF subjects/objects to SD objects
-                        for mapping_key, mapping_value in self.rdf_wrapper.sd_rdf_dict.items():
-                            if rdf_sub_obj[0] == mapping_value:
-                                sd_sub = mapping_key
-                            if rdf_sub_obj[1] == mapping_value:
-                                sd_obj = mapping_key
-                        try:
-                            # if all SD_Objects were mapped from their RDF subject/object equivilants:
-                            # build an according RDF triplet from the SD relation
-                            sd_rel = {sd_pred: [sd_sub, sd_obj]}  # sd_rel: dict = {Predicate:[SD subject,SD object]}
-                            triplet = self.rdf_wrapper.triplet_from_relation(sd_rel)
-                            # generate new graph by removing all mapped triplets from current RDF Database
-                            _new_graph = self.rdf_wrapper.remove_triplets(_new_graph, [triplet])
-                            # if debug:
-                            #     print(f'delete sd relation: {rel}')
-                        except Exception as e:
-                            print(f'{e}: Error while removing d_list from current scene')
-            if debug:
-                print_graph = self.rdf_wrapper.gen_sd_scene_from_rdf_database(_new_graph)
-                print(f'print_graph: dlist after == alist before: \n {print_graph}')
-            # add new_graph to new_graph_list
-            new_graph_list.append(_new_graph)
-        return new_graph_list
-
-    def execute_alist(self, new_graph_list, debug=False):
-        '''
-        add the RDF triplet to the graph from a_list
-        1. map SELECT parameter to RDF subjects/objects-> result: rdf_rel={Predicate:[rdflib subject,rdflib object]}
-        2. map RDF subjects/objects to SD_Object instances-> result: sd_rel={Predicate:[SD subject,SD object]}
-        3. map SD relation to a RDF Tuple (RDF subject, RDF predicate, RDF object)
-        4. add the triplet to the graph
-        '''
-        sd_rel_action_effect = {}
-        sd_rel_action_effect_list = []
-        _new_graph_list = []
-
-        for select_dict, _new_graph in zip(self.select_dict_list, new_graph_list):
-            for a_dictonary in self.a_list:
-                for pred, select_parameters in a_dictonary.items():
-                    for item in select_parameters:
-                        if not isinstance(item, list):
-                            sub = select_dict[select_parameters[0]]
-                            obj = select_dict[select_parameters[1]]
-                            if debug:
-                                print(f"execute add: \n\tsubject: {sub}\n\t object: {obj}\n")
-                            break
-                        else:
-                            for nested_index in item:
-                                if not isinstance(nested_index, list):
-                                    sub = select_dict[item[0]]
-                                    obj = select_dict[item[1]]
-                                    if debug:
-                                        print(f"execute add: \n\tsubject: {sub}\n\t object: {obj}\n")
-                                    break
-                    sd_rel = {}
-                    rdf_rel = {pred: [sub, obj]}
-
-                    for sd_pred, rdf_sub_obj in rdf_rel.items():
-                        for mapping_key, mapping_value in self.rdf_wrapper.sd_rdf_dict.items():
-
-                            if rdf_sub_obj[0] == mapping_value:
-                                sd_sub = mapping_key
-                            if rdf_sub_obj[1] == mapping_value:
-                                sd_obj = mapping_key
-                        try:
-                            sd_rel = {sd_pred: [sd_sub, sd_obj]}
-                            triplet = self.rdf_wrapper.triplet_from_relation(sd_rel)
-                            sd_rel_action_effect.update(sd_rel)
-                            # print(f'sd_rel_action_effect : {sd_rel_action_effect}')
-                            # add all triplets from a_list to _new_graph
-                            _new_graph = self.rdf_wrapper.add_triplets(_new_graph, [triplet])
-                        except Exception as e:
-                            print(f'{e}:Error while adding a_list to new scene')
-            sd_rel_action_effect_list.append(sd_rel_action_effect)
-            sd_rel_action_effect = {}
-            # print(f'sd_rel_action_effect_list : {sd_rel_action_effect_list}')
-
-            if debug:
-                print_graph = self.rdf_wrapper.gen_sd_scene_from_rdf_database(_new_graph)
-                print(f'print_graph: alist after: \n {print_graph}')
-            _new_graph_list.append(_new_graph)
-        return [_new_graph_list, sd_rel_action_effect_list]
-
-    @time_tracker("effect_execute_processing_time")
+    @time_tracker('effect_execute_processing_time')
     def execute_select_dict_list(self, scene: Scene, debug=False):
-        '''executes the action in a given scene if possible.
+        """executes the action in a given scene if possible.
         This includes action precondition checks and generating the follow-up scenes.
         If the precondition check generate a list of possible actions, all follow-up scenes will be build.
 
@@ -495,14 +398,13 @@ class Action(Thing):
             A List includes new scene list created by executing actions
             and a list of Dicts of the effects by executing actions.
             If preconditions for action not fullfilled return Bool:False
-        '''
+        """
 
-        if debug:
-            print(f'scene database: {scene}')
-        if self.check_precondition(scene, debug=False):
-
+        if self.check_precondition(scene, debug=debug):
             new_graph_list = self.execute_dlist()
-            new_graph_list, sd_rel_action_effect_list = self.execute_alist(new_graph_list)
+            new_graph_list, sd_rel_action_effect_list = self.execute_alist(
+                new_graph_list
+            )
 
             # map RDF Database in SD scene
             new_scene_list = []
@@ -511,7 +413,9 @@ class Action(Thing):
                 new_scene = self.rdf_wrapper.gen_sd_scene_from_rdf_database(graph)
                 new_scene_list.append(new_scene)
             if len(new_scene_list) == len(sd_rel_action_effect_list):
-                new_scene_action_dict = dict(zip(new_scene_list, sd_rel_action_effect_list, strict=False))
+                new_scene_action_dict = dict(
+                    zip(new_scene_list, sd_rel_action_effect_list, strict=False)
+                )
                 # for scene, predcates in new_scene_action_dict.items():
                 #     print(f'predcates {predcates}')
                 #     print(f'scene {scene}')
@@ -521,20 +425,173 @@ class Action(Thing):
         else:
             return False
 
+    def execute_dlist(self, debug=False):
+        """
+        remove the RDF triplet from the graph from d_list
+        d_list: Dict {SD_Predicate: [select param 1 (type: string), select param 2 (type: string)]}
+        1. map SELECT parameter to RDF subjects/objects-> result: rdf_rel={Predicate:[rdflib subject,rdflib object]}
+        2. map RDF subjects/objects to SD_Object instances-> result: sd_rel={Predicate:[SD subject,SD object]}
+        3. map SD relation to a RDF Tuple (RDF subject, RDF predicate, RDF object)
+        4. remove triplet from graph
+        """
+        new_graph_list = []
+        for select_dict in self.select_dict_list:
+            _new_graph = self.rdf_wrapper.copy_rdf_graph()
+            if debug:
+                print(f'select_dict: {select_dict}')
+                print_graph = self.rdf_wrapper.gen_sd_scene_from_rdf_database(
+                    _new_graph
+                )
+                print(f'print_graph: dlist before: \n {print_graph}')
+            for d_dictonary in self.d_list:
+                # iterate over all elements in d_list (Dict -> key: predicate, value: list of 2 SELECT parameters)
+                # and get the RDF equivalents of their values
+                # self.select_dict_list: mapping of SELECT variables to corresponding RDF objects (from SPARQL query)
+                for pred, select_parameters in d_dictonary.items():
+                    for item in select_parameters:
+                        if not isinstance(item, list):
+                            sub = select_dict[select_parameters[0]]
+                            obj = select_dict[select_parameters[1]]
+                            if debug:
+                                print(
+                                    f'execute delete: \n\tsubject: {sub}\n\t object: {obj}\n'
+                                )
+                            break
+                        else:
+                            for nested_index in item:
+                                if not isinstance(nested_index, list):
+                                    sub = select_dict[item[0]]
+                                    obj = select_dict[item[1]]
+                                    if debug:
+                                        print(
+                                            f'execute delete: \n\tsubject: {sub}\n\t object: {obj}\n'
+                                        )
+                                    break
+                    rdf_rel = {
+                        pred: [sub, obj]
+                    }  # rdf_rel: dict = {Predicate:[rdflib subject, rdflib object]}
+                    sd_rel = {}
+
+                    # map the RDF subject/object pair of rdf_rel to according SD objects
+                    for sd_pred, rdf_sub_obj in rdf_rel.items():
+                        # mapping of RDF subjects/objects to SD objects
+                        for (
+                            mapping_key,
+                            mapping_value,
+                        ) in self.rdf_wrapper.sd_rdf_dict.items():
+                            if rdf_sub_obj[0] == mapping_value:
+                                sd_sub = mapping_key
+                            if rdf_sub_obj[1] == mapping_value:
+                                sd_obj = mapping_key
+                        try:
+                            # if all SD_Objects were mapped from their RDF subject/object equivilants:
+                            # build an according RDF triplet from the SD relation
+                            sd_rel = {
+                                sd_pred: [sd_sub, sd_obj]
+                            }  # sd_rel: dict = {Predicate:[SD subject,SD object]}
+                            triplet = self.rdf_wrapper.triplet_from_relation(sd_rel)
+                            # generate new graph by removing all mapped triplets from current RDF Database
+                            _new_graph = self.rdf_wrapper.remove_triplets(
+                                _new_graph, [triplet]
+                            )
+                            # if debug:
+                            #     print(f'delete sd relation: {rel}')
+                        except Exception as e:
+                            print(
+                                f'{e}: Error while removing d_list from current scene'
+                            )
+            if debug:
+                print_graph = self.rdf_wrapper.gen_sd_scene_from_rdf_database(
+                    _new_graph
+                )
+                print(f'print_graph: dlist after == alist before: \n {print_graph}')
+            # add new_graph to new_graph_list
+            new_graph_list.append(_new_graph)
+        return new_graph_list
+
+    def execute_alist(self, new_graph_list, debug=False):
+        """
+        add the RDF triplet to the graph from a_list
+        1. map SELECT parameter to RDF subjects/objects-> result: rdf_rel={Predicate:[rdflib subject,rdflib object]}
+        2. map RDF subjects/objects to SD_Object instances-> result: sd_rel={Predicate:[SD subject,SD object]}
+        3. map SD relation to a RDF Tuple (RDF subject, RDF predicate, RDF object)
+        4. add the triplet to the graph
+        """
+        sd_rel_action_effect = {}
+        sd_rel_action_effect_list = []
+        _new_graph_list = []
+
+        for select_dict, _new_graph in zip(self.select_dict_list, new_graph_list):
+            for a_dictonary in self.a_list:
+                for pred, select_parameters in a_dictonary.items():
+                    for item in select_parameters:
+                        if not isinstance(item, list):
+                            sub = select_dict[select_parameters[0]]
+                            obj = select_dict[select_parameters[1]]
+                            if debug:
+                                print(
+                                    f'execute add: \n\tsubject: {sub}\n\t object: {obj}\n'
+                                )
+                            break
+                        else:
+                            for nested_index in item:
+                                if not isinstance(nested_index, list):
+                                    sub = select_dict[item[0]]
+                                    obj = select_dict[item[1]]
+                                    if debug:
+                                        print(
+                                            f'execute add: \n\tsubject: {sub}\n\t object: {obj}\n'
+                                        )
+                                    break
+                    sd_rel = {}
+                    rdf_rel = {pred: [sub, obj]}
+
+                    for sd_pred, rdf_sub_obj in rdf_rel.items():
+                        for (
+                            mapping_key,
+                            mapping_value,
+                        ) in self.rdf_wrapper.sd_rdf_dict.items():
+                            if rdf_sub_obj[0] == mapping_value:
+                                sd_sub = mapping_key
+                            if rdf_sub_obj[1] == mapping_value:
+                                sd_obj = mapping_key
+                        try:
+                            sd_rel = {sd_pred: [sd_sub, sd_obj]}
+                            triplet = self.rdf_wrapper.triplet_from_relation(sd_rel)
+                            sd_rel_action_effect.update(sd_rel)
+                            # print(f'sd_rel_action_effect : {sd_rel_action_effect}')
+                            # add all triplets from a_list to _new_graph
+                            _new_graph = self.rdf_wrapper.add_triplets(
+                                _new_graph, [triplet]
+                            )
+                        except Exception as e:
+                            print(f'{e}:Error while adding a_list to new scene')
+            sd_rel_action_effect_list.append(sd_rel_action_effect)
+            sd_rel_action_effect = {}
+            # print(f'sd_rel_action_effect_list : {sd_rel_action_effect_list}')
+
+            if debug:
+                print_graph = self.rdf_wrapper.gen_sd_scene_from_rdf_database(
+                    _new_graph
+                )
+                print(f'print_graph: alist after: \n {print_graph}')
+            _new_graph_list.append(_new_graph)
+        return [_new_graph_list, sd_rel_action_effect_list]
+
     def graph_processing_time(self):
-        '''graph_processing_time time of rdf-graph generation
+        """graph_processing_time time of rdf-graph generation
         Returns (float): self.graph_processing_time
-        '''
+        """
         return self.graph_processing_time
 
     def query_processing_time(self):
-        '''processing time of query
+        """processing time of query
         Returns (float): self.query_processing_time
-        '''
+        """
         return self.query_processing_time
 
     def effect_execute_processing_time(self):
-        '''processing time effect execution
+        """processing time effect execution
         Returns (float): self.effect_execute_processing_time]
-        '''
+        """
         return self.effect_execute_processing_time

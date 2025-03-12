@@ -10,17 +10,19 @@ base_dir = os.path.join(parent_dir, '..')
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
 from core.sdf_core import Action
+from core.gen_data import DataGenerator
 from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple
 
 from core.sdf_solver import Solver
 from tests.env_sets.road_test_scenarios import *
+from tests.env_sets.gen_road_scenario import actions_light, scenario_5gen
 
 from tests.run_tests.test_base import TestBase
 
 def test_scenario20():
-    testbase = TestBase
+    testbase = TestBase()
 
-    loops = 1
+    loops = 10
     predicates = predicates_simple()
     actions = actions_simple(predicates)
 
@@ -35,7 +37,7 @@ def test_scenario20():
         testbase.test_solver(scene_tuple, solver, loops)
 
 def test_scenario30():
-    testbase = TestBase
+    testbase = TestBase()
 
     loops = 10
     predicates = predicates_simple()
@@ -43,12 +45,32 @@ def test_scenario30():
 
     scene_tuple = scenario_30(predicates, actions)
 
-    simple_bfs = Solver.simple_bfs
-    simple_dfs = Solver.simple_dfs
     bfs_list = Solver.bfs_list
     dfs_list = Solver.dfs_list
 
-    solver_list = [simple_bfs,simple_dfs,bfs_list, dfs_list]
+    solver_list = [bfs_list, dfs_list]
+
+    for solver in solver_list:
+        testbase.test_solver(scene_tuple, solver, loops)
+
+def test_scenario5gen():
+    testbase = TestBase()
+    generator = DataGenerator('test_scene.ttl')
+    predicate_dict = generator.gen_predicates()
+    generator.rdf_wrapper.get_base_uri(generator._graph_datagen)
+    base_uri = generator.rdf_wrapper.base_uri
+
+    
+    loops = 10
+
+    actions = actions_light(predicate_dict, base_uri)
+
+    scene_tuple = scenario_5gen(predicate_dict, actions)
+
+    bfs_list = Solver.bfs_list
+    dfs_list = Solver.dfs_list
+
+    solver_list = [dfs_list, bfs_list]
 
     for solver in solver_list:
         testbase.test_solver(scene_tuple, solver, loops)
@@ -56,5 +78,6 @@ def test_scenario30():
 
 if __name__ == "__main__":
 
-    test_scenario20()
-    # test_scenario30()
+    #test_scenario20()
+    #test_scenario30()
+    test_scenario5gen()
