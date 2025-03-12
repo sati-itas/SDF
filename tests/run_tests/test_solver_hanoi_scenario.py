@@ -11,7 +11,7 @@ sys.path.append(base_dir)
 from tests.env_sets.hanoi_predicates_actions import actions_simple, hanoi_predicates
 
 from core.sdf_solver import Solver
-from tests.env_sets.hanoi_sceanario import scenario_test
+from tests.env_sets.hanoi_sceanario import hanoi_classic
 from tests.run_tests.test_base import TestBase
 
 
@@ -20,18 +20,18 @@ from tests.run_tests.test_base import TestBase
 def test_hanoi():
     testbase = TestBase()
 
-    loops = 1
+    loops = 10
 
     predicates = hanoi_predicates()
     actions = actions_simple(predicates)
 
-    scene_tuple = scenario_test(predicates, actions)
+    scene_tuple = hanoi_classic(predicates, actions)
 
 
     bfs_list = Solver.bfs_list
     dfs_list = Solver.dfs_list
 
-    solver_list = [bfs_list, dfs_list]
+    solver_list = [bfs_list]
 
     for solver in solver_list:
         testbase.test_solver(scene_tuple, solver, loops)

@@ -23,40 +23,30 @@ def actions_simple(predicate_dict):
 
     # SPARQL Query according: https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QueryForms
     # prepared for rdflib in python: https://rdflib.readthedocs.io/en/stable/intro_to_sparql.html
-    move_precondition0 = """
-                PREFIX pre: <http://example.org/predicate/>
-                PREFIX attr: <NONE:>
-                SELECT ?disc ?from ?to
-                WHERE {
-                        ?to pre:smaller ?disc .
-                        ?disc pre:is_on ?from .
-                        ?disc pre:clear attr:o_clear .
-                        ?to pre:clear attr:o_clear .
-                }
-            """
+
     move_precondition1 = """
-                PREFIX pre: <http://example.org/predicate/>
+                PREFIX pre: <http://example.org/predicate#>
                 SELECT ?disc ?from ?to ?clear
                 WHERE {
-                        ?to pre:smaller ?disc .
+                        ?disk pre:smaller ?to .
                         ?disc pre:is_on ?from .
                         ?disc pre:clear ?clear .
                         ?to pre:clear ?clear .
                 }
             """
 
-    move0 = Action(
-        'move',
-        move_precondition0,
-        [{is_on: ["disc", "to"]}, {clear: ["from", "o_clear"]}],
-        [{is_on: ["disc", "from"]}, {clear: ["to", "o_clear"]}],
-        ["disc", "from", "to"],
-    )
-
     move1 = Action(
         'move',
         move_precondition1,
         [{is_on: ["disc", "to"]}, {clear: ["from", "clear"]}],
+        [{is_on: ["disc", "from"]}, {clear: ["to", "clear"]}],
+        ["disc", "from", "to", "clear"],
+    )
+
+    move2 = Action(
+        'move',
+        move_precondition1,
+        [{is_on: ["to", "disc"]}, {clear: ["disc", "clear"]}],
         [{is_on: ["disc", "from"]}, {clear: ["to", "clear"]}],
         ["disc", "from", "to", "clear"],
     )

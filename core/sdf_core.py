@@ -349,6 +349,7 @@ class Action(Thing):
         else:
             if debug:
                 print(f'{self.name}.check_precondition(): precondition not satisfied')
+                print(f'scene database: {scene!r}')
             return False
 
     @time_tracker("effect_execute_processing_time")

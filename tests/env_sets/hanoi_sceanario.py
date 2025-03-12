@@ -11,7 +11,22 @@ from core.sdf_core import SDObject, Scene
 from data.otype import OType 
 
 
-def scenario_test(predicates, actions):
+
+def hanoi_classic(predicates, actions):
+    """
+        Peg 1        Peg 2        Peg 3
+        --------------------------------
+        |            |            |   
+        |            |            |   
+        |            |            |   
+       ===           |            |   
+      ======         |            |  
+     ========        |            |   
+        --------------------------------
+        D3 (small)   Empty       Empty
+        D2 (med)   
+        D1 (large)
+    """
 
     # instantiate sdf objects
     disc1 = SDObject("disc1", OType.DISK)
@@ -25,33 +40,30 @@ def scenario_test(predicates, actions):
 
     object_list = [disc1, disc2, disc3, peg1, peg2, peg3, o_clear, o_not_clear]
 
-    predicate_list = list(predicates.values())
-
-    (smaller, is_on, clear) = predicate_list
 
     # generate init-scene
     rel_smaller = {
-        smaller: [
+        predicates['smaller']: [
             [disc2, disc1],
             [disc3, disc1],
             [disc3, disc2],
-            [peg1, disc1],
-            [peg2, disc1],
-            [peg3, disc1],
-            [peg1, disc2],
-            [peg2, disc2],
-            [peg3, disc2],
-            [peg1, disc3],
-            [peg2, disc3],
-            [peg3, disc3],
+            [disc1, peg1],
+            [disc1, peg2],
+            [disc1, peg3],
+            [disc2, peg1],
+            [disc2, peg2],
+            [disc2, peg3],
+            [disc3, peg1],
+            [disc3, peg2],
+            [disc3, peg3],
         ]
     }
-    rel_is_on = {is_on: [[disc3, peg1], [disc2, disc3], [disc1, disc2]]}
+    rel_is_on = {predicates['is_on']: [[disc1, peg1], [disc2, disc1], [disc3, disc2]]}
     # rel_clear = {clear: [[peg2, True], [peg1, True], [disc1, True]]}
-    rel_clear = {clear: [[peg2, o_clear], [peg3, o_clear], [disc1, o_clear]]}
+    rel_clear = {predicates['clear']: [[peg2, o_clear], [peg3, o_clear], [disc3, o_clear]]}
 
     # goal_rel_is_on = {is_on: [[disc3, peg1], [disc2, disc3], [disc1, disc2]]}
-    goal_rel_is_on = {is_on: [[disc3, peg3], [disc2, disc3], [disc1, disc2]]}
+    goal_rel_is_on = {predicates['is_on']: [[disc1, peg3], [disc2, disc1], [disc3, disc2]]}
     goal_scene = {**goal_rel_is_on}
 
     init_scene = {**rel_smaller, **rel_is_on, **rel_clear}
