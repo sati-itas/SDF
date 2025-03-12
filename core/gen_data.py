@@ -69,8 +69,7 @@ class DataGenerator:
 
     @staticmethod
     def gen_enumfile_from_subcls(gen_path, py_filename, subclasses, type_str):
-        """generates pythonfile with enum class from given graph subclasses
-        """
+        """generates pythonfile with enum class from given graph subclasses"""
         if '.' in py_filename:
             if py_filename.split('.')[-1] == 'py':
                 pass

@@ -38,11 +38,14 @@ class Solver:
         while queue:
             parent_node = queue.pop()  # stack: last-in, first-out
             for action in action_list:
-
-                new_scene_action_dict = action.execute_select_dict_list(parent_node.state, debug=False)
+                new_scene_action_dict = action.execute_select_dict_list(
+                    parent_node.state, debug=False
+                )
                 if new_scene_action_dict:
                     for next_scene, action_eff in new_scene_action_dict.items():
-                        new_node = SearchNode([action, action_eff], next_scene, parent_node)
+                        new_node = SearchNode(
+                            [action, action_eff], next_scene, parent_node
+                        )
                         # new_node = SearchNode(action, next_scene, parent_node)
 
                         if check_subset_pair(goal_scene, next_scene):
@@ -95,13 +98,14 @@ class Solver:
 
             for action in action_list:
                 new_scene_action_dict = action.execute_select_dict_list(
-                    parent_node.state,
-                    debug=False
+                    parent_node.state, debug=False
                 )  # pruning Scenes: which action is executable in Scene, if executable generate Scene
 
                 if new_scene_action_dict:
                     for next_scene, action_eff in new_scene_action_dict.items():
-                        new_node = SearchNode([action, action_eff], next_scene, parent_node)
+                        new_node = SearchNode(
+                            [action, action_eff], next_scene, parent_node
+                        )
                         for scene in visited:
                             if check_identical_scenes(next_scene, scene):
                                 visited_check = True
@@ -110,9 +114,7 @@ class Solver:
                             solution = True
                             plan = new_node.act_sequence()
                             return (plan, solution)
-                        elif (
-                            visited_check
-                        ):  # pruning rule: do not consider any path that visits a state that you have already visited via some other path.
+                        elif visited_check:  # pruning rule: do not consider any path that visits a state that you have already visited via some other path.
                             visited_check = False
                             pass
                         else:
@@ -146,7 +148,9 @@ class SearchNode:
     def in_path(self, state):
         """checks if next state is equal to parent state.
         for pruning reason: do not consider any path that visits the same state twice."""
-        if self.state.scene_relations.items() == state.scene_relations.items():  # check_identical_scenes
+        if (
+            self.state.scene_relations.items() == state.scene_relations.items()
+        ):  # check_identical_scenes
             return True
         elif self.parent is None:
             return False

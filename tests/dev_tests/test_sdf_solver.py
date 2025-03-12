@@ -25,7 +25,7 @@ from data._gen.domain_self import SelfRepresentation
 
 from tests.env_sets.hanoi_predicates_actions import hanoi_predicates
 from tests.env_sets.hanoi_predicates_actions import actions_simple as hanoi_move
-from tests.env_sets.hanoi_sceanario import scenario_test
+from tests.env_sets.hanoi_sceanario import hanoi_classic
 
 
 def test_goal_checker_road():
@@ -77,8 +77,8 @@ def test_goal_checker_hanoi():
     predicates = hanoi_predicates()
     actions = hanoi_move(predicates)
 
-    CurrentScene, Goal_scene, action_list = scenario_test(predicates, actions)
-    CurrentScene1, GoalScene1, action_list1 = scenario_test(predicates, actions)
+    CurrentScene, Goal_scene, action_list = hanoi_classic(predicates, actions)
+    CurrentScene1, GoalScene1, action_list1 = hanoi_classic(predicates, actions)
 
     goal_checker(CurrentScene, GoalScene1)
 
