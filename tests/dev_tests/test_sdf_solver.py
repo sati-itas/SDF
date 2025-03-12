@@ -83,7 +83,7 @@ def test_goal_checker_hanoi():
     goal_checker(CurrentScene, GoalScene1)
 
 def test_goal_gen_road():
-    generator = DataGenerator('scene_otypes.ttl')
+    generator = DataGenerator('test_scene.ttl')
     predicate_dict = generator.gen_predicates()
     generator.rdf_wrapper.get_base_uri(generator._graph_datagen)
     base_uri = generator.rdf_wrapper.base_uri

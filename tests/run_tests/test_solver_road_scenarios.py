@@ -55,7 +55,7 @@ def test_scenario30():
 
 def test_scenario5gen():
     testbase = TestBase()
-    generator = DataGenerator('scene_otypes.ttl')
+    generator = DataGenerator('test_scene.ttl')
     predicate_dict = generator.gen_predicates()
     generator.rdf_wrapper.get_base_uri(generator._graph_datagen)
     base_uri = generator.rdf_wrapper.base_uri
@@ -78,6 +78,6 @@ def test_scenario5gen():
 
 if __name__ == "__main__":
 
-    test_scenario20()
+    #test_scenario20()
     #test_scenario30()
-    #test_scenario5gen()
+    test_scenario5gen()

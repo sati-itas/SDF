@@ -18,7 +18,7 @@ from core.gen_data import DataGenerator
 
 def test_sdf_actions():
 
-    generator = DataGenerator('scene_otypes.ttl')
+    generator = DataGenerator('test_scene.ttl')
     predicate_dict = generator.gen_predicates('gen_pred_list2.txt')
 
     generator.rdf_wrapper.get_base_uri(generator._graph_datagen)

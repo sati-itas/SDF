@@ -36,7 +36,7 @@ def test_gen_rdf_graph():
 
 def test_gen_rdf_graph_from_gen_data():
 
-    generator = DataGenerator('scene_otypes.ttl')
+    generator = DataGenerator('test_scene.ttl')
     predicate_dict = generator.gen_predicates('gen_pred_list2.txt')
     for key,value in predicate_dict.items():
         print(f'{key}: {value}')
@@ -72,7 +72,7 @@ def test_gen_from_data_graph():
     print(rdf_wrapper.base_uri)
 
     # parse graph with rdflib
-    graph = rdf_wrapper.load_rdf_graph('scene_otypes.ttl', 'ttl')
+    graph = rdf_wrapper.load_rdf_graph('test_scene.ttl', 'ttl')
     rdf_wrapper.get_base_uri(graph)
     print(rdf_wrapper.base_uri)
 

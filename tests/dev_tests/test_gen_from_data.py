@@ -12,7 +12,7 @@ from core.gen_data import DataGenerator
 
 
 def test_gen():
-    generator = DataGenerator('scene_otypes.ttl')
+    generator = DataGenerator('test_scene.ttl')
 
     ##########
     py_file_otypes = 'domain_otypes'
@@ -67,7 +67,7 @@ def test_gen():
     print(predicate_dict)
 
 def enum_gen():
-    generator = DataGenerator('scene_otypes.ttl')
+    generator = DataGenerator('test_scene.ttl')
 
     ##########
     py_file_otypes = 'domain_otypes'
