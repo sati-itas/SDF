@@ -54,3 +54,17 @@ max-args = 5
 max-branches = 12
 max-locals = 15
 max-statements = 50
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sdf"
+version = "0.1"
+dependencies = [
+    'rdflib', 'numpy', 'pyyaml', 'matplotlib'
+]
+
+[tool.setuptools.packages.find]
+include = ["sdf", "sdf.*"]
