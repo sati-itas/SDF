@@ -3,7 +3,7 @@ from typing import List
 from typing import Tuple
 from typing import Union
 
-from core.utility.timing_utils import time_tracker
+from .utility.timing_utils import time_tracker
 
 
 class Thing:
