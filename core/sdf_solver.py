@@ -2,8 +2,8 @@ from typing import Any
 from typing import List
 from typing import Tuple
 
-from core.sdf_core import Action
-from core.sdf_core import Scene
+from sdf.core.sdf_core import Action
+from sdf.core.sdf_core import Scene
 
 
 class Solver:

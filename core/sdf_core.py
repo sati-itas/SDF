@@ -344,7 +344,7 @@ class Action(Thing):
         self.select_dict_list = []
 
         # generate rdf data and rdf graph based on scene
-        from core.rdf_wrapper import RDFWrapper
+        from sdf.core.rdf_wrapper import RDFWrapper
 
         self.rdf_wrapper = RDFWrapper(scene=scene)
         rdf_graph = self.rdf_wrapper.gen_rdf_graph()
@@ -399,7 +399,7 @@ class Action(Thing):
             and a list of Dicts of the effects by executing actions.
             If preconditions for action not fullfilled return Bool:False
         """
-
+        # print(f'check precondition of action: {self.name}')
         if self.check_precondition(scene, debug=debug):
             new_graph_list = self.execute_dlist()
             new_graph_list, sd_rel_action_effect_list = self.execute_alist(

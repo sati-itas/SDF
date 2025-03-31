@@ -11,12 +11,12 @@ from rdflib import Graph
 from rdflib import Namespace
 from rdflib import URIRef
 
-from core.utility.dict_helper import merge_dicts
-from core.utility.timing_utils import time_tracker
+from sdf.core.utility.dict_helper import merge_dicts
+from sdf.core.utility.timing_utils import time_tracker
 
 
 if TYPE_CHECKING:
-    from core.sdf_core import Scene
+    from sdf.core.sdf_core import Scene
 
 
 class RDFWrapper:
@@ -471,7 +471,7 @@ class RDFWrapper:
             except Exception as e:
                 print(f'{e}:Error while creating new SD scene relations')
 
-        from core.sdf_core import Scene
+        from sdf.core.sdf_core import Scene
 
         new_scene = Scene(
             object_list=self.scene.object_list, scene_relations=new_sd_relations
