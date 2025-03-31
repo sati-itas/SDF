@@ -10,7 +10,7 @@ sys.path.append(base_dir)
 
 from tests.env_sets.hanoi_predicates_actions import actions_simple, hanoi_predicates
 
-from core.sdf_solver import Solver
+from sdf.core.sdf_solver import Solver
 from tests.env_sets.hanoi_sceanario import hanoi_classic
 from tests.run_tests.test_base import TestBase
 

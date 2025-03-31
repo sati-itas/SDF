@@ -9,11 +9,11 @@ base_dir = os.path.join(parent_dir, '..')
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
 
-from core.rdf_wrapper import RDFWrapper
-from data.otype import OType 
+from sdf.core.rdf_wrapper import RDFWrapper
+from sdf.data.otype import OType 
 
 from tests.env_sets.gen_road_scenario import actions_light, scenario_5gen
-from core.gen_data import DataGenerator
+from sdf.core.gen_data import DataGenerator
 
 
 def test_sdf_actions():

@@ -9,11 +9,11 @@ base_dir = os.path.join(parent_dir, '..')
 # append parent and base direction
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
-from core.sdf_core import Action
-from core.gen_data import DataGenerator
+from sdf.core.sdf_core import Action
+from sdf.core.gen_data import DataGenerator
 from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple
 
-from core.sdf_solver import Solver
+from sdf.core.sdf_solver import Solver
 from tests.env_sets.road_test_scenarios import *
 from tests.env_sets.gen_road_scenario import actions_light, scenario_5gen
 
@@ -78,6 +78,6 @@ def test_scenario5gen():
 
 if __name__ == "__main__":
 
-    #test_scenario20()
+    test_scenario20()
     #test_scenario30()
     test_scenario5gen()

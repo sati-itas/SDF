@@ -7,4 +7,7 @@ numpy
 pyyaml
 
 matplotlib
+
+-e .
+
 -r requirements-dev.txt
