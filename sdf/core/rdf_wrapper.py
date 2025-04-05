@@ -54,6 +54,20 @@ class RDFWrapper:
     def set_base_uri(self, uri: str):
         self.base_uri = uri
         return self.base_uri
+    
+    def to_uri(self, value: str) -> URIRef:
+        """
+        Converts a string to an URIRef.
+
+        Args:
+            value (str): The string to be converted.
+
+        Returns:
+            URIRef: The converted URIRef object.
+        """
+        if not value.startswith("http://") and not value.startswith("https://"):
+            raise ValueError(f"Invalid URI: {value}. Must start with 'http://' or 'https://'.")
+        return URIRef(value)
 
     def load_rdf_graph(self, data_graph: str, format_: str):
         # https://rdflib.readthedocs.io/en/stable/plugin_parsers.html

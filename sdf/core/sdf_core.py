@@ -349,7 +349,8 @@ class Action(Thing):
         self.rdf_wrapper = RDFWrapper(scene=scene)
         rdf_graph = self.rdf_wrapper.gen_rdf_graph()
         self.graph_processing_time = self.rdf_wrapper.gen_rdf_graph_processing_time
-
+        
+        #self.rdf_wrapper.serialize_rdf_graph(rdf_graph)
         # carry out SPARQL Query
         result = self.rdf_wrapper.query_rdf_graph(rdf_graph, self.precondition)
         self.query_processing_time = self.rdf_wrapper.query_rdf_graph_processing_time
@@ -372,10 +373,10 @@ class Action(Thing):
                     )
                 self.select_dict_list.append(self.select_dict)
             if debug:
+                print(f'{self.name}.check_precondition(): scene database: {scene!r}')
                 print(
                     f'{self.name}.check_precondition(): self.select_dict_list={self.select_dict_list}\n'
                 )
-                print(f'scene database: {scene!r}')
             return True
         else:
             if debug:
@@ -448,25 +449,36 @@ class Action(Thing):
                 # and get the RDF equivalents of their values
                 # self.select_dict_list: mapping of SELECT variables to corresponding RDF objects (from SPARQL query)
                 for pred, select_parameters in d_dictonary.items():
+                    sub, obj = None, None  # Initialize variables
+                    # TODO: should be REFACTORED
                     for item in select_parameters:
-                        if not isinstance(item, list):
-                            sub = select_dict[select_parameters[0]]
-                            obj = select_dict[select_parameters[1]]
-                            if debug:
-                                print(
-                                    f'execute delete: \n\tsubject: {sub}\n\t object: {obj}\n'
-                                )
-                            break
-                        else:
-                            for nested_index in item:
-                                if not isinstance(nested_index, list):
-                                    sub = select_dict[item[0]]
-                                    obj = select_dict[item[1]]
+                        if isinstance(item, list):
+                            for nested_item in item:
+                                if isinstance(nested_item, str):
+                                    sub = select_dict.get(nested_item)
+                                    obj = select_dict.get(item[1]) if len(item) > 1 else None
                                     if debug:
                                         print(
-                                            f'execute delete: \n\tsubject: {sub}\n\t object: {obj}\n'
+                                            f'execute delete: \n\tsubject: {sub}\n\tobject: {obj}\n'
                                         )
                                     break
+                        elif isinstance(item, str):
+                            if len(item) == 2:
+                                sub = select_dict.get(select_parameters[0])
+                                obj = select_dict.get(select_parameters[1])
+                            # FIX: handle complete URIs in SPARQL
+                            elif len(item) > 2:
+                                sub = self.rdf_wrapper.to_uri(item)
+                                obj = select_dict.get(select_parameters[1])
+                            if debug:
+                                print(
+                                    f'execute delete: \n\tsubject: {sub}\n\tobject: {obj}\n'
+                                )
+                            break
+
+                    if sub is None or obj is None:
+                        raise ValueError(f"Invalid select_parameters: {select_parameters}")
+
                     rdf_rel = {
                         pred: [sub, obj]
                     }  # rdf_rel: dict = {Predicate:[rdflib subject, rdflib object]}
@@ -524,25 +536,35 @@ class Action(Thing):
         for select_dict, _new_graph in zip(self.select_dict_list, new_graph_list):
             for a_dictonary in self.a_list:
                 for pred, select_parameters in a_dictonary.items():
+                    sub, obj = None, None  # Initialize variables
+
                     for item in select_parameters:
-                        if not isinstance(item, list):
-                            sub = select_dict[select_parameters[0]]
-                            obj = select_dict[select_parameters[1]]
-                            if debug:
-                                print(
-                                    f'execute add: \n\tsubject: {sub}\n\t object: {obj}\n'
-                                )
-                            break
-                        else:
-                            for nested_index in item:
-                                if not isinstance(nested_index, list):
-                                    sub = select_dict[item[0]]
-                                    obj = select_dict[item[1]]
+                        if isinstance(item, list):
+                            for nested_item in item:
+                                if isinstance(nested_item, str):
+                                    sub = select_dict.get(nested_item)
+                                    obj = select_dict.get(item[1]) if len(item) > 1 else None
                                     if debug:
                                         print(
-                                            f'execute add: \n\tsubject: {sub}\n\t object: {obj}\n'
+                                            f'execute add: \n\tsubject: {sub}\n\tobject: {obj}\n'
                                         )
                                     break
+                        elif isinstance(item, str):
+                            if len(item) == 2:
+                                sub = select_dict.get(select_parameters[0])
+                                obj = select_dict.get(select_parameters[1])
+                            # FIX: handle complete URIs in SPARQL
+                            elif len(item) > 2:
+                                sub = self.rdf_wrapper.to_uri(item)
+                                obj = select_dict.get(select_parameters[1])
+                            if debug:
+                                print(
+                                    f'execute add: \n\tsubject: {sub}\n\tobject: {obj}\n'
+                                )
+                            break
+                    if sub is None or obj is None:
+                        raise ValueError(f"Invalid select_parameters: {select_parameters}")
+
                     sd_rel = {}
                     rdf_rel = {pred: [sub, obj]}
 
