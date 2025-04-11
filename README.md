@@ -21,9 +21,9 @@ pip install -r requirements.txt
 ```
 
 #### start a test run
-To start a simple test of a simple street scenario:
+To start a simple test to solve the hanoi tower:
 ```
-python tests/run_tests/test_solver_road_scenarios.py
+python tests/run_tests/test_solver_hanoi_scenario.py
 ```
 ### In the development phase
 This repository is under development and no documentation currently exists. For any questions, remarks or issues feel free to create an [issue](https://github.com/sati-itas/SDF/issues) or open a [discussion](https://github.com/sati-itas/SDF/discussions).
