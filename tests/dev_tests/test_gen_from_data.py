@@ -8,7 +8,7 @@ base_dir = os.path.join(parent_dir, '..')
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
 
-from core.gen_data import DataGenerator
+from sdf.core.gen_data import DataGenerator
 
 
 def test_gen():

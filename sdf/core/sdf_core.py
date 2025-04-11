@@ -3,7 +3,7 @@ from typing import List
 from typing import Tuple
 from typing import Union
 
-from core.utility.timing_utils import time_tracker
+from .utility.timing_utils import time_tracker
 
 
 class Thing:
@@ -344,12 +344,13 @@ class Action(Thing):
         self.select_dict_list = []
 
         # generate rdf data and rdf graph based on scene
-        from core.rdf_wrapper import RDFWrapper
+        from sdf.core.rdf_wrapper import RDFWrapper
 
         self.rdf_wrapper = RDFWrapper(scene=scene)
         rdf_graph = self.rdf_wrapper.gen_rdf_graph()
         self.graph_processing_time = self.rdf_wrapper.gen_rdf_graph_processing_time
 
+        # self.rdf_wrapper.serialize_rdf_graph(rdf_graph)
         # carry out SPARQL Query
         result = self.rdf_wrapper.query_rdf_graph(rdf_graph, self.precondition)
         self.query_processing_time = self.rdf_wrapper.query_rdf_graph_processing_time
@@ -372,10 +373,10 @@ class Action(Thing):
                     )
                 self.select_dict_list.append(self.select_dict)
             if debug:
+                print(f'{self.name}.check_precondition(): scene database: {scene!r}')
                 print(
                     f'{self.name}.check_precondition(): self.select_dict_list={self.select_dict_list}\n'
                 )
-                print(f'scene database: {scene!r}')
             return True
         else:
             if debug:
@@ -399,7 +400,7 @@ class Action(Thing):
             and a list of Dicts of the effects by executing actions.
             If preconditions for action not fullfilled return Bool:False
         """
-
+        # print(f'check precondition of action: {self.name}')
         if self.check_precondition(scene, debug=debug):
             new_graph_list = self.execute_dlist()
             new_graph_list, sd_rel_action_effect_list = self.execute_alist(
@@ -424,6 +425,39 @@ class Action(Thing):
             return new_scene_action_dict
         else:
             return False
+        
+    def process_select_parameters(self, select_parameters, select_dict, debug=False):
+        """
+        Recursively process select_parameters to extract subject (sub) and object (obj).
+
+        Args:
+            select_parameters (list): The list of parameters to process.
+            select_dict (dict): The dictionary containing mappings for SELECT variables.
+            debug (bool): Whether to print debug information.
+
+        Returns:
+            Tuple: A tuple (sub, obj) representing the processed subject and object.
+        """
+        sub, obj = None, None
+
+        for item in select_parameters:
+            if isinstance(item, list):
+                # Recursively process nested lists
+                sub, obj = self.process_select_parameters(item, select_dict, debug)
+                if sub is not None and obj is not None:
+                    break  # Stop processing if valid sub and obj are found
+            elif isinstance(item, str):
+                if item.startswith("http://") or item.startswith("https://"):
+                    sub = self.rdf_wrapper.to_uri(item)
+                    obj = select_dict.get(select_parameters[1])
+                elif len(select_parameters) >= 1:
+                    sub = select_dict.get(select_parameters[0])
+                    obj = select_dict.get(select_parameters[1])
+                if debug:
+                    print(f"Processed item: {item}, sub: {sub}, obj: {obj}")
+                break
+
+        return sub, obj
 
     def execute_dlist(self, debug=False):
         """
@@ -444,32 +478,10 @@ class Action(Thing):
                 )
                 print(f'print_graph: dlist before: \n {print_graph}')
             for d_dictonary in self.d_list:
-                # iterate over all elements in d_list (Dict -> key: predicate, value: list of 2 SELECT parameters)
-                # and get the RDF equivalents of their values
-                # self.select_dict_list: mapping of SELECT variables to corresponding RDF objects (from SPARQL query)
                 for pred, select_parameters in d_dictonary.items():
-                    for item in select_parameters:
-                        if not isinstance(item, list):
-                            sub = select_dict[select_parameters[0]]
-                            obj = select_dict[select_parameters[1]]
-                            if debug:
-                                print(
-                                    f'execute delete: \n\tsubject: {sub}\n\t object: {obj}\n'
-                                )
-                            break
-                        else:
-                            for nested_index in item:
-                                if not isinstance(nested_index, list):
-                                    sub = select_dict[item[0]]
-                                    obj = select_dict[item[1]]
-                                    if debug:
-                                        print(
-                                            f'execute delete: \n\tsubject: {sub}\n\t object: {obj}\n'
-                                        )
-                                    break
-                    rdf_rel = {
-                        pred: [sub, obj]
-                    }  # rdf_rel: dict = {Predicate:[rdflib subject, rdflib object]}
+                    # Process the select parameters to extract the subject (sub) and object (obj)
+                    sub, obj = self.process_select_parameters(select_parameters, select_dict, debug=debug)
+                    rdf_rel = {pred: [sub, obj]}
                     sd_rel = {}
 
                     # map the RDF subject/object pair of rdf_rel to according SD objects
@@ -524,25 +536,8 @@ class Action(Thing):
         for select_dict, _new_graph in zip(self.select_dict_list, new_graph_list):
             for a_dictonary in self.a_list:
                 for pred, select_parameters in a_dictonary.items():
-                    for item in select_parameters:
-                        if not isinstance(item, list):
-                            sub = select_dict[select_parameters[0]]
-                            obj = select_dict[select_parameters[1]]
-                            if debug:
-                                print(
-                                    f'execute add: \n\tsubject: {sub}\n\t object: {obj}\n'
-                                )
-                            break
-                        else:
-                            for nested_index in item:
-                                if not isinstance(nested_index, list):
-                                    sub = select_dict[item[0]]
-                                    obj = select_dict[item[1]]
-                                    if debug:
-                                        print(
-                                            f'execute add: \n\tsubject: {sub}\n\t object: {obj}\n'
-                                        )
-                                    break
+                    # Process the select parameters to extract the subject (sub) and object (obj)
+                    sub, obj = self.process_select_parameters(select_parameters, select_dict, debug=debug)
                     sd_rel = {}
                     rdf_rel = {pred: [sub, obj]}
 

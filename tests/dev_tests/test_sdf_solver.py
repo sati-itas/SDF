@@ -7,21 +7,21 @@ base_dir = os.path.join(parent_dir, '..')
 # append parent and base direction
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
-from core.gen_data import DataGenerator
-from core.sdf_core import SDObject, Scene
-from data.otype import OType
+from sdf.core.gen_data import DataGenerator
+from sdf.core.sdf_core import SDObject, Scene
+from sdf.data.otype import OType
 
-from core.sdf_solver import check_subset_scenes, check_identical_scenes, check_common_keys, check_subset_pair
+from sdf.core.sdf_solver import check_subset_scenes, check_identical_scenes, check_common_keys, check_subset_pair
 
 from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple
 from tests.env_sets.road_test_scenarios import scenario_10
 
 from tests.env_sets.gen_road_scenario import actions_light, scenario_5gen
-from data._gen.domain_otypes import DomainTypes
-from data._gen.domain_scenery import Scenery
-from data._gen.domain_dyn_object import DynamicObject
-from data._gen.domain_location import Location
-from data._gen.domain_self import SelfRepresentation
+from sdf.data._gen.domain_otypes import DomainTypes
+from sdf.data._gen.domain_scenery import Scenery
+from sdf.data._gen.domain_dyn_object import DynamicObject
+from sdf.data._gen.domain_location import Location
+from sdf.data._gen.domain_self import SelfRepresentation
 
 from tests.env_sets.hanoi_predicates_actions import hanoi_predicates
 from tests.env_sets.hanoi_predicates_actions import actions_simple as hanoi_move

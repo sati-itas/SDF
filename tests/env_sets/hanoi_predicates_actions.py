@@ -1,8 +1,8 @@
 from typing import Dict
 
-from core.sdf_core import Action
-from core.sdf_core import Predicate
-from data.otype import OType
+from sdf.core.sdf_core import Action
+from sdf.core.sdf_core import Predicate
+from sdf.data.otype import OType
 
 
 def hanoi_predicates() -> Dict[str, Predicate]:

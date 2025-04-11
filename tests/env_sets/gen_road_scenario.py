@@ -8,13 +8,13 @@ base_dir = os.path.join(parent_dir, '..')
 # append parent and base direction
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
-from core.sdf_core import SDObject, Scene, Action
+from sdf.core.sdf_core import SDObject, Scene, Action
 
-from data._gen.domain_otypes import DomainTypes
-from data._gen.domain_scenery import Scenery
-from data._gen.domain_dyn_object import DynamicObject
-from data._gen.domain_location import Location
-from data._gen.domain_self import SelfRepresentation
+from sdf.data._gen.domain_otypes import DomainTypes
+from sdf.data._gen.domain_scenery import Scenery
+from sdf.data._gen.domain_dyn_object import DynamicObject
+from sdf.data._gen.domain_location import Location
+from sdf.data._gen.domain_self import SelfRepresentation
 
 
 def actions_light(predicate_dict, base):

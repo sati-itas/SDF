@@ -11,12 +11,12 @@ from rdflib import Graph
 from rdflib import Namespace
 from rdflib import URIRef
 
-from core.utility.dict_helper import merge_dicts
-from core.utility.timing_utils import time_tracker
+from sdf.core.utility.dict_helper import merge_dicts
+from sdf.core.utility.timing_utils import time_tracker
 
 
 if TYPE_CHECKING:
-    from core.sdf_core import Scene
+    from sdf.core.sdf_core import Scene
 
 
 class RDFWrapper:
@@ -54,11 +54,25 @@ class RDFWrapper:
     def set_base_uri(self, uri: str):
         self.base_uri = uri
         return self.base_uri
+    
+    def to_uri(self, value: str) -> URIRef:
+        """
+        Converts a string to an URIRef.
+
+        Args:
+            value (str): The string to be converted.
+
+        Returns:
+            URIRef: The converted URIRef object.
+        """
+        if not value.startswith("http://") and not value.startswith("https://"):
+            raise ValueError(f"Invalid URI: {value}. Must start with 'http://' or 'https://'.")
+        return URIRef(value)
 
     def load_rdf_graph(self, data_graph: str, format_: str):
         # https://rdflib.readthedocs.io/en/stable/plugin_parsers.html
         # https://rdflib.readthedocs.io/en/stable/apidocs/rdflib.html#rdflib.graph.Graph.parse
-        loaded_graph = self.graph.parse(f'data/{data_graph}', format=format_)
+        loaded_graph = self.graph.parse(f'sdf/data/{data_graph}', format=format_)
         return loaded_graph
 
     def get_base_uri(self, loaded_graph: Graph):
@@ -339,7 +353,7 @@ class RDFWrapper:
 
     def serialize_rdf_graph(self, graph_name: str):
         """serialize to turtle per default"""
-        with open(f'data/{graph_name}.ttl', 'wb') as f:
+        with open(f'sdf/data/{graph_name}.ttl', 'wb') as f:
             self.graph.serialize(f, format='turtle')
 
     @time_tracker('query_rdf_graph_processing_time')
@@ -471,7 +485,7 @@ class RDFWrapper:
             except Exception as e:
                 print(f'{e}:Error while creating new SD scene relations')
 
-        from core.sdf_core import Scene
+        from sdf.core.sdf_core import Scene
 
         new_scene = Scene(
             object_list=self.scene.object_list, scene_relations=new_sd_relations

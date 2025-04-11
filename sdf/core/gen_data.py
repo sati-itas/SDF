@@ -2,7 +2,7 @@ import importlib
 import os
 import sys
 
-from core.rdf_wrapper import RDFWrapper
+from sdf.core.rdf_wrapper import RDFWrapper
 
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -20,7 +20,7 @@ class DataGenerator:
         self.rdf_wrapper = RDFWrapper()
         self._graph_datagen = self.rdf_wrapper.load_rdf_graph(self.graph_file, 'ttl')
         self.rdf_wrapper.get_base_uri(self._graph_datagen)
-        self.gen_path = 'data/_gen'
+        self.gen_path = 'sdf/data/_gen'
 
     def gen_enum_types(self, class_type: str, py_file: str, import_modul=False):
         subcls = self.rdf_wrapper.get_subclasses(

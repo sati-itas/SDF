@@ -10,8 +10,8 @@ base_dir = os.path.join(parent_dir, '..')
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
 
-from core.sdf_core import Action
-from core.sdf_solver import Solver
+from sdf.core.sdf_core import Action
+from sdf.core.sdf_solver import Solver
 
 
 class TestBase:
