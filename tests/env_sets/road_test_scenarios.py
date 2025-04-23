@@ -22,7 +22,16 @@ def scenario_5(predicates, actions):
     lane5 = SDObject("lane5", OType.LANE)
     lane6 = SDObject("lane6", OType.LANE)
 
-    object_list = [Agent, Car1, lane1, lane2, lane3, lane4, lane5, lane6]
+    object_map = {
+        Agent.name: Agent,
+        Car1.name: Car1,
+        lane1.name: lane1,
+        lane2.name: lane2,
+        lane3.name: lane3,
+        lane4.name: lane4,
+        lane5.name: lane5,
+        lane6.name: lane6,
+    }
 
     # generate init-scene
     rel_is_on_lane = {predicates['is_on_lane']: [[Agent, lane1]]}
@@ -47,8 +56,8 @@ def scenario_5(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene)
-    GoalScene = Scene(object_list, goal_scene)
+    InitScene = Scene(object_map, init_scene)
+    GoalScene = Scene(object_map, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions
@@ -70,7 +79,20 @@ def scenario_10(predicates, actions):
     lane9 = SDObject("lane9", OType.LANE)
     lane10 = SDObject("lane10", OType.LANE)
 
-    object_list = [Agent, Car1, lane1, lane2, lane3, lane4, lane5, lane6, lane7, lane8, lane9, lane10]
+    object_map = {
+        Agent.name: Agent,
+        Car1.name: Car1,
+        lane1.name: lane1,
+        lane2.name: lane2,
+        lane3.name: lane3,
+        lane4.name: lane4,
+        lane5.name: lane5,
+        lane6.name: lane6,
+        lane7.name: lane7,
+        lane8.name: lane8,
+        lane9.name: lane9,
+        lane10.name: lane10,
+    }
 
 
 
@@ -123,8 +145,8 @@ def scenario_10(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene)
-    GoalScene = Scene(object_list, goal_scene)
+    InitScene = Scene(object_map, init_scene)
+    GoalScene = Scene(object_map, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions
@@ -152,26 +174,26 @@ def scenario_15(predicates, actions):
     lane15 = SDObject("lane15", OType.LANE)
     lane16 = SDObject("lane16", OType.LANE)
 
-    object_list = [
-        Agent,
-        Car1,
-        lane1,
-        lane2,
-        lane3,
-        lane4,
-        lane5,
-        lane6,
-        lane7,
-        lane8,
-        lane9,
-        lane10,
-        lane11,
-        lane12,
-        lane13,
-        lane14,
-        lane15,
-        lane16,
-    ]
+    object_map = {
+        Agent.name: Agent,
+        Car1.name: Car1,
+        lane1.name: lane1,
+        lane2.name: lane2,
+        lane3.name: lane3,
+        lane4.name: lane4,
+        lane5.name: lane5,
+        lane6.name: lane6,
+        lane7.name: lane7,
+        lane8.name: lane8,
+        lane9.name: lane9,
+        lane10.name: lane10,
+        lane11.name: lane11,
+        lane12.name: lane12,
+        lane13.name: lane13,
+        lane14.name: lane14,
+        lane15.name: lane15,
+        lane16.name: lane16,
+    }
 
 
 
@@ -254,8 +276,8 @@ def scenario_15(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene)
-    GoalScene = Scene(object_list, goal_scene)
+    InitScene = Scene(object_map, init_scene)
+    GoalScene = Scene(object_map, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions
@@ -287,30 +309,30 @@ def scenario_20(predicates, actions):
     lane19 = SDObject("lane19", OType.LANE)
     lane20 = SDObject("lane20", OType.LANE)
 
-    object_list = [
-        Agent,
-        Car1,
-        lane1,
-        lane2,
-        lane3,
-        lane4,
-        lane5,
-        lane6,
-        lane7,
-        lane8,
-        lane9,
-        lane10,
-        lane11,
-        lane12,
-        lane13,
-        lane14,
-        lane15,
-        lane16,
-        lane17,
-        lane18,
-        lane19,
-        lane20,
-    ]
+    object_map = {
+        Agent.name: Agent,
+        Car1.name: Car1,
+        lane1.name: lane1,
+        lane2.name: lane2,
+        lane3.name: lane3,
+        lane4.name: lane4,
+        lane5.name: lane5,
+        lane6.name: lane6,
+        lane7.name: lane7,
+        lane8.name: lane8,
+        lane9.name: lane9,
+        lane10.name: lane10,
+        lane11.name: lane11,
+        lane12.name: lane12,
+        lane13.name: lane13,
+        lane14.name: lane14,
+        lane15.name: lane15,
+        lane16.name: lane16,
+        lane17.name: lane17,
+        lane18.name: lane18,
+        lane19.name: lane19,
+        lane20.name: lane20,
+    }
 
 
 
@@ -405,8 +427,8 @@ def scenario_20(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene)
-    GoalScene = Scene(object_list, goal_scene)
+    InitScene = Scene(object_map, init_scene)
+    GoalScene = Scene(object_map, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions
@@ -448,40 +470,40 @@ def scenario_30(predicates, actions):
     lane29 = SDObject("lane29", OType.LANE)
     lane30 = SDObject("lane30", OType.LANE)
 
-    object_list = [
-        Agent,
-        Car1,
-        lane1,
-        lane2,
-        lane3,
-        lane4,
-        lane5,
-        lane6,
-        lane7,
-        lane8,
-        lane9,
-        lane10,
-        lane11,
-        lane12,
-        lane13,
-        lane14,
-        lane15,
-        lane16,
-        lane17,
-        lane18,
-        lane19,
-        lane20,
-        lane21,
-        lane22,
-        lane23,
-        lane24,
-        lane25,
-        lane26,
-        lane27,
-        lane28,
-        lane29,
-        lane30,
-    ]
+    object_map = {
+        Agent.name: Agent,
+        Car1.name: Car1,
+        lane1.name: lane1,
+        lane2.name: lane2,
+        lane3.name: lane3,
+        lane4.name: lane4,
+        lane5.name: lane5,
+        lane6.name: lane6,
+        lane7.name: lane7,
+        lane8.name: lane8,
+        lane9.name: lane9,
+        lane10.name: lane10,
+        lane11.name: lane11,
+        lane12.name: lane12,
+        lane13.name: lane13,
+        lane14.name: lane14,
+        lane15.name: lane15,
+        lane16.name: lane16,
+        lane17.name: lane17,
+        lane18.name: lane18,
+        lane19.name: lane19,
+        lane20.name: lane20,
+        lane21.name: lane21,
+        lane22.name: lane22,
+        lane23.name: lane23,
+        lane24.name: lane24,
+        lane25.name: lane25,
+        lane26.name: lane26,
+        lane27.name: lane27,
+        lane28.name: lane28,
+        lane29.name: lane29,
+        lane30.name: lane30,
+    }
 
 
 
@@ -598,8 +620,8 @@ def scenario_30(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene)
-    GoalScene = Scene(object_list, goal_scene)
+    InitScene = Scene(object_map, init_scene)
+    GoalScene = Scene(object_map, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions
@@ -639,38 +661,38 @@ def scenario_3_lane(predicates, actions):
     lane27 = SDObject("lane27", OType.LANE)
     lane28 = SDObject("lane28", OType.LANE)
 
-    object_list = [
-        Agent,
-        Car1,
-        lane1,
-        lane2,
-        lane3,
-        lane4,
-        lane5,
-        lane6,
-        lane7,
-        lane8,
-        lane9,
-        lane10,
-        lane11,
-        lane12,
-        lane13,
-        lane14,
-        lane15,
-        lane16,
-        lane17,
-        lane18,
-        lane19,
-        lane20,
-        lane21,
-        lane22,
-        lane23,
-        lane24,
-        lane25,
-        lane26,
-        lane27,
-        lane28,
-    ]
+    object_map = {
+        Agent.name: Agent,
+        Car1.name: Car1,
+        lane1.name: lane1,
+        lane2.name: lane2,
+        lane3.name: lane3,
+        lane4.name: lane4,
+        lane5.name: lane5,
+        lane6.name: lane6,
+        lane7.name: lane7,
+        lane8.name: lane8,
+        lane9.name: lane9,
+        lane10.name: lane10,
+        lane11.name: lane11,
+        lane12.name: lane12,
+        lane13.name: lane13,
+        lane14.name: lane14,
+        lane15.name: lane15,
+        lane16.name: lane16,
+        lane17.name: lane17,
+        lane18.name: lane18,
+        lane19.name: lane19,
+        lane20.name: lane20,
+        lane21.name: lane21,
+        lane22.name: lane22,
+        lane23.name: lane23,
+        lane24.name: lane24,
+        lane25.name: lane25,
+        lane26.name: lane26,
+        lane27.name: lane27,
+        lane28.name: lane28,
+    }
 
 
 
@@ -796,8 +818,8 @@ def scenario_3_lane(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene)
-    GoalScene = Scene(object_list, goal_scene)
+    InitScene = Scene(object_map, init_scene)
+    GoalScene = Scene(object_map, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions
@@ -813,7 +835,15 @@ def Ramp_On(predicates, actions):
     lane3 = SDObject("lane3", OType.LANE)
     lane4 = SDObject("lane4", OType.LANE)
     lane5 = SDObject("lane5", OType.LANE)
-    object_list = [Agent, Car1, lane1, lane2, lane3, lane4, lane5]
+    object_map = {
+        Agent.name: Agent,
+        Car1.name: Car1,
+        lane1.name: lane1,
+        lane2.name: lane2,
+        lane3.name: lane3,
+        lane4.name: lane4,
+        lane5.name: lane5,
+    }
 
 
 
@@ -836,8 +866,8 @@ def Ramp_On(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene)
-    GoalScene = Scene(object_list, goal_scene)
+    InitScene = Scene(object_map, init_scene)
+    GoalScene = Scene(object_map, goal_scene)
 
     InitScene
 
@@ -854,7 +884,15 @@ def Ramp_Off(predicates, actions):
     lane3 = SDObject("lane3", OType.LANE)
     lane4 = SDObject("lane4", OType.LANE)
     lane5 = SDObject("lane5", OType.LANE)
-    object_list = [Agent, Car1, lane1, lane2, lane3, lane4, lane5]
+    object_map = {
+        Agent.name: Agent,
+        Car1.name: Car1,
+        lane1.name: lane1,
+        lane2.name: lane2,
+        lane3.name: lane3,
+        lane4.name: lane4,
+        lane5.name: lane5,
+    }
 
 
 
@@ -877,8 +915,8 @@ def Ramp_Off(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene)
-    GoalScene = Scene(object_list, goal_scene)
+    InitScene = Scene(object_map, init_scene)
+    GoalScene = Scene(object_map, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions
