@@ -103,7 +103,16 @@ def scenario_5gen(predicates, actions):
     lane5 = SDObject("lane5", Scenery.LANESEGMENT)
     lane6 = SDObject("lane6", Scenery.LANESEGMENT)
 
-    object_list = [Agent, Car1, lane1, lane2, lane3, lane4, lane5, lane6]
+    object_map = {
+        Agent.name: Agent,
+        Car1.name: Car1,
+        lane1.name: lane1,
+        lane2.name: lane2,
+        lane3.name: lane3,
+        lane4.name: lane4,
+        lane5.name: lane5,
+        lane6.name: lane6,
+    }
 
     # generate init-scene
     rel_has_lane_assignment = {predicates['has_lane_assignment']: [[Agent, lane1],[Car1, lane3]]}
@@ -127,8 +136,8 @@ def scenario_5gen(predicates, actions):
         **rel_has_successor,
         **rel_has_predecessor,
     }
-    InitScene = Scene(object_list, init_scene)
-    GoalScene = Scene(object_list, goal_scene)
+    InitScene = Scene(object_map, init_scene)
+    GoalScene = Scene(object_map, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions

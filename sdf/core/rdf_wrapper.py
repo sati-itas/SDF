@@ -31,7 +31,7 @@ class RDFWrapper:
         if scene is not None:
             self.object_types = None
             self.scene = scene
-            self.scene_objects = scene.object_list
+            self.scene_objects = scene.object_map
             self.scene_relation_dict = scene.scene_relations
         else:
             print('WARNING: no scene passed to the constructor')
@@ -119,7 +119,7 @@ class RDFWrapper:
         Returns:
             list of rdflib.namespace.Namespace objects: list of unique Namespace objects for rdf
         """
-        for item in self.scene_objects:
+        for item in self.scene_objects.values():
             ns_uri = f'{self.base_uri}{item.object_type}#'  # "http://example.org/{object_type}/"
             ns = Namespace(ns_uri)
             self.graph.bind(f'{item.object_type}', ns)
@@ -488,6 +488,6 @@ class RDFWrapper:
         from sdf.core.sdf_core import Scene
 
         new_scene = Scene(
-            object_list=self.scene.object_list, scene_relations=new_sd_relations
+            object_map=self.scene.object_map, scene_relations=new_sd_relations
         )
         return new_scene

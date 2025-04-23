@@ -193,7 +193,7 @@ class Scene(Thing):
 
     def __init__(
         self,
-        object_list: List[SDObject],
+        object_map: Dict[str, SDObject],
         scene_relations: Dict[Predicate, List[Union[List[int], Tuple[int, int]]]],
     ):
         Thing.__init__(self)
@@ -217,7 +217,7 @@ class Scene(Thing):
                     )
 
         self.scene_relations = scene_relations
-        self.object_list = object_list
+        self.object_map = object_map
 
     def __repr__(self) -> str:
         """call with repr()"""
@@ -265,15 +265,14 @@ class Scene(Thing):
         """
         counter = 0
         try:
-            for scene_object in self.object_list:
-                if scene_object.name == object_name:
-                    return scene_object
-                else:
-                    counter += 1
+            if object_name in self.object_map:
+                return self.object_map[object_name]
+            else:
+                counter += 1
 
         except Exception as e:
             print(
-                f'{e}: Exception occured: {object_name} not an member of self.object_list'
+                f'{e}: Exception occured: {object_name} not an member of self.object_map'
             )
 
     def search_all_individuals_of_class(self, otype) -> List[SDObject]:
@@ -287,7 +286,7 @@ class Scene(Thing):
         """
         obj_list = [
             scene_object
-            for scene_object in self.object_list
+            for scene_object in self.object_map.values()
             if scene_object.object_type == otype
         ]
         return obj_list

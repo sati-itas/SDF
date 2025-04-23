@@ -38,7 +38,7 @@ def hanoi_classic(predicates, actions):
     o_clear = SDObject("o_clear", OType.NONE)
     o_not_clear = SDObject("o_not_clear", OType.NONE)
 
-    object_list = [disc1, disc2, disc3, peg1, peg2, peg3, o_clear, o_not_clear]
+    object_map = {obj.name: obj for obj in [disc1, disc2, disc3, peg1, peg2, peg3, o_clear, o_not_clear]}
 
 
     # generate init-scene
@@ -67,8 +67,8 @@ def hanoi_classic(predicates, actions):
     goal_scene = {**goal_rel_is_on}
 
     init_scene = {**rel_smaller, **rel_is_on, **rel_clear}
-    InitScene = Scene(object_list, init_scene)
-    GoalScene = Scene(object_list, goal_scene)
+    InitScene = Scene(object_map, init_scene)
+    GoalScene = Scene(object_map, goal_scene)
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions
