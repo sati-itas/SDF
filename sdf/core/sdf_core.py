@@ -326,16 +326,27 @@ class Action(Thing):
     def __repr__(self) -> str:
         return f'action | name={self.name}'
 
-    def init_action(self, scene: Scene):
-        """Initialize the RDF wrapper with the given scene.
+    def init_action(self):
+        """Initialize the RDF wrapper and prepare SPARQL Query.
 
         Args:
             scene (Scene): The scene to initialize the RDF wrapper with.
         """
         from sdf.core.rdf_wrapper import RDFWrapper
 
-        self.rdf_wrapper = RDFWrapper(scene=scene)
+        self.rdf_wrapper = RDFWrapper()
         self.prep_query = self.rdf_wrapper.prepare_sparql_query(self.precondition)
+
+    def init_rdf_wrapper(self, scene: Scene):
+        """Initialize the RDF wrapper with the given scene.
+
+        Args:
+            rdf_wrapper (RDFWrapper): The RDF wrapper to initialize with.
+
+        """
+        from sdf.core.rdf_wrapper import RDFWrapper
+
+        self.rdf_wrapper = RDFWrapper(scene)
 
     def check_precondition(self, scene: Scene, debug=False) -> bool:
         """check if action precondition is satisfied in current scene.
@@ -364,6 +375,8 @@ class Action(Thing):
             raise ValueError(
                 f'{self.name} action is not initialized with a valid SPARQL query'
             )
+
+        self.init_rdf_wrapper(scene)
 
         # Generate RDF graph and record processing time
         rdf_graph = self.rdf_wrapper.gen_rdf_graph()

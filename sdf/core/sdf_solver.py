@@ -36,7 +36,7 @@ class Solver:
         queue.append(SearchNode(None, current_scene, None))
 
         for action in action_list:
-            action.init_action(current_scene)
+            action.init_action()
 
         while queue:
             parent_node = queue.pop()  # stack: last-in, first-out
@@ -97,7 +97,7 @@ class Solver:
         visited = {current_scene: True}
 
         for action in action_list:
-            action.init_action(current_scene)
+            action.init_action()
 
         while queue:
             parent_node = queue.pop(0)  # first-in, first-out

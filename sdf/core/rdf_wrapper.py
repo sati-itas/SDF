@@ -34,8 +34,8 @@ class RDFWrapper:
             self.scene = scene
             self.scene_objects = scene.object_map
             self.scene_relation_dict = scene.scene_relations
-        else:
-            print('WARNING: no scene passed to the constructor')
+        # else:
+        #     print('WARNING: no scene passed to the constructor')
 
         self.graph = Graph()
         self.list_of_triplets = []
