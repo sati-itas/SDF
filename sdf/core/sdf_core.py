@@ -320,8 +320,22 @@ class Action(Thing):
         self.d_list = d_list
         self.select = select
 
+        self.rdf_wrapper = None
+        self.prep_query = None
+
     def __repr__(self) -> str:
         return f'action | name={self.name}'
+
+    def init_action(self, scene: Scene):
+        """Initialize the RDF wrapper with the given scene.
+
+        Args:
+            scene (Scene): The scene to initialize the RDF wrapper with.
+        """
+        from sdf.core.rdf_wrapper import RDFWrapper
+
+        self.rdf_wrapper = RDFWrapper(scene=scene)
+        self.prep_query = self.rdf_wrapper.prepare_sparql_query(self.precondition)
 
     def check_precondition(self, scene: Scene, debug=False) -> bool:
         """check if action precondition is satisfied in current scene.
@@ -343,39 +357,36 @@ class Action(Thing):
         self.select_dict_list = []
 
         # generate rdf data and rdf graph based on scene
-        from sdf.core.rdf_wrapper import RDFWrapper
+        # INFO: action has to be initialized. This is done in the solver class
 
-        self.rdf_wrapper = RDFWrapper(scene=scene)
+        # Ensure the action is initialized with a valid SPARQL query
+        if not self.prep_query:
+            raise ValueError(
+                f'{self.name} action is not initialized with a valid SPARQL query'
+            )
+
+        # Generate RDF graph and record processing time
         rdf_graph = self.rdf_wrapper.gen_rdf_graph()
         self.graph_processing_time = self.rdf_wrapper.gen_rdf_graph_processing_time
 
-        # self.rdf_wrapper.serialize_rdf_graph(rdf_graph)
-        # carry out SPARQL Query
-        result = self.rdf_wrapper.query_rdf_graph(rdf_graph, self.precondition)
+        # Execute the SPARQL query and record query processing time
+        result = self.rdf_wrapper.query_rdf_graph(rdf_graph, prepared_query=self.prep_query)
         self.query_processing_time = self.rdf_wrapper.query_rdf_graph_processing_time
 
-        # if query gives a result
+        # If query successful, generate a list of dicts with the selected variables
         if len(result.bindings) > 0:
             for row in result:
                 self.select_dict = {}
-                # if debug:
-                #     print(f'result.bindings: {result.bindings}')
-                #     print(f'Action.check_precondition(): SPARQL Object={result} \n SPARQL result={row} \n')
                 for var in self.select:
                     selected = row[var]
-                    # if debug:
-                    #     print(f'\t var: {var}, selected: {selected} ')
                     self.select_dict.update({var: selected})
                 if debug:
-                    print(
-                        f'{self.name}.check_precondition(): select_dict={self.select_dict}\n'
-                    )
+                    print(f'{self.name}.check_precondition(): select_dict={self.select_dict}\n')
                 self.select_dict_list.append(self.select_dict)
             if debug:
                 print(f'{self.name}.check_precondition(): scene database: {scene!r}')
                 print(
-                    f'{self.name}.check_precondition(): self.select_dict_list={self.select_dict_list}\n'
-                )
+                    f'{self.name}.check_precondition(): self.select_dict_list={self.select_dict_list}\n')
             return True
         else:
             if debug:
@@ -424,7 +435,7 @@ class Action(Thing):
             return new_scene_action_dict
         else:
             return False
-        
+
     def process_select_parameters(self, select_parameters, select_dict, debug=False):
         """
         Recursively process select_parameters to extract subject (sub) and object (obj).
