@@ -10,6 +10,7 @@ from rdflib import RDFS
 from rdflib import Graph
 from rdflib import Namespace
 from rdflib import URIRef
+from rdflib.plugins.sparql import prepareQuery
 
 from sdf.core.utility.dict_helper import merge_dicts
 from sdf.core.utility.timing_utils import time_tracker
@@ -33,8 +34,8 @@ class RDFWrapper:
             self.scene = scene
             self.scene_objects = scene.object_map
             self.scene_relation_dict = scene.scene_relations
-        else:
-            print('WARNING: no scene passed to the constructor')
+        # else:
+        #     print('WARNING: no scene passed to the constructor')
 
         self.graph = Graph()
         self.list_of_triplets = []
@@ -334,21 +335,25 @@ class RDFWrapper:
         return self.list_of_triplets
 
     @time_tracker('gen_rdf_graph_processing_time')
-    def gen_rdf_graph(self, debug=False):
+    def gen_rdf_graph(self, warmup=False, debug=False):
         """builds up RDF graph from RDF triplets
 
         Args:
             triplets (list of tuples): RDF triplets (subject, predicate, object)
 
         Returns:
-            rdflib.graph.Graph : RDF ontology
+            rdflib.graph.Graph : RDF graph
         """
         self.gen_namespace(debug=debug)
         self.gen_rdf_database(debug=debug)
         self.rdf_triplets(debug=debug)
-
+        # iterate over all triplets and add them to the graph
         for item in self.list_of_triplets:
             self.graph.add(item)
+
+        # warmup graph (load graph in memory)
+        if warmup:
+            self.graph.query(("ASK { ?s ?p ?o }"))
         return self.graph
 
     def serialize_rdf_graph(self, graph_name: str):
@@ -356,10 +361,50 @@ class RDFWrapper:
         with open(f'sdf/data/{graph_name}.ttl', 'wb') as f:
             self.graph.serialize(f, format='turtle')
 
+    def prepare_sparql_query(self, query: str):
+        """prepares the query for the RDF graph.
+        Compiles the SPARQL query once and saves it as bytecode.
+
+        Args:
+            query (str): SPARQL query
+
+        Returns:
+            str: prepared query
+        """
+        q = prepareQuery(
+            query,
+            initNs={
+                'owl': OWL,
+                'rdf': RDF,
+                'rdfs': RDFS,
+                'ex': Namespace(self.base_uri),
+            },
+        )
+        return q
+
     @time_tracker('query_rdf_graph_processing_time')
-    def query_rdf_graph(self, graph: Graph, preconditions: str):
-        result = graph.query(preconditions)
-        return result
+    def query_rdf_graph(self, graph: Graph, query: str = None, prepared_query=None):
+        """
+        Queries the RDF graph using a SPARQL query or a prepared query.
+
+        Args:
+            graph (Graph): The RDF graph to query.
+            query (str, optional): SPARQL query string. Defaults to None.
+            prepared_query (PreparedQuery, optional): Precompiled SPARQL query. Defaults to None.
+
+        Returns:
+            Result: Query result or None if an error occurs.
+        """
+        try:
+            if prepared_query:
+                return graph.query(prepared_query)
+            elif query:
+                return graph.query(query)
+            else:
+                raise ValueError("Either 'query' or 'prepared_query' must be provided.")
+        except Exception as e:
+            print(f"Error while querying RDF graph: {e}")
+            return None
 
     def copy_rdf_graph(self) -> Graph:
         graph_copy = Graph()
