@@ -33,12 +33,12 @@ def test_sdf_actions():
 
     # SPARQL proof
     for act in action_list:
+        act.init_action()
         print(act.name)
         act.precondition
         pre = graph.query(act.precondition)
         for row in pre:
             print(row)
-
         # TEST check_precondition
         act.check_precondition(CurrentScene, debug=False)
         # precondition
