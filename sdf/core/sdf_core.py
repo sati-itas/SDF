@@ -463,6 +463,7 @@ class Action(Thing):
         # and generate the corresponding RDF graph
         scene_rdf_wrapper = scene.init_rdf_wrapper()
         self.rdf_wrapper = scene_rdf_wrapper
+        self.graph_processing_time = scene.graph_processing_time
         # precondition of action
         if self.check_precondition_on_rdf(scene_rdf_wrapper.graph, debug=debug):
             # effect of action
