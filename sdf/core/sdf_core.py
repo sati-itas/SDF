@@ -311,7 +311,7 @@ class Scene(Thing):
 
         return rdf_wrapper
 
-    def graph_processing_time(self):
+    def get_graph_processing_time(self):
         """graph_processing_time time of rdf-graph generation
         Returns (float): self.graph_processing_time
         """
@@ -348,6 +348,10 @@ class Action(Thing):
 
         self.rdf_wrapper = None
         self.prep_query = None
+
+        self.query_processing_time = 0.0
+        self.effect_processing_time = 0.0
+        self.execute_processing_time = 0.0
 
     def __repr__(self) -> str:
         return f'action | name={self.name}'
@@ -463,7 +467,7 @@ class Action(Thing):
         # and generate the corresponding RDF graph
         scene_rdf_wrapper = scene.init_rdf_wrapper()
         self.rdf_wrapper = scene_rdf_wrapper
-        self.graph_processing_time = scene.graph_processing_time
+        self.graph_processing_time = scene.get_graph_processing_time
         # precondition of action
         if self.check_precondition_on_rdf(scene_rdf_wrapper.graph, debug=debug):
             # effect of action
@@ -622,19 +626,19 @@ class Action(Thing):
 
         return sub, obj
 
-    def query_processing_time(self):
+    def get_query_processing_time(self):
         """processing time of query for checking the preconditions
         Returns (float): self.query_processing_time
         """
         return self.query_processing_time
 
-    def effect_processing_time(self):
+    def get_effect_processing_time(self):
         """processing time of effect of action
         Returns (float): self.effect_processing_time
         """
         return self.effect_processing_time
 
-    def execute_processing_time(self):
+    def get_execute_processing_time(self):
         """processing time execution: execute = precondition + effect
         Returns (float): self.execute_processing_time
         """
