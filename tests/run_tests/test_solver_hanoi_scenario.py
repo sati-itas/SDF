@@ -28,10 +28,11 @@ def test_hanoi():
     scene_tuple = hanoi_classic(predicates, actions)
 
 
-    bfs_list = Solver.bfs_list
-    dfs_list = Solver.dfs_list
+    bfs_list = Solver.bfs_sdscene
+    bfs_rdf_list = Solver.bfs_rdf
 
-    solver_list = [bfs_list]
+    solver_list = [bfs_list, bfs_rdf_list]
+    
 
     for solver in solver_list:
         testbase.test_solver(scene_tuple, solver, loops)

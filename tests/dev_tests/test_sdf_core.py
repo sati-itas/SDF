@@ -13,10 +13,15 @@ from sdf.core.rdf_wrapper import RDFWrapper
 from sdf.data.otype import OType 
 
 from tests.env_sets.gen_road_scenario import actions_light, scenario_5gen
+from tests.env_sets.road_test_predicates_actions import predicates_simple, actions_simple
+from tests.env_sets.road_test_scenarios import scenario_20
+from tests.env_sets.hanoi_predicates_actions import hanoi_predicates
+from tests.env_sets.hanoi_sceanario import hanoi_classic
 from sdf.core.gen_data import DataGenerator
+from sdf.core.rdf_wrapper import RDFUtils
 
 
-def test_sdf_actions():
+def test_sdf_actions_sdscene():
 
     generator = DataGenerator('test_scene.ttl')
     predicate_dict = generator.gen_predicates('gen_pred_list2.txt')
@@ -40,15 +45,64 @@ def test_sdf_actions():
         for row in pre:
             print(row)
         # TEST check_precondition
-        act.check_precondition(CurrentScene, debug=False)
+        scene_rdf_wrapper = CurrentScene.init_rdf_wrapper()
+        act.check_precondition_on_rdf(scene_rdf_wrapper.graph, debug=False)
         # precondition
         # TEST check_precondition
-        new_scene_action_dict = act.execute_select_dict_list(CurrentScene, debug=False)
+        new_scene_action_dict = act.execute_action_on_sdscene(CurrentScene, debug=False)
         print(f'\n CurrentScene: {CurrentScene}')
         if new_scene_action_dict:
             print(f'\n new_scene_action_dict: {[key for key in new_scene_action_dict.keys()][0]}')
         else: 
             print(f'\n new_scene_action_dict: {new_scene_action_dict}')
 
+def test_sdf_actions_rdf():
+
+
+    # predicates = hanoi_predicates()
+    # actions = actions_simple(predicates)
+    # CurrentScene, GoalScene, action_list = hanoi_classic(predicates, actions)
+
+
+    predicates = predicates_simple()
+    actions = actions_simple(predicates)
+    CurrentScene, GoalScene, action_list = scenario_20(predicates, actions)
+
+    # Test the RDFWrapper Scene Initialization
+    #initialize the RDFWrapper with the current scene
+    rdf_wrapper = RDFWrapper(CurrentScene)
+    graph = rdf_wrapper.gen_rdf_graph(debug=False)
+
+    rdf_wrapper= CurrentScene.init_rdf_wrapper()
+    print(f'graphs are equal: {RDFUtils.is_equal(graph, rdf_wrapper.graph)}')
+    CurrentScene_graph = rdf_wrapper.graph
+
+    # SPARQL proof
+    for act in action_list:
+        act.init_action_with_rdf(rdf_wrapper)
+
+        # Test action query
+        # Measure timing for raw query
+        start_time = timeit.default_timer()
+        pre = graph.query(act.precondition)
+        raw_query_time = timeit.default_timer() - start_time
+        print(f"Raw query time: {raw_query_time:.6f} seconds")
+        for row in pre:
+            print(row)
+        # Measure timing for prepared query
+        start_time = timeit.default_timer()
+        pre = graph.query(act.prep_query)
+        prepared_query_time = timeit.default_timer() - start_time
+        print(f"Prepared query time: {prepared_query_time:.6f} seconds")
+        for row in pre:
+            print(row)
+
+        # TEST check_precondition
+        print(f'{act.name}.check_precondition_improve() => {act.check_precondition_on_rdf(CurrentScene_graph, debug=False)}')
+
+        # TEST execute_select_dict_list_improve
+        print(f'{act.name}.execute_select_dict_list_improve() => {act.execute_action_on_rdf(CurrentScene_graph, debug=False)}')
+
 if __name__ == "__main__":
-    test_sdf_actions()
+    test_sdf_actions_sdscene()
+    test_sdf_actions_rdf()

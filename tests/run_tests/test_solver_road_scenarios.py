@@ -1,7 +1,5 @@
 import os
 import sys
-import timeit
-import numpy as np
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -9,7 +7,6 @@ base_dir = os.path.join(parent_dir, '..')
 # append parent and base direction
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
-from sdf.core.sdf_core import Action
 from sdf.core.gen_data import DataGenerator
 from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple
 
@@ -28,10 +25,12 @@ def test_scenario20():
 
     scene_tuple = scenario_20(predicates, actions)
 
-    bfs_list = Solver.bfs_list
-    dfs_list = Solver.dfs_list
+    bfs_list = Solver.bfs_sdscene
+    dfs_list = Solver.dfs_sdscene
+    dfs_list_rdf = Solver.dfs_rdf
+    bfs_list_rdf = Solver.bfs_rdf
 
-    solver_list = [dfs_list,bfs_list]
+    solver_list = [bfs_list, bfs_list_rdf, dfs_list_rdf, dfs_list]
 
     for solver in solver_list:
         testbase.test_solver(scene_tuple, solver, loops)
@@ -45,8 +44,8 @@ def test_scenario30():
 
     scene_tuple = scenario_30(predicates, actions)
 
-    bfs_list = Solver.bfs_list
-    dfs_list = Solver.dfs_list
+    bfs_list = Solver.bfs_sdscene
+    dfs_list = Solver.dfs_sdscene
 
     solver_list = [bfs_list, dfs_list]
 
@@ -67,8 +66,8 @@ def test_scenario5gen():
 
     scene_tuple = scenario_5gen(predicate_dict, actions)
 
-    bfs_list = Solver.bfs_list
-    dfs_list = Solver.dfs_list
+    bfs_list = Solver.bfs_sdscene
+    dfs_list = Solver.dfs_sdscene
 
     solver_list = [dfs_list, bfs_list]
 
