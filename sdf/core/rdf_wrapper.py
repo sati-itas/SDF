@@ -97,12 +97,14 @@ class RDFWrapper:
         Returns:
             list of rdflib.namespace.Namespace objects: list of unique Namespace objects for rdf
         """
+        seen_namespaces = set()
         for item in self.scene_objects.values():
             ns_uri = f'{self.base_uri}{item.object_type}#'  # "http://example.org/{object_type}/"
-            ns = Namespace(ns_uri)
-            self.graph.bind(f'{item.object_type}', ns)
-            if ns not in self.namespace_list:
+            if ns_uri not in seen_namespaces:
+                ns = Namespace(ns_uri)
+                self.graph.bind(f'{item.object_type}', ns)
                 self.namespace_list.append(ns)
+                seen_namespaces.add(ns_uri)
 
         # generate predicate namespace
         ns_pred_uri = f'{self.base_uri}predicate#'  # "http://example.org/predicate/"
@@ -654,6 +656,7 @@ class RDFUtils:
         for item in g:
             graph_copy.add(item)
         return graph_copy
+        # return g + Graph()
 
     #@time_tracker_static('query_rdf_graph_processing_time')
     @staticmethod
