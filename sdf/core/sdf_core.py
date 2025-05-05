@@ -430,6 +430,11 @@ class Action(Thing):
             and a list of Dicts of the effects by executing actions.
             If preconditions for action not fullfilled return Bool:False
         """
+        # initialize processing time
+        self.execute_processing_time = 0.0
+        self.query_processing_time = 0.0
+        self.effect_processing_time = 0.0
+
         # precondition of action
         if self.check_precondition_on_rdf(rdf_scene, debug=debug):
             # effect of action
@@ -467,7 +472,7 @@ class Action(Thing):
         # and generate the corresponding RDF graph
         scene_rdf_wrapper = scene.init_rdf_wrapper()
         self.rdf_wrapper = scene_rdf_wrapper
-        self.graph_processing_time = scene.get_graph_processing_time
+        self.graph_processing_time = scene.graph_processing_time
         # precondition of action
         if self.check_precondition_on_rdf(scene_rdf_wrapper.graph, debug=debug):
             # effect of action
