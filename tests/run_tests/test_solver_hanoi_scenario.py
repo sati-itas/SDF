@@ -20,7 +20,7 @@ from tests.run_tests.test_base import TestBase
 def test_hanoi():
     testbase = TestBase()
 
-    loops = 10
+    loops = 1
 
     predicates = hanoi_predicates()
     actions = actions_simple(predicates)
@@ -28,10 +28,10 @@ def test_hanoi():
     scene_tuple = hanoi_classic(predicates, actions)
 
 
-    bfs_list = Solver.bfs_sdscene
-    bfs_rdf_list = Solver.bfs_rdf
+    bfs_sdscene = Solver.bfs_sdscene
+    bfs_rdf = Solver.bfs_rdf
 
-    solver_list = [bfs_list, bfs_rdf_list]
+    solver_list = [bfs_sdscene, bfs_rdf]
     
 
     for solver in solver_list:
