@@ -3,6 +3,8 @@ from typing import List
 from typing import Tuple
 from typing import Union
 
+from rdflib import Graph
+
 from .utility.timing_utils import time_tracker
 
 
@@ -219,6 +221,8 @@ class Scene(Thing):
         self.scene_relations = scene_relations
         self.object_map = object_map
 
+        self.graph_processing_time = 0.0
+
     def __repr__(self) -> str:
         """call with repr()"""
         str_to_print = ''
@@ -291,6 +295,28 @@ class Scene(Thing):
         ]
         return obj_list
 
+    def init_rdf_wrapper(self):
+        """Initialize the RDF wrapper with the current scene
+        and generate the corresponding RDF graph.
+        Returns:
+            rdf_wrapper (RDFWrapper): The initialized RDF wrapper.
+        """
+        from sdf.core.rdf_wrapper import RDFWrapper
+
+        rdf_wrapper = RDFWrapper(self)
+
+        # Generate RDF graph and record processing time
+        rdf_wrapper.gen_rdf_graph()
+        self.graph_processing_time = rdf_wrapper.gen_rdf_graph_processing_time
+
+        return rdf_wrapper
+
+    def get_graph_processing_time(self):
+        """graph_processing_time time of rdf-graph generation
+        Returns (float): self.graph_processing_time
+        """
+        return self.graph_processing_time
+
 
 class Action(Thing):
     """Action class for defining action template
@@ -323,6 +349,10 @@ class Action(Thing):
         self.rdf_wrapper = None
         self.prep_query = None
 
+        self.query_processing_time = 0.0
+        self.effect_processing_time = 0.0
+        self.execute_processing_time = 0.0
+
     def __repr__(self) -> str:
         return f'action | name={self.name}'
 
@@ -337,53 +367,30 @@ class Action(Thing):
         self.rdf_wrapper = RDFWrapper()
         self.prep_query = self.rdf_wrapper.prepare_sparql_query(self.precondition)
 
-    def init_rdf_wrapper(self, scene: Scene):
-        """Initialize the RDF wrapper with the given scene.
+    def init_action_with_rdf(self, rdf_wrapper):
+        """Initialize the RDF wrapper with the given scene and prepare the SPARQL query.
+        By generate a bytecode of the SPARQL query and store it in self.prep_query.
 
         Args:
             rdf_wrapper (RDFWrapper): The RDF wrapper to initialize with.
 
         """
-        from sdf.core.rdf_wrapper import RDFWrapper
+        if self.rdf_wrapper is None:
+            self.rdf_wrapper = rdf_wrapper
+        self.prep_query = self.rdf_wrapper.prepare_sparql_query(self.precondition)
 
-        return RDFWrapper(scene)
-
-    def check_precondition(self, scene: Scene, debug=True) -> bool:
-        """check if action precondition is satisfied in current scene.
-        If precondition is satified the function generates:
-        a dict (self.select_dict) or a list of dicts (self.select_dict_list) with the possible SELECT variables.
-
-        Args:
-            scene (Scene): current scene model
-            debug (bool, optional): default to False.
-
-        Returns:
-            bool: whether precondition in current scene is satisfied or not.
-        """
-
-        self.graph_processing_time = 0.0
-        self.query_processing_time = 0.0
+    def check_precondition_on_rdf(self, rdf_scene: Graph, debug=True) -> bool:
 
         self.select_dict = {}
         self.select_dict_list = []
 
-        # generate rdf data and rdf graph based on scene
-        # INFO: action has to be initialized. This is done in the solver class
-
-        # Ensure the action is initialized with a valid SPARQL query
         if not self.prep_query:
             raise ValueError(
                 f'{self.name} action is not initialized with a valid SPARQL query'
             )
 
-        self.rdf_wrapper = self.init_rdf_wrapper(scene)
-
-        # Generate RDF graph and record processing time
-        rdf_graph = self.rdf_wrapper.gen_rdf_graph()
-        self.graph_processing_time = self.rdf_wrapper.gen_rdf_graph_processing_time
-
         # Execute the SPARQL query and record query processing time
-        result = self.rdf_wrapper.query_rdf_graph(rdf_graph, prepared_query=self.prep_query)
+        result = self.rdf_wrapper.query_rdf_graph(rdf_scene, prepared_query=self.prep_query)
         self.query_processing_time = self.rdf_wrapper.query_rdf_graph_processing_time
 
         # If query successful, generate a list of dicts with the selected variables
@@ -407,10 +414,48 @@ class Action(Thing):
                 # print(f'scene database: {scene!r}')
             return False
 
-    @time_tracker('effect_execute_processing_time')
-    def execute_select_dict_list(self, scene: Scene, debug=False):
-        """executes the action in a given scene if possible.
-        This includes action precondition checks and generating the follow-up scenes.
+    @time_tracker('execute_processing_time')
+    def execute_action_on_rdf(self, rdf_scene: Graph, debug=False):
+        """Executes the action in a given rdf graph if possible.
+        This includes action precondition checks and generating the follow-up rdf_scenes.
+        If the precondition check generate a list of possible actions, all follow-up rdf_scenes will be build.
+
+        Args:
+            scene (Graph): scene, in which action shell by executed
+            debug (bool, optional): _description_. Defaults to False.
+
+        Returns:
+            new_scene_action_dict (Dict[Graph:{Predicate:[SD subject,SD object]}):
+            A List includes new rdf_scene list created by executing actions
+            and a list of Dicts of the effects by executing actions.
+            If preconditions for action not fullfilled return Bool:False
+        """
+        # initialize processing time
+        self.execute_processing_time = 0.0
+        self.query_processing_time = 0.0
+        self.effect_processing_time = 0.0
+
+        # precondition of action
+        if self.check_precondition_on_rdf(rdf_scene, debug=debug):
+            # effect of action
+            new_graph_list, sd_rel_action_effect_list = self.action_effect_on_rdf(rdf_scene, debug=debug)
+
+            if len(new_graph_list) == len(sd_rel_action_effect_list):
+                new_scene_action_dict = dict(
+                    zip(new_graph_list, sd_rel_action_effect_list, strict=False)
+                )
+            else:
+                raise Exception('Error: scene list and effect list are not coherent')
+            return new_scene_action_dict
+        else:
+            return False
+
+    @time_tracker('execute_processing_time')
+    def execute_action_on_sdscene(self, scene: Scene, debug=False):
+        """Executes the action in a given scene if possible.
+        Therefore, the scene is initialized with the RDF wrapper and the RDF graph is generated.
+        The action is then executed on the RDF graph.
+        This includes action precondition checks and generating the follow-up sd scenes.
         If the precondition check generate a list of possible actions, all follow-up scenes will be build.
 
         Args:
@@ -423,16 +468,17 @@ class Action(Thing):
             and a list of Dicts of the effects by executing actions.
             If preconditions for action not fullfilled return Bool:False
         """
-        # print(f'check precondition of action: {self.name}')
-        if self.check_precondition(scene, debug=debug):
-            new_graph_list = self.execute_dlist()
-            new_graph_list, sd_rel_action_effect_list = self.execute_alist(
-                new_graph_list
-            )
-
+        # initialize the RDF wrapper with the current scene
+        # and generate the corresponding RDF graph
+        scene_rdf_wrapper = scene.init_rdf_wrapper()
+        self.rdf_wrapper = scene_rdf_wrapper
+        self.graph_processing_time = scene.graph_processing_time
+        # precondition of action
+        if self.check_precondition_on_rdf(scene_rdf_wrapper.graph, debug=debug):
+            # effect of action
+            new_graph_list, sd_rel_action_effect_list = self.action_effect_on_rdf(scene_rdf_wrapper.graph, debug=debug)
             # map RDF Database in SD scene
             new_scene_list = []
-
             for graph in new_graph_list:
                 new_scene = self.rdf_wrapper.gen_sd_scene_from_rdf_database(graph)
                 new_scene_list.append(new_scene)
@@ -440,50 +486,19 @@ class Action(Thing):
                 new_scene_action_dict = dict(
                     zip(new_scene_list, sd_rel_action_effect_list, strict=False)
                 )
-                # for scene, predcates in new_scene_action_dict.items():
-                #     print(f'predcates {predcates}')
-                #     print(f'scene {scene}')
             else:
                 raise Exception('Error: scene list and effect list are not coherent')
             return new_scene_action_dict
         else:
             return False
 
-    def process_select_parameters(self, select_parameters, select_dict, debug=False):
-        """
-        Recursively process select_parameters to extract subject (sub) and object (obj).
+    @time_tracker('effect_processing_time')
+    def action_effect_on_rdf(self, rdf_scene: Graph, debug=False):
+        new_graph_list = self.remove_triplets_from_rdf(rdf_scene, debug=debug)
+        new_graph_list, sd_rel_action_effect_list = self.add_triplets_to_rdf(new_graph_list, debug=debug)
+        return new_graph_list, sd_rel_action_effect_list
 
-        Args:
-            select_parameters (list): The list of parameters to process.
-            select_dict (dict): The dictionary containing mappings for SELECT variables.
-            debug (bool): Whether to print debug information.
-
-        Returns:
-            Tuple: A tuple (sub, obj) representing the processed URIs
-            of subject and object depenting from select List.
-        """
-        sub, obj = None, None
-
-        for item in select_parameters:
-            if isinstance(item, list):
-                # Recursively process nested lists
-                sub, obj = self.process_select_parameters(item, select_dict, debug)
-                if sub is not None and obj is not None:
-                    break  # Stop processing if valid sub and obj are found
-            elif isinstance(item, str):
-                if item.startswith("http://") or item.startswith("https://"):
-                    sub = self.rdf_wrapper.to_uri(item)
-                    obj = select_dict.get(select_parameters[1])
-                elif len(select_parameters) >= 1:
-                    sub = select_dict.get(select_parameters[0])
-                    obj = select_dict.get(select_parameters[1])
-                if debug:
-                    print(f"Processed item: {item}, sub: {sub}, obj: {obj}")
-                break
-
-        return sub, obj
-
-    def execute_dlist(self, debug=False):
+    def remove_triplets_from_rdf(self, rdf_scene, debug=False):
         """
         remove the RDF triplet from the graph from d_list
         d_list: Dict {SD_Predicate: [select param 1 (type: string), select param 2 (type: string)]}
@@ -494,7 +509,7 @@ class Action(Thing):
         """
         new_graph_list = []
         for select_dict in self.select_dict_list:
-            _new_graph = self.rdf_wrapper.copy_rdf_graph()
+            _new_graph = self.rdf_wrapper.copy_rdf_graph(rdf_scene)
             if debug:
                 print(f'select_dict: {select_dict}')
                 print_graph = self.rdf_wrapper.gen_sd_scene_from_rdf_database(
@@ -530,7 +545,7 @@ class Action(Thing):
             new_graph_list.append(_new_graph)
         return new_graph_list
 
-    def execute_alist(self, new_graph_list, debug=False):
+    def add_triplets_to_rdf(self, new_graph_list, debug=False):
         """
         add the RDF triplet to the graph from a_list
         1. map SELECT parameter to RDF subjects/objects-> result: rdf_rel={Predicate:[rdflib subject,rdflib object]}
@@ -582,20 +597,90 @@ class Action(Thing):
 
         return [_new_graph_list, sd_rel_action_effect_list]
 
-    def graph_processing_time(self):
-        """graph_processing_time time of rdf-graph generation
-        Returns (float): self.graph_processing_time
+    def process_select_parameters(self, select_parameters, select_dict, debug=False):
         """
-        return self.graph_processing_time
+        Recursively process select_parameters to extract subject (sub) and object (obj).
 
-    def query_processing_time(self):
-        """processing time of query
+        Args:
+            select_parameters (list): The list of parameters to process.
+            select_dict (dict): The dictionary containing mappings for SELECT variables.
+            debug (bool): Whether to print debug information.
+
+        Returns:
+            Tuple: A tuple (sub, obj) representing the processed URIs
+            of subject and object depenting from select List.
+        """
+        sub, obj = None, None
+
+        for item in select_parameters:
+            if isinstance(item, list):
+                # Recursively process nested lists
+                sub, obj = self.process_select_parameters(item, select_dict, debug)
+                if sub is not None and obj is not None:
+                    break  # Stop processing if valid sub and obj are found
+            elif isinstance(item, str):
+                if item.startswith("http://") or item.startswith("https://"):
+                    sub = self.rdf_wrapper.to_uri(item)
+                    obj = select_dict.get(select_parameters[1])
+                elif len(select_parameters) >= 1:
+                    sub = select_dict.get(select_parameters[0])
+                    obj = select_dict.get(select_parameters[1])
+                if debug:
+                    print(f"Processed item: {item}, sub: {sub}, obj: {obj}")
+                break
+
+        return sub, obj
+
+    def get_query_processing_time(self):
+        """processing time of query for checking the preconditions
         Returns (float): self.query_processing_time
         """
         return self.query_processing_time
 
-    def effect_execute_processing_time(self):
-        """processing time effect execution
-        Returns (float): self.effect_execute_processing_time]
+    def get_effect_processing_time(self):
+        """processing time of effect of action
+        Returns (float): self.effect_processing_time
         """
-        return self.effect_execute_processing_time
+        return self.effect_processing_time
+
+    def get_execute_processing_time(self):
+        """processing time execution: execute = precondition + effect
+        Returns (float): self.execute_processing_time
+        """
+        return self.execute_processing_time
+
+
+class SDUtils:
+    """Utility class for Scene-related operations."""
+
+    @staticmethod
+    def check_identical_scenes(scene1: Scene, scene2: Scene) -> bool:
+        """Checks if scene1.scene_relations is equal to scene2.scene_relations."""
+        return scene1.scene_relations.items() == scene2.scene_relations.items()
+
+    @staticmethod
+    def check_subset_scenes(goal_scene: Scene, scene: Scene) -> bool:
+        """Checks if goal_scene.scene_relations is a subset or equal to scene.scene_relations."""
+        return goal_scene.scene_relations.items() <= scene.scene_relations.items()
+
+    @staticmethod
+    def check_common_keys(scene1: Scene, scene2: Scene) -> bool:
+        """Finds common keys between the scene relations of two scenes."""
+        return scene1.scene_relations.keys() & scene2.scene_relations.keys()
+
+    @staticmethod
+    def check_subset_pair(goal: Scene, scene: Scene) -> bool:
+        """Checks if goal.scene_relations is a subset of scene.scene_relations in a pairwise manner."""
+        common_keys = goal.scene_relations.keys() & scene.scene_relations.keys()
+        if common_keys:
+            for key in common_keys:
+                set1 = {tuple(sublist) for sublist in goal.scene_relations[key]}
+                set2 = {tuple(sublist) for sublist in scene.scene_relations[key]}
+                # set1 = set(dict1[key])  # TODO:Tupel direkt verwenden
+                # set2 = set(dict2[key])  # TODO:Tupel direkt verwenden
+
+                # calculate subset
+                # subset = set1.issubset(set2)
+                if not set1 <= set2:
+                    return False
+        return True

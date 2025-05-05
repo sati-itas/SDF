@@ -59,8 +59,6 @@ def test_gen_rdf_graph_from_gen_data():
         pre = graph.query(act.precondition)
         for row in pre:
             print(row)
-
-
     
     rdf_wrapper.serialize_rdf_graph('out_test_gen_rdf_graph_from_gen_data')
 
@@ -85,9 +83,6 @@ def test_gen_from_data_graph():
     predicates = rdf_wrapper.get_predicates(graph)
     for pred in predicates:
         print("object-property:", pred)
-
-    
-
 
 if __name__ == "__main__":
 

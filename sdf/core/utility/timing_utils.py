@@ -19,3 +19,15 @@ def time_tracker(attr_name):
         return wrapper
 
     return decorator
+
+
+def time_tracker_static(label):
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            start = timeit.default_timer()
+            result = func(*args, **kwargs)
+            end = timeit.default_timer()
+            print(f"{label}: {end - start:.4f} seconds")
+            return result
+        return wrapper
+    return decorator
