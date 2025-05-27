@@ -19,7 +19,7 @@ class TestBase:
     def __init__(self):
         pass
 
-    def test_solver(self, scene: tuple, solver: Solver, loops: int):
+    def test_solver(self, scene: tuple, solver: Solver, loops: int, heuristic=None):
         CurrentScene, GoalScene, action_list = scene
         loop_count = 0
         planning_processing_time = []
@@ -29,7 +29,10 @@ class TestBase:
         while loop_count < loops:
 
             start_planning_time = timeit.default_timer()
-            plan = solver(CurrentScene, GoalScene, action_list)
+            if heuristic is None:
+                plan = solver(CurrentScene, GoalScene, action_list)
+            else:
+                plan = solver(CurrentScene, GoalScene, action_list, heuristic)
             end_planning_time = timeit.default_timer()
 
             print(f'\n planning step processing_time : {(end_planning_time-start_planning_time)*1000} [msec]')

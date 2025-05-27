@@ -1,5 +1,8 @@
+import heapq  # https://docs.python.org/3/library/heapq.html
+from collections import deque # https://docs.python.org/3/library/collections.html#deque-objects
 from typing import Any
 from typing import List
+from typing import Optional
 from typing import Tuple
 
 from rdflib import Graph
@@ -39,6 +42,7 @@ class Solver:
 
         queue.append(SearchNode(None, current_scene, None))
 
+        # Init actions
         for action in action_list:
             action.init_action()
 
@@ -60,7 +64,8 @@ class Solver:
                             # path = new_node.path()
                             plan = new_node.act_sequence()
                             return (plan, solution)
-                        elif parent_node.in_path(next_scene, SDUtils.check_identical_scenes
+                        elif parent_node.in_path(
+                            next_scene, SDUtils.check_identical_scenes
                         ):  # pruning rule1: do not consider any path that visits the same state twice
                             pass
                         else:
@@ -87,9 +92,8 @@ class Solver:
         """
 
         plan = []
-        queue = []
+        queue = deque()  # using deque for efficient FIFO queue operations
         visited = {}
-        visited_check = False
         solution = False
 
         if SDUtils.check_subset_pair(goal_scene, current_scene):
@@ -99,11 +103,12 @@ class Solver:
         queue.append(SearchNode(None, current_scene, None))
         visited = {current_scene: True}
 
+        # Init actions
         for action in action_list:
             action.init_action()
 
         while queue:
-            parent_node = queue.pop(0)  # first-in, first-out
+            parent_node = queue.popleft()  # first-in, first-out
 
             for action in action_list:
                 new_scene_action_dict = action.execute_action_on_sdscene(
@@ -115,21 +120,88 @@ class Solver:
                         new_node = SearchNode(
                             [action, action_eff], next_scene, parent_node
                         )
-                        for scene in visited:
-                            if SDUtils.check_identical_scenes(next_scene, scene):
-                                visited_check = True
-                                break
                         if SDUtils.check_subset_pair(goal_scene, next_scene):
                             solution = True
                             plan = new_node.act_sequence()
                             return (plan, solution)
-                        elif visited_check:  # pruning rule: do not consider any path that visits a state that you have already visited via some other path.
-                            visited_check = False
-                            pass
+                        # Check if the next scene has already been visited
+                        next_key = SDUtils.canonical_scene_signature(next_scene)
+                        if next_key in visited:
+                            pass  # already visited, skip! do not consider any path that visits a state that you have already visited via some other path.
                         else:
-                            visited[next_scene] = True
+                            visited[next_key] = True
                             queue.append(new_node)
         return (plan, solution)
+
+    @staticmethod
+    def astar_sdscene(
+        current_scene: Scene,
+        goal_scene: Scene,
+        action_list: List[Action],
+        heuristic: Optional[callable] = None,
+    ) -> Tuple[List[Any], bool]:
+        plan = []
+        solution = False
+
+        if SDUtils.check_subset_pair(goal_scene, current_scene):
+            return (plan, True)
+
+        open_list = []
+
+        # astar without heuristic is equivalent to uniform cost search (or Dijkstra's algorithm)
+        if heuristic is None:
+            h = 0
+        else:
+            h = heuristic(goal_scene, current_scene)
+
+        # Initialize the open list (priority queue) for A* search
+        start_node = SearchNode(
+            None, current_scene, None, g=0, h=h
+        ) 
+        heapq.heappush(open_list, start_node)
+        visited = set()
+
+        # Init actions
+        for action in action_list:
+            action.init_action()
+
+        while open_list:
+            parent_node = heapq.heappop(open_list)
+
+            if SDUtils.check_subset_pair(goal_scene, parent_node.state):
+                solution = True
+                plan = parent_node.act_sequence()
+                return (plan, solution)
+
+            # Check if the state has already been visited
+            key = SDUtils.canonical_scene_signature(parent_node.state)
+            if key in visited:
+                continue
+            visited.add(key)
+
+            for action in action_list:
+                new_scene_action_dict = action.execute_action_on_sdscene(
+                    parent_node.state, debug=False
+                )  #
+                if new_scene_action_dict:
+                    for next_scene, action_eff in new_scene_action_dict.items():
+                        g_new = (
+                            parent_node.g + action.weight
+                        )  # accumulate action cost
+                        # astar without heuristic is equivalent to uniform cost search (or Dijkstra's algorithm)
+                        if heuristic is None:
+                            h_new = 0
+                        else:
+                            h_new = heuristic(goal_scene, next_scene) # Heuristic value for the new state
+                        new_node = SearchNode(
+                            [action, action_eff],
+                            next_scene,
+                            parent_node,
+                            g=g_new,
+                            h=h_new,
+                        )
+                        heapq.heappush(open_list, new_node)
+        return None
 
     @staticmethod
     def initialize_rdf(
@@ -170,7 +242,9 @@ class Solver:
         solution = False
 
         # Init RDF graphs from current and goal scene
-        goal_scene, current_scene = Solver.initialize_rdf(current_scene, goal_scene, action_list)
+        goal_scene, current_scene = Solver.initialize_rdf(
+            current_scene, goal_scene, action_list
+        )
 
         if RDFUtils.is_subset(goal_scene, current_scene):
             solution = True
@@ -196,7 +270,8 @@ class Solver:
                             # path = new_node.path()
                             plan = new_node.act_sequence()
                             return (plan, solution)
-                        elif parent_node.in_path(next_rdf_scene, RDFUtils.is_equal
+                        elif parent_node.in_path(
+                            next_rdf_scene, RDFUtils.is_equal
                         ):  # pruning rule1: do not consider any path that visits the same state twice
                             pass
                         else:
@@ -222,12 +297,13 @@ class Solver:
         """
 
         plan = []
-        queue = []
+        queue = deque()  # using deque for efficient FIFO queue operations
         visited = {}
-        visited_check = False
         solution = False
-        #Init RDF graphs from current and goal scene
-        goal_scene, current_scene = Solver.initialize_rdf(current_scene, goal_scene, action_list)
+        # Init RDF graphs from current and goal scene
+        goal_scene, current_scene = Solver.initialize_rdf(
+            current_scene, goal_scene, action_list
+        )
 
         if RDFUtils.is_subset(goal_scene, current_scene):
             solution = True
@@ -237,7 +313,7 @@ class Solver:
         visited = {current_scene: True}
 
         while queue:
-            parent_node = queue.pop(0)  # first-in, first-out
+            parent_node = queue.popleft()  # first-in, first-out
 
             for action in action_list:
                 new_scene_action_dict = action.execute_action_on_rdf(
@@ -249,30 +325,107 @@ class Solver:
                         new_node = SearchNode(
                             [action, action_eff], next_scene, parent_node
                         )
-                        for scene in visited:
-                            if RDFUtils.is_equal(next_scene, scene):
-                                visited_check = True
-                                break
                         if RDFUtils.is_subset(goal_scene, next_scene):
                             solution = True
                             plan = new_node.act_sequence()
                             return (plan, solution)
-                        elif visited_check:  # pruning rule: do not consider any path that visits a state that you have already visited via some other path.
-                            visited_check = False
+                        # Check if the next scene has already been visited
+                        next_key = RDFUtils.canonical_rdf_signature(next_scene)
+                        if next_key in visited:
                             pass
                         else:
-                            visited[next_scene] = True
+                            visited[next_key] = True
                             queue.append(new_node)
         return (plan, solution)
+
+    @staticmethod
+    def astar_rdf(
+        current_scene: Scene,
+        goal_scene: Scene,
+        action_list: List[Action],
+        heuristic: Optional[callable] = None,
+    ) -> Tuple[List[Any], bool]:
+        plan = []
+        solution = False
+
+        if SDUtils.check_subset_pair(goal_scene, current_scene):
+            return (plan, True)
+
+        # Init RDF graphs from current and goal scene
+        goal_scene, current_scene = Solver.initialize_rdf(
+            current_scene, goal_scene, action_list
+        )
+        # Initialize the open list (priority queue) for A* search
+        open_list = []
+
+        # astar without heuristic is equivalent to uniform cost search (or Dijkstra's algorithm)
+        if heuristic is None:
+            h = 0
+        else:
+            h = heuristic(goal_scene, current_scene)
+        # Initialize the start node with the current scene and heuristic value
+        start_node = SearchNode(
+            None, current_scene, None, g=0, h=h
+        )
+
+        heapq.heappush(open_list, start_node)
+        visited = set()
+
+        while open_list:
+            parent_node = heapq.heappop(open_list)
+
+            if RDFUtils.is_subset(goal_scene, parent_node.state):
+                solution = True
+                plan = parent_node.act_sequence()
+                return (plan, solution)
+
+            # Check if the state has already been visited
+            key = RDFUtils.canonical_rdf_signature(parent_node.state)
+            if key in visited:
+                continue
+            visited.add(key)
+
+            for action in action_list:
+                new_scene_action_dict = action.execute_action_on_rdf(
+                    parent_node.state, debug=False
+                )  #
+                if new_scene_action_dict:
+                    for next_scene, action_eff in new_scene_action_dict.items():
+                        g_new = parent_node.g + action.weight  # accumulate action cost
+
+                        # astar without heuristic is equivalent to uniform cost search (or Dijkstra's algorithm)
+                        if heuristic is None:
+                            h_new = 0
+                        else:
+                            h_new = heuristic(goal_scene, next_scene) # Heuristic value for the new state
+
+                        new_node = SearchNode(
+                            [action, action_eff],
+                            next_scene,
+                            parent_node,
+                            g=g_new,
+                            h=h_new,
+                        )
+                        heapq.heappush(open_list, new_node)
+        return None
 
 
 class SearchNode:
     """Represent each node in the tree as an instance of class SearchNode. For BFS"""
 
-    def __init__(self, action, state, parent=None):
+    def __init__(self, action, state, parent=None, g=0, h=0):
         self.action = action
         self.state = state
         self.parent = parent
+
+        self.g = g  # Cost so far
+        self.h = h  # Heuristic value
+        self.f = g + h  # Total estimated cost (f = g + h)
+
+    def __lt__(self, other):
+        """Less than operator for SearchNode to allow comparison based on f value.
+        This is used to prioritize nodes in a priority queue (e.g., heapq or sorted)."""
+        return self.f < other.f
 
     def path(self):
         """returns a sequence of a 2-tubel with action-state pairs"""
