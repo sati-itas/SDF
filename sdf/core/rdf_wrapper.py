@@ -15,7 +15,6 @@ from rdflib.plugins.sparql import prepareQuery
 
 from sdf.core.utility.dict_helper import merge_dicts
 from sdf.core.utility.timing_utils import time_tracker
-from sdf.core.utility.timing_utils import time_tracker_static
 
 
 if TYPE_CHECKING:
@@ -603,6 +602,12 @@ class RDFUtils:
             bool: True if the first graph is a subset of the second, False otherwise.
         """
         return set(g).issubset(set(other_graph))
+
+    @staticmethod
+    def canonical_rdf_signature(graph: Graph) -> tuple:
+        """Returns a hashable, canonical signature for an RDF graph."""
+        facts = sorted((str(s), str(p), str(o)) for s, p, o in graph)
+        return tuple(facts)
 
     @staticmethod
     def delete_subject(graph: Graph, subject: str):

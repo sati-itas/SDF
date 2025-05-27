@@ -54,3 +54,13 @@ def actions_simple(predicate_dict):
     action_list = [move1]
 
     return action_list
+
+
+def hanoi_heuristic(state, goal_scene):
+    # count the number of facts in the goal scene that are not in the current state
+    return sum(1 for fact in goal_scene.scene_relations.items() if fact not in state.scene_relations.items())
+
+
+def hanoi_heuristic_rdf(state, goal_scene):
+    # count the number of facts in the goal scene that are not in the current state
+    return sum(1 for fact in goal_scene.scene_relations.items() if fact not in state.scene_relations.items())

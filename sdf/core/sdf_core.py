@@ -339,12 +339,15 @@ class Action(Thing):
         a_list: List,
         d_list: List,
         select: List[str],
+        weight: float = 1.0,
     ):
         Thing.__init__(self, name=action_name)
         self.precondition = precondition
         self.a_list = a_list
         self.d_list = d_list
         self.select = select
+
+        self.weight = weight
 
         self.rdf_wrapper = None
         self.prep_query = None
@@ -386,7 +389,7 @@ class Action(Thing):
 
         if not self.prep_query:
             raise ValueError(
-                f'{self.name} action is not initialized with a valid SPARQL query'
+                f'{self.name} action is not initialized with a valid SPARQL query: use init_action() or init_action_with_rdf() first.'
             )
 
         # Execute the SPARQL query and record query processing time
@@ -684,3 +687,13 @@ class SDUtils:
                 if not set1 <= set2:
                     return False
         return True
+
+    @staticmethod
+    def canonical_scene_signature(scene: Scene) -> Tuple:
+        """Returns a hashable, canonical key for a Scene based on its facts."""
+        facts = [
+            (pred.name, *(obj.name for obj in objs))
+            for pred, obj_list in scene.scene_relations.items()
+            for objs in obj_list
+        ]
+        return tuple(sorted(facts))

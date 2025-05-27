@@ -29,8 +29,10 @@ def test_scenario20():
     dfs_list = Solver.dfs_sdscene
     dfs_list_rdf = Solver.dfs_rdf
     bfs_list_rdf = Solver.bfs_rdf
+    astar_sdscene = Solver.astar_sdscene
+    astar_rdf = Solver.astar_rdf
 
-    solver_list = [bfs_list, bfs_list_rdf, dfs_list_rdf, dfs_list]
+    solver_list = [bfs_list, bfs_list_rdf, dfs_list_rdf, dfs_list, astar_sdscene, astar_rdf]
 
     for solver in solver_list:
         testbase.test_solver(scene_tuple, solver, loops)
@@ -79,4 +81,4 @@ if __name__ == "__main__":
 
     test_scenario20()
     #test_scenario30()
-    test_scenario5gen()
+    #test_scenario5gen()
