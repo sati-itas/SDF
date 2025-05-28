@@ -37,42 +37,13 @@ class SDObject(Thing):
         position(int): position of object in environment (default=None)
     """
 
-    def __init__(self, object_name: str, object_type):
+    def __init__(self, object_name: str, object_type, **kwargs):
+        """Initialize the SDObject with a name and an object type."""
         self.object_type = object_type
         Thing.__init__(self, name=object_name)
 
-        self.course_angle = None
-        self.object_length = None
-        self.object_width = None
-
-        self.RelPos_x = None
-        self.RelPos_y = None
-        self.RelPos_z = None
-
-        self.RelAcc = None
-        self.RelAcc_x = None
-        self.RelAcc_y = None
-        self.RelAcc_z = None
-
-        self.AbsSpeed = None
-        self.AbsSpeed_x = None
-        self.AbsSpeed_y = None
-        self.AbsSpeed_z = None
-
-        self.RelSpeed = None
-        self.RelSpeed_x = None
-        self.RelSpeed_y = None
-        self.RelSpeed_z = None
-
-        self.MovingDirection = None
-        self.MovingState = None
-        self.RefPos = None
-
-        self.YawRate = None
-        self.Vel_x = None
-        self.Vel_y = None
-        self.Acc_x = None
-        self.Acc_y = None
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     def __repr__(self) -> str:
         return f'object | name={self.name}'  # id: {self.id} object type: {self.object_type}")#\n \
@@ -88,75 +59,6 @@ class SDObject(Thing):
         self,
     ):  # This method is necessary to be able to use the class as a key in a dictionary
         return hash(self.name)
-
-    def add_rel_speed(self, rel_speed):
-        self.RelSpeed = rel_speed
-
-    def add_rel_speed_x(self, rel_speed_x):
-        self.RelSpeed_x = rel_speed_x
-
-    def add_rel_speed_y(self, rel_speed_y):
-        self.RelSpeed_y = rel_speed_y
-
-    def add_rel_speed_z(self, rel_speed_z):
-        self.RelSpeed_z = rel_speed_z
-
-    def add_abs_speed(self, abs_speed):
-        self.AbsSpeed = abs_speed
-
-    def add_abs_speed_x(self, abs_speed_x):
-        self.AbsSpeed_x = abs_speed_x
-
-    def add_abs_speed_y(self, abs_speed_y):
-        self.AbsSpeed_y = abs_speed_y
-
-    def add_abs_speed_z(self, abs_speed_z):
-        self.AbsSpeed_y = abs_speed_z
-
-    def add_rel_acc(self, rel_acc):
-        self.RelAcc = rel_acc
-
-    def add_rel_acc_x(self, rel_acc_x):
-        self.RelAcc_x = rel_acc_x
-
-    def add_rel_acc_y(self, rel_acc_y):
-        self.RelAcc_y = rel_acc_y
-
-    def add_rel_acc_z(self, rel_acc_z):
-        self.RelAcc_z = rel_acc_z
-
-    def add_rel_pos_x(self, rel_pos_x):
-        self.RelPos_x = rel_pos_x
-
-    def add_rel_pos_y(self, rel_pos_y):
-        self.RelPos_y = rel_pos_y
-
-    def add_rel_pos_z(self, rel_pos_z):
-        self.RelPos_z = rel_pos_z
-
-    def add_moving_direction(self, moving_direction):
-        self.MovingDirection = moving_direction
-
-    def add_moving_state(self, moving_state):
-        self.MovingState = moving_state
-
-    def add_ref_pos(self, ref_pos):
-        self.RefPos = ref_pos
-
-    def add_yaw_rate(self, yaw_rate):
-        self.YawRate = yaw_rate
-
-    def add_vel_x(self, vel_x):
-        self.Vel_x = vel_x
-
-    def add_vel_y(self, vel_y):
-        self.Vel_y = vel_y
-
-    def add_acc_x(self, acc_x):
-        self.Acc_x = acc_x
-
-    def add_acc_y(self, acc_y):
-        self.Acc_y = acc_y
 
 
 class Predicate(Thing):
