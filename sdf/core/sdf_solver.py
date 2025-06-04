@@ -209,10 +209,10 @@ class Solver:
     ) -> Tuple[Graph, Graph]:
         # Initialize RDF graphs for current and goal scenes
         current_scene_rdf_wrapper = current_scene.init_rdf_wrapper()
-        current_scene_rdf_graph = current_scene_rdf_wrapper.graph
+        current_scene_rdf_graph = current_scene_rdf_wrapper.data_graph
 
         goal_rdf_wrapper = goal_scene.init_rdf_wrapper()
-        goal_rdf_graph = goal_rdf_wrapper.graph
+        goal_rdf_graph = goal_rdf_wrapper.data_graph
 
         # Initialize actions with the current scene's RDF wrapper
         for action in action_list:

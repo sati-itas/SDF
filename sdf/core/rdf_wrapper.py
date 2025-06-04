@@ -2,18 +2,19 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from typing import Dict
-from typing import List
+from urllib.parse import quote
 
-from rdflib import OWL
-from rdflib import RDF
-from rdflib import RDFS
 from rdflib import Graph
+from rdflib import Literal
 from rdflib import Namespace
 from rdflib import URIRef
 from rdflib.compare import to_isomorphic
+from rdflib.namespace import OWL
+from rdflib.namespace import RDF
+from rdflib.namespace import RDFS
+from rdflib.namespace import XSD
 from rdflib.plugins.sparql import prepareQuery
 
-from sdf.core.utility.dict_helper import merge_dicts
 from sdf.core.utility.timing_utils import time_tracker
 
 
@@ -38,7 +39,6 @@ class RDFWrapper:
         # else:
         #     print('WARNING: no scene passed to the constructor')
 
-        self.graph = Graph()
         self.list_of_triplets = []
         self.rdf_triplet_list = []
         self.namespace_list = []
@@ -53,6 +53,15 @@ class RDFWrapper:
         if not self.base_uri:
             self.base_uri = self.ex_base_uri
 
+        # Define data_graphs and namespace for data
+        self.data_graph = Graph()
+        self.DATA = Namespace(f"{self.base_uri}data#")
+        self.data_graph.bind('data', self.DATA)
+        # Define knowledge_graph namespac for knowledge
+        self.knowledge_graph = Graph()
+        self.KN = Namespace(f"{self.base_uri}knowledge#")
+        self.knowledge_graph.bind('scene', self.KN)
+
     def set_base_uri(self, uri: str):
         self.base_uri = uri
         return self.base_uri
@@ -60,13 +69,6 @@ class RDFWrapper:
     def to_uri(self, value: str) -> URIRef:
         """Converts a string to an URIRef using RDFUtils."""
         return RDFUtils.to_uri(value)
-
-    def load_rdf_graph(self, data_graph: str, format_: str):
-        """loads RDF graph from file"""
-        # https://rdflib.readthedocs.io/en/stable/plugin_parsers.html
-        # https://rdflib.readthedocs.io/en/stable/apidocs/rdflib.html#rdflib.graph.Graph.parse
-        loaded_graph = self.graph.parse(f'sdf/data/{data_graph}', format=format_)
-        return loaded_graph
 
     def get_base_uri(self, loaded_graph: Graph):
         """get base uri from loaded graph"""
@@ -86,274 +88,103 @@ class RDFWrapper:
         """get all predicates/properties from graph if they are marked with OWL.ObjectProperty"""
         return RDFUtils.get_predicates(self, loaded_graph)
 
-    def gen_namespace(self, debug=False) -> List:
-        """generates unique Namespace instances from object and predicate lists
+    def load_rdf_graph(self, data_graph: str, format_: str):
+        """loads RDF graph from file"""
+        # https://rdflib.readthedocs.io/en/stable/plugin_parsers.html
+        # https://rdflib.readthedocs.io/en/stable/apidocs/rdflib.html#rdflib.graph.Graph.parse
+        loaded_graph = Graph().parse(f'sdf/data/{data_graph}', format=format_)
+        return loaded_graph
 
-        Args:
-            object_types (OType class): ENUM of objects
-            objects (list): list of unique objects
-
-        Returns:
-            list of rdflib.namespace.Namespace objects: list of unique Namespace objects for rdf
-        """
-        seen_namespaces = set()
-        for item in self.scene_objects.values():
-            ns_uri = f'{self.base_uri}{item.object_type}#'  # "http://example.org/{object_type}/"
-            if ns_uri not in seen_namespaces:
-                ns = Namespace(ns_uri)
-                self.graph.bind(f'{item.object_type}', ns)
-                self.namespace_list.append(ns)
-                seen_namespaces.add(ns_uri)
-
-        # generate predicate namespace
-        ns_pred_uri = f'{self.base_uri}predicate#'  # "http://example.org/predicate/"
-        self.PRED = Namespace(ns_pred_uri)
-        self.graph.bind('pred', self.PRED)
-        self.namespace_list.append(self.PRED)
-
-        if debug:
-            print(
-                f'\nRDFWrapper.gen_namespace() - generate all rdf namespaces: {self.namespace_list}\n'
-            )
-            for item in self.namespace_list:
-                print(f'\tType Namespace {item}: {type(item)}\n')
-        return self.namespace_list
-
-    def gen_rdf_database(self, debug=False) -> Dict:
-        """generates a dict which maps any SD object to a generated rdf object; within all relations of a sdf scene.
-
-        Args:
-            debug (bool, optional)): debugmode. Dafault is False
-        Returns (Dict):
-            self.sd_rdf_dict {key=any SD object: value=any rdf object}
-        """
-
-        # iterate over all relations in current scene
-        for key, sd_value in self.scene_relation_dict.items():
-            # "scene_relation_dict" data structure: {key=sd_predicate: value=[nested List of sd_object instances]}
-            sd_predicate = key
-
-            # map sd_predicates to rdf predicate namespace
-            for namespace in self.namespace_list:
-                if namespace == self.PRED:
-                    self.predicate_mapping_dict = {
-                        sd_predicate: namespace[sd_predicate.name]
-                    }
-                    # append all mappings of rdf instances with Namespace self.PRED
-                    # to SD Predicate instances to "sd_rdf_dict" mapping dict
-                    self.sd_rdf_dict = {
-                        **self.sd_rdf_dict,
-                        **self.predicate_mapping_dict,
-                    }
-
-            # iterate over all values (sd_objects) in "scene_relation_dict"
-            for objects in sd_value:
-                if debug:
-                    print(f'wrapper.gen_rdf_database() - \t {objects}')
-                if not isinstance(objects, list):
-                    # if value is no nested list
-                    sd_subject = sd_value[0]
-                    sd_object = sd_value[1]
-
-                    for namespace_item in self.namespace_list:
-                        # iterate over namespaces
-                        # if namespace name and object type is identical generate rdf item
-                        if (
-                            str(namespace_item)
-                            == f'{self.base_uri}{sd_subject.object_type}#'
-                        ):
-                            self.subject_mapping_dict = {
-                                sd_subject: namespace_item[sd_subject.name]
-                            }  # generate rdf item
-                            self.sd_rdf_dict = {
-                                **self.sd_rdf_dict,
-                                **self.subject_mapping_dict,
-                            }
-
-                        if (
-                            str(namespace_item)
-                            == f'{self.base_uri}{sd_object.object_type}#'
-                        ):
-                            self.object_mapping_dict = {
-                                sd_object: namespace_item[sd_object.name]
-                            }
-                            self.sd_rdf_dict = {
-                                **self.sd_rdf_dict,
-                                **self.object_mapping_dict,
-                            }
-
-                        if str(namespace_item) == self.PRED:
-                            self.predicate_mapping_dict = {
-                                sd_predicate: namespace_item[sd_predicate.name]
-                            }
-                            self.sd_rdf_dict = {
-                                **self.sd_rdf_dict,
-                                **self.predicate_mapping_dict,
-                            }
-
-                else:  # else: value is nested list; iterate over all nested lists
-                    # if value is nested list
-                    for _item in objects:
-                        # same as above but one hierarchy level further down
-                        # (instead of sd_value[0] and sd_value[1]: sd_value[...][0] and sd_value[...][1])
-                        if not isinstance(_item, list):
-                            sd_subject = objects[0]
-                            sd_object = objects[1]
-
-                            for namespace_item in self.namespace_list:
-                                if (
-                                    str(namespace_item)
-                                    == f'{self.base_uri}{sd_subject.object_type}#'
-                                ):
-                                    self.subject_mapping_dict = {
-                                        sd_subject: namespace_item[sd_subject.name]
-                                    }
-                                    self.sd_rdf_dict = {
-                                        **self.sd_rdf_dict,
-                                        **self.subject_mapping_dict,
-                                    }
-
-                                if (
-                                    str(namespace_item)
-                                    == f'{self.base_uri}{sd_object.object_type}#'
-                                ):
-                                    self.object_mapping_dict = {
-                                        sd_object: namespace_item[sd_object.name]
-                                    }
-                                    self.sd_rdf_dict = {
-                                        **self.sd_rdf_dict,
-                                        **self.object_mapping_dict,
-                                    }
-
-                                if str(namespace_item) == self.PRED:
-                                    self.predicate_mapping_dict = {
-                                        sd_predicate: namespace_item[sd_predicate.name]
-                                    }
-                                    self.sd_rdf_dict = {
-                                        **self.sd_rdf_dict,
-                                        **self.predicate_mapping_dict,
-                                    }
-
-        if debug:
-            print(
-                'wrapper.gen_rdf_database() -> self.sd_rdf_dict {key=any SD object: value=any rdf object }\n'
-            )
-            for key, value in self.sd_rdf_dict.items():
-                print(f'\tkey (sd object): {key} \n \tvalue (rdf object): {value}\n \n')
-
-        return self.sd_rdf_dict
-
-    def rdf_triplets(self, debug=False) -> List:
-        """Generating rdf triplets from scene (self.scene_relation_dict),
-        namespaces (self.namespace_list) and database (self.sd_rdf_dict)
-
-        Args:
-            debug (bool, optional): debugmode. Dafault is False
-
-        Returns:
-            List:  List of Tuples: List of rdf triplets
-        """
-
-        # iterate over all SD relations in current scene
-        for sd_key, sd_value in self.scene_relation_dict.items():
-            sd_predicate = sd_key
-
-            for objects in sd_value:
-                if debug:
-                    print(f'wrapper.rdf_triplets() - \t {objects}')
-
-                if not isinstance(objects, list):
-                    # if objects is no nested list
-                    sd_subject = sd_value[0]
-                    sd_object = sd_value[1]
-
-                    # take value entries and find equivilants in "sd_rdf_dict"
-                    for rdf_key in self.sd_rdf_dict.keys():
-                        if rdf_key == sd_predicate:
-                            rdf_predicate = self.sd_rdf_dict[sd_predicate]
-                        if rdf_key == sd_subject:
-                            rdf_subject = self.sd_rdf_dict[sd_subject]
-                        if rdf_key == sd_subject:
-                            rdf_object = self.sd_rdf_dict[sd_object]
-
-                    triple = (rdf_subject, rdf_predicate, rdf_object)
-
-                    # if triple is not already in "list_of_triplets": append it
-                    if triple not in self.list_of_triplets:
-                        self.list_of_triplets.append(triple)
-                    break
-
-                else:
-                    # if value is nested list
-                    for _item in objects:
-                        # same as above but one hierarchy level further down
-                        # (instead of sd_value[0] and sd_value[1]: sd_value[...][0] and sd_value[...][1])
-                        if not isinstance(_item, list):
-                            sd_subject = objects[0]
-                            sd_object = objects[1]
-                            # take value entries and find equivilants in "sd_rdf_dict"
-                            for rdf_key in self.sd_rdf_dict.keys():
-                                if rdf_key == sd_predicate:
-                                    rdf_predicate = self.sd_rdf_dict[sd_predicate]
-                                if rdf_key == sd_subject:
-                                    rdf_subject = self.sd_rdf_dict[sd_subject]
-                                if rdf_key == sd_subject:
-                                    rdf_object = self.sd_rdf_dict[sd_object]
-                            triple = (rdf_subject, rdf_predicate, rdf_object)
-                            if triple not in self.list_of_triplets:
-                                self.list_of_triplets.append(triple)
-                            break
-        if debug:
-            print('\nRDFWrapper.RDFTriplets - generate RDF-triplets from SD_Scene:')
-            for item in self.list_of_triplets:
-                print(f'\t{item}\n')
-            print('\t\tTypes of triplet entries (given example: first triplet):')
-            for triplet_item in self.list_of_triplets[0]:
-                print(f'\t\t\t{triplet_item}: {type(triplet_item)}\n')
-        return self.list_of_triplets
+    def load_and_prepare_knowledge_graph(self, load_graph: str):
+        """Loads a knowledge graph from file, sets base URI, and binds the namespace."""
+        self.knowledge_graph = self.load_rdf_graph(load_graph, 'ttl')
+        self.get_base_uri(self.knowledge_graph)
+        self.KN = Namespace(f"{self.base_uri}knowledge#")
+        self.knowledge_graph.bind('scene', self.KN)
+        print(self.knowledge_graph.serialize(format="turtle"))
 
     @time_tracker('gen_rdf_graph_processing_time')
-    def gen_rdf_graph(self, warmup=False, debug=False):
-        """builds up RDF graph from RDF triplets
-
-        Args:
-            triplets (list of tuples): RDF triplets (subject, predicate, object)
-
-        Returns:
-            rdflib.graph.Graph : RDF graph
+    def generate_graph(self) -> Graph:
+        """Generates a knowledge graph and data graph from the current scene.
+        If no graph is provided, it generates a new knowledge graph based on the scene
+        objects types and relations.
         """
-        self.gen_namespace(debug=debug)
-        self.gen_rdf_database(debug=debug)
-        self.rdf_triplets(debug=debug)
-        # iterate over all triplets and add them to the graph
-        for item in self.list_of_triplets:
-            self.graph.add(item)
+        knowledge_triples = []
+        data_triples = []
+        for obj in self.scene_objects.values():
+            # if object type is not in knowledge graph, add it
+            class_uri = self.KN[obj.object_type.name]
+            if (class_uri, RDF.type, None) not in self.knowledge_graph:
+                # print(f"ObjectType '{obj.object_type}' not in ontology - adding it: {class_uri}")
+                class_uri = self.KN[obj.object_type.name]
+                knowledge_triples.append((class_uri, RDF.type, RDFS.Class))
+                knowledge_triples.append((class_uri, RDFS.label, Literal(f"{obj.object_type}")))
 
-        # warmup graph (load graph in memory)
-        if warmup:
-            self.graph.query(("ASK { ?s ?p ?o }"))
-        return self.graph
+        # iterate over all relations in current scene and generate ObjectProperty
+        for sd_predicate, pairs_list in self.scene_relation_dict.items():
+            pred_uri = self.KN[sd_predicate.name]
 
-    def triplet_from_relation(self, relation):
-        """generates RDF triplet from single SD relation
+            # add predicate mapping
+            self.predicate_mapping_dict[sd_predicate] = pred_uri
 
-        Args:
-            relation (Dict): Relation based on SD Objects and Predicates
+            # if predicate is not in knowledge graph, add it
+            if (pred_uri, RDF.type, None) not in self.knowledge_graph:
+                # print(f"Predicate '{sd_predicate.name}' not in ontology - adding it: {pred_uri}")
+                knowledge_triples.append((pred_uri, RDF.type, RDF.Property)) # OWL.ObjectProperty
+                knowledge_triples.append((pred_uri, RDFS.label, Literal(sd_predicate.name)))
 
-        Returns:
-            Tuple: RDF triplet (RDF subject, RDF predicate, RDF object)
-        """
-        for sd_rel_key, sd_rel_value in relation.items():
-            for mapping_key, mapping_value in self.sd_rdf_dict.items():
-                if sd_rel_key == mapping_key:
-                    pre = mapping_value
-                if sd_rel_value[0] == mapping_key:
-                    sub = mapping_value
-                if sd_rel_value[1] == mapping_key:
-                    obj = mapping_value
+            # Tripel hinzufügen
+            for sd_subj, sd_obj in pairs_list:
+                subj_uri = self.obj_uri(sd_subj)
+                obj_uri = self.obj_uri(sd_obj)
+                # add subject and object mapping
+                self.subject_mapping_dict[sd_subj] = subj_uri
+                self.object_mapping_dict[sd_obj] = obj_uri
 
-            triplet = (sub, pre, obj)
-            return triplet
+                # add subject and object to data graph
+                # TODO use object_to_rdf function
+                # if (subj_uri, RDF.type, None) not in self.data_graph:
+                #     data_triples.append((subj_uri, RDF.type, self.KN[sd_subj.object_type.name]))
+                #     data_triples.append((subj_uri, RDFS.label, Literal(sd_subj.name)))
+                # if (obj_uri, RDF.type, None) not in self.data_graph:
+                #     data_triples.append((obj_uri, RDF.type, self.KN[sd_obj.object_type.name]))
+                #     data_triples.append((obj_uri, RDFS.label, Literal(sd_obj.name)))
+                # Add the relation triple
+                data_triples.append((subj_uri, pred_uri, obj_uri))
+
+        # Batch add all triples
+        for triple in knowledge_triples:
+            self.knowledge_graph.add(triple)
+        for triple in data_triples:
+            self.data_graph.add(triple)
+
+        # merge all mappings into sd_rdf_dict
+        self.sd_rdf_dict = {
+            **self.predicate_mapping_dict,
+            **self.subject_mapping_dict,
+            **self.object_mapping_dict,
+        }
+        # to use the knowledge graph in the data graph by binding the namespace
+        self.data_graph.bind('scene', self.KN)
+
+        # print(self.knowledge_graph.serialize(format="turtle"))
+        # print(self.data_graph.serialize(format="turtle"))
+        # for key, value in self.sd_rdf_dict.items():
+        #     print(f'\tkey (sd object): {key} \n \tvalue (rdf object): {value}\n \n')
+
+        # TODO warmup graph (load graph in memory)
+        # if warmup:
+        #   self.graph.query(("ASK { ?s ?p ?o }"))
+
+        return self.data_graph
+
+    def obj_uri(self, obj):
+        # helper function to generate URIRef for objects
+        return URIRef(self.DATA + quote(obj.name))
+
+    def object_to_rdf(self):
+        # TODO
+        pass
 
     def gen_sd_scene_from_rdf_database(self, new_graph) -> Scene:
         """generates new SD scene from manipulated RDF Database.
@@ -365,10 +196,10 @@ class RDFWrapper:
         Returns:
             Scene: new SD Scene
         """
-
         new_sd_relations = {}
+
         for triplet in new_graph:
-            # print(f"triplet: {triplet}")
+            new_sub = new_pred = new_obj = None
             for key, value in self.sd_rdf_dict.items():
                 if triplet[0] == value:
                     new_sub = key
@@ -376,12 +207,8 @@ class RDFWrapper:
                     new_pred = key
                 if triplet[2] == value:
                     new_obj = key
-            try:
-                new_sd_relations = merge_dicts(
-                    new_sd_relations, {new_pred: [[new_sub, new_obj]]}
-                )
-            except Exception as e:
-                print(f'{e}:Error while creating new SD scene relations')
+            if new_pred is not None and new_sub is not None and new_obj is not None:
+                new_sd_relations.setdefault(new_pred, []).append([new_sub, new_obj])
 
         from sdf.core.sdf_core import Scene
 
@@ -393,7 +220,7 @@ class RDFWrapper:
     def serialize_rdf_graph(self, graph_name: str):
         """serialize to turtle per default"""
         with open(f'sdf/data/{graph_name}.ttl', 'wb') as f:
-            self.graph.serialize(f, format='turtle')
+            self.data_graph.serialize(f, format='turtle')
 
     def prepare_sparql_query(self, query: str):
         """Prepares the SPARQL query for the RDF graph using RDFUtils."""
@@ -422,39 +249,6 @@ class RDFWrapper:
             Graph: A new RDF graph that is a copy of the original.
         """
         return RDFUtils.copy_graph(g)
-
-    def map_rdf_object_to_sd_object(self, rdf_obj):
-        """maps given RDF object from database to SD object from given scene
-
-        Args:
-            rdf_obj (RDF URI): RDF entity from Namespace
-
-        Returns:
-            Object: object instance equivilant of given RDF object
-        """
-        for key, value in self.scene_relation_dict.items():
-            if value == rdf_obj:
-                return key
-
-    def remove_triplets_from_rdf_database(self, d_list):
-        """removes triplets from the current RDF graph wrapper instance
-        Args:
-            d_list (list): list of triplets to be removed
-        Returns:
-            rdflib.graph.Graph: updated RDF self.graph
-        """
-        self.graph = RDFUtils.remove_triplets(self.graph, d_list)
-        return self.graph
-
-    def add_triplets_to_rdf_database(self, a_list):
-        """adds triplets to the current RDF graph wrapper instance
-        Args:
-            a_list (list): list of triplets to be added
-        Returns:
-            rdflib.graph.Graph: updated RDF self.graph
-        """
-        self.graph = RDFUtils.add_triplets(self.graph, a_list)
-        return self.graph
 
     def remove_triplets(self, _graph: Graph, d_list):
         """removes triplets from RDF graph using RDFUtils"""

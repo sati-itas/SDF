@@ -203,7 +203,7 @@ class GRAPHSceneGoalValidatorTests:
         GoalScene = Scene(object_list, goal_scene)
         goal_Scene = GoalScene.init_rdf_wrapper()
 
-        self.goal_checker(init_Scene.graph, goal_Scene.graph)
+        self.goal_checker(init_Scene.data_graph, goal_Scene.data_graph)
 
         ##############################################
 

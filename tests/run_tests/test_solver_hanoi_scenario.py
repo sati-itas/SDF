@@ -15,8 +15,6 @@ from tests.env_sets.hanoi_sceanario import hanoi_classic, hanoi_heuristic_rdf, h
 from tests.run_tests.test_base import TestBase
 
 
-
-
 def test_hanoi():
     testbase = TestBase()
 

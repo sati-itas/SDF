@@ -15,8 +15,7 @@ def hanoi_predicates() -> Dict[str, Predicate]:
     predicate_dict = {'smaller': smaller, 'is_on': is_on, 'clear': clear}
     return predicate_dict
 
-
-def actions_simple(predicate_dict):
+def actions_simple(predicate_dict, base_uri: str = 'http://example.org/knowledge#'):
 
     is_on = predicate_dict['is_on']
     clear = predicate_dict['clear']
@@ -24,15 +23,15 @@ def actions_simple(predicate_dict):
     # SPARQL Query according: https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QueryForms
     # prepared for rdflib in python: https://rdflib.readthedocs.io/en/stable/intro_to_sparql.html
 
-    move_precondition1 = """
-                PREFIX pre: <http://example.org/predicate#>
+    move_precondition1 = f"""
+                PREFIX pre: <{base_uri}>
                 SELECT ?disc ?from ?to ?clear
-                WHERE {
+                WHERE {{
                         ?disk pre:smaller ?to .
                         ?disc pre:is_on ?from .
                         ?disc pre:clear ?clear .
                         ?to pre:clear ?clear .
-                }
+                }}
             """
 
     move1 = Action(

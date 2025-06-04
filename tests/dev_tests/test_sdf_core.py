@@ -34,7 +34,7 @@ def test_sdf_actions_sdscene():
 
 
     rdf_wrapper = RDFWrapper(CurrentScene)
-    graph = rdf_wrapper.gen_rdf_graph(debug=False)
+    graph = rdf_wrapper.generate_graph()
 
     # SPARQL proof
     for act in action_list:
@@ -46,7 +46,7 @@ def test_sdf_actions_sdscene():
             print(row)
         # TEST check_precondition
         scene_rdf_wrapper = CurrentScene.init_rdf_wrapper()
-        act.check_precondition_on_rdf(scene_rdf_wrapper.graph, debug=False)
+        act.check_precondition_on_rdf(scene_rdf_wrapper.data_graph, debug=False)
         # precondition
         # TEST check_precondition
         new_scene_action_dict = act.execute_action_on_sdscene(CurrentScene, debug=False)
@@ -71,11 +71,15 @@ def test_sdf_actions_rdf():
     # Test the RDFWrapper Scene Initialization
     #initialize the RDFWrapper with the current scene
     rdf_wrapper = RDFWrapper(CurrentScene)
-    graph = rdf_wrapper.gen_rdf_graph(debug=False)
+    start_time = timeit.default_timer()
+    print(f'Generating RDF graph for CurrentScene: {CurrentScene.name}')
+    graph = rdf_wrapper.generate_graph()
+    generation_time = timeit.default_timer() - start_time
+    print(f'RDF graph generation time: {generation_time:.6f} seconds')
 
     rdf_wrapper= CurrentScene.init_rdf_wrapper()
-    print(f'graphs are equal: {RDFUtils.is_equal(graph, rdf_wrapper.graph)}')
-    CurrentScene_graph = rdf_wrapper.graph
+    print(f'graphs are equal: {RDFUtils.is_equal(graph, rdf_wrapper.data_graph)}')
+    CurrentScene_graph = rdf_wrapper.data_graph
 
     # SPARQL proof
     for act in action_list:
@@ -98,11 +102,10 @@ def test_sdf_actions_rdf():
             print(row)
 
         # TEST check_precondition
-        print(f'{act.name}.check_precondition_improve() => {act.check_precondition_on_rdf(CurrentScene_graph, debug=False)}')
+        print(f'{act.name}.check_precondition_improve() => {act.check_precondition_on_rdf(CurrentScene_graph, debug=False)}\n')
 
         # TEST execute_select_dict_list_improve
-        print(f'{act.name}.execute_select_dict_list_improve() => {act.execute_action_on_rdf(CurrentScene_graph, debug=False)}')
-
+        print(f'{act.name}.execute_select_dict_list_improve() => {act.execute_action_on_rdf(CurrentScene_graph, debug=False)}\n')
 if __name__ == "__main__":
     test_sdf_actions_sdscene()
     test_sdf_actions_rdf()

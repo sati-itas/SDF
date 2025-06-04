@@ -34,41 +34,40 @@ def predicates_simple() -> Dict[str, Predicate]:
     }
     return predicate_dict
 
-
-def actions_simple(predicate_dict):
+def actions_simple(predicate_dict, base_uri: str = 'http://example.org/knowledge#'):
 
     is_on_lane = predicate_dict['is_on_lane']
 
     # SPARQL Query according: https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QueryForms
     # prepared for rdflib in python: https://rdflib.readthedocs.io/en/stable/intro_to_sparql.html
-    lc_right_precondition = """
-                PREFIX pre: <http://example.org/predicate#>
+    lc_right_precondition = f"""
+                PREFIX scene: <{base_uri}>
                 SELECT ?x ?y ?v ?e
-                WHERE {
-                        ?e pre:is_on_lane ?x .
-                        ?x pre:has_right_neighbour ?y .
-                        FILTER NOT EXISTS { ?v pre:is_on ?y}
-                }
+                WHERE {{
+                        ?e scene:is_on_lane ?x .
+                        ?x scene:has_right_neighbour ?y .
+                        FILTER NOT EXISTS {{ ?v scene:is_on ?y}}
+                }}
             """
 
-    lc_left_precondition = """
-                PREFIX pre: <http://example.org/predicate#>
+    lc_left_precondition = f"""
+                PREFIX scene:   <{base_uri}>
                 SELECT ?y ?x ?v ?e
-                WHERE {
-                        ?e pre:is_on_lane ?x .
-                        ?x pre:has_left_neighbour ?y .
-                        FILTER NOT EXISTS { ?v pre:is_on ?y}
-                }
+                WHERE {{
+                        ?e scene:is_on_lane ?x .
+                        ?x scene:has_left_neighbour ?y .
+                        FILTER NOT EXISTS {{ ?v scene:is_on ?y}}
+                }}
             """
 
-    l_keep_precondition = """
-                PREFIX pre: <http://example.org/predicate#>
+    l_keep_precondition = f"""
+                PREFIX scene: <{base_uri}>
                 SELECT ?y ?x ?v ?e
-                WHERE {
-                        ?e pre:is_on_lane ?x .
-                        ?x pre:has_successor ?y .
-                        FILTER NOT EXISTS { ?v pre:is_on ?y}
-                }
+                WHERE {{
+                        ?e scene:is_on_lane ?x .
+                        ?x scene:has_successor ?y .
+                        FILTER NOT EXISTS {{ ?v scene:is_on ?y}}
+                }}
             """
 
     # Definition of Actions

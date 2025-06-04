@@ -208,7 +208,7 @@ class Scene(Thing):
         rdf_wrapper = RDFWrapper(self)
 
         # Generate RDF graph and record processing time
-        rdf_wrapper.gen_rdf_graph()
+        rdf_wrapper.generate_graph()
         self.graph_processing_time = rdf_wrapper.gen_rdf_graph_processing_time
 
         return rdf_wrapper
@@ -379,9 +379,9 @@ class Action(Thing):
         self.rdf_wrapper = scene_rdf_wrapper
         self.graph_processing_time = scene.graph_processing_time
         # precondition of action
-        if self.check_precondition_on_rdf(scene_rdf_wrapper.graph, debug=debug):
+        if self.check_precondition_on_rdf(scene_rdf_wrapper.data_graph, debug=debug):
             # effect of action
-            new_graph_list, sd_rel_action_effect_list = self.action_effect_on_rdf(scene_rdf_wrapper.graph, debug=debug)
+            new_graph_list, sd_rel_action_effect_list = self.action_effect_on_rdf(scene_rdf_wrapper.data_graph, debug=debug)
             # map RDF Database in SD scene
             new_scene_list = []
             for graph in new_graph_list:
