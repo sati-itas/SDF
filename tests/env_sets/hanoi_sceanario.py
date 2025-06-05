@@ -29,14 +29,14 @@ def hanoi_classic(predicates, actions):
     """
 
     # instantiate sdf objects
-    disc1 = SDObject("disc1", OType.DISK)
-    disc2 = SDObject("disc2", OType.DISK)
-    disc3 = SDObject("disc3", OType.DISK)
-    peg1 = SDObject("peg1", OType.PEG)
-    peg2 = SDObject("peg2", OType.PEG)
-    peg3 = SDObject("peg3", OType.PEG)
-    o_clear = SDObject("o_clear", OType.NONE)
-    o_not_clear = SDObject("o_not_clear", OType.NONE)
+    disc1 = SDObject("disc1", OType.DISK.name)
+    disc2 = SDObject("disc2", OType.DISK.name)
+    disc3 = SDObject("disc3", OType.DISK.name)
+    peg1 = SDObject("peg1", OType.PEG.name)
+    peg2 = SDObject("peg2", OType.PEG.name)
+    peg3 = SDObject("peg3", OType.PEG.name)
+    o_clear = SDObject("o_clear", OType.NONE.name)
+    o_not_clear = SDObject("o_not_clear", OType.NONE.name)
 
     object_map = {obj.name: obj for obj in [disc1, disc2, disc3, peg1, peg2, peg3, o_clear, o_not_clear]}
 
