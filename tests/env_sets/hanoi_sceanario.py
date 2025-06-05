@@ -74,29 +74,3 @@ def hanoi_classic(predicates, actions):
 
     CurrentScene = InitScene
     return CurrentScene, GoalScene, actions
-
-def hanoi_heuristic_sd(state: Scene, goal_scene: Scene):
-    # count the number of facts in the goal scene that are not in the current state
-    state_facts = set(
-        (pred, *objs) for pred, obj_list in state.scene_relations.items() for objs in obj_list
-    )
-    return sum(
-        1
-        for pred, obj_list in goal_scene.scene_relations.items()
-        for objs in obj_list
-        if (pred, *objs) not in state_facts
-    )
-
-def hanoi_heuristic_rdf(state, goal_scene):
-    """
-    Counts the number of triples in goal_graph that are not present in state_graph.
-
-    Args:
-        goal_graph (rdflib.Graph): The goal RDF graph.
-        state_graph (rdflib.Graph): The current state RDF graph.
-
-    Returns:
-        int: Number of triples in goal_graph missing from state_graph.
-    """
-    state_triples = set(state)
-    return sum(1 for triple in goal_scene if triple not in state_triples)

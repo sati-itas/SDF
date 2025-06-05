@@ -8,13 +8,11 @@ base_dir = os.path.join(parent_dir, '..')
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
 
-from tests.env_sets.hanoi_predicates_actions import actions_simple, hanoi_predicates
+from tests.env_sets.hanoi_predicates_actions import actions_simple, hanoi_predicates, hanoi_heuristic_rdf, hanoi_heuristic_sd
 
 from sdf.core.sdf_solver import Solver
-from tests.env_sets.hanoi_sceanario import hanoi_classic, hanoi_heuristic_rdf, hanoi_heuristic_sd
+from tests.env_sets.hanoi_sceanario import hanoi_classic
 from tests.run_tests.test_base import TestBase
-
-
 
 
 def test_hanoi():
@@ -31,11 +29,11 @@ def test_hanoi():
     heuristic_sd = hanoi_heuristic_sd
 
 
-
-    bfs_sdscene = Solver.bfs_sdscene
-    bfs_rdf = Solver.bfs_rdf
-    astar_sdscene = Solver.astar_sdscene
-    astar_rdf = Solver.astar_rdf
+    solver = Solver()
+    bfs_sdscene = solver.bfs_sdscene
+    bfs_rdf = solver.bfs_rdf
+    astar_sdscene = solver.astar_sdscene
+    astar_rdf = solver.astar_rdf
 
     solver_list = [astar_rdf, astar_sdscene, bfs_sdscene, bfs_rdf]
     

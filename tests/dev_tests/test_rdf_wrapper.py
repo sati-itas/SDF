@@ -10,10 +10,8 @@ sys.path.append(parent_dir)
 sys.path.append(base_dir)
 
 from sdf.core.rdf_wrapper import RDFWrapper
-from sdf.data.otype import OType 
+from sdf.data.otype import OType
 
-# from tests.env_sets.hanoi_sceanario import *
-# from tests.env_sets.hanoi_predicates_actions import hanoi_predicates, actions_simple
 from tests.env_sets.road_test_scenarios import *
 from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple
 
@@ -28,7 +26,7 @@ def test_gen_rdf_graph():
     print(CurrentScene)
 
     rdf_wrapper = RDFWrapper(CurrentScene)
-    graph = rdf_wrapper.gen_rdf_graph()
+    graph = rdf_wrapper.generate_graph()
     print(graph)
     rdf_wrapper.serialize_rdf_graph('output_test_gen_rdf_graph')
 
@@ -51,7 +49,7 @@ def test_gen_rdf_graph_from_gen_data():
     print(CurrentScene)
 
     rdf_wrapper = RDFWrapper(CurrentScene)
-    graph = rdf_wrapper.gen_rdf_graph(debug=False)
+    graph = rdf_wrapper.generate_graph()
     print(graph)
     for act in action_list:
         print(act.name)
@@ -59,7 +57,7 @@ def test_gen_rdf_graph_from_gen_data():
         pre = graph.query(act.precondition)
         for row in pre:
             print(row)
-    
+
     rdf_wrapper.serialize_rdf_graph('out_test_gen_rdf_graph_from_gen_data')
 
     print(f'\ngraph_processing_time: {rdf_wrapper.gen_rdf_graph_processing_time*1000}ms')
@@ -84,8 +82,24 @@ def test_gen_from_data_graph():
     for pred in predicates:
         print("object-property:", pred)
 
+def test_graph_generation():
+    predicates = predicates_simple()
+    actions = actions_simple(predicates)
+    CurrentScene, GoalScene, action_list = scenario_20(predicates, actions)
+    print(repr(CurrentScene))
+
+
+    rdf_wrapper_scene = RDFWrapper(CurrentScene)
+    rdf_graph = rdf_wrapper_scene.generate_graph()
+
+    sd_scene = rdf_wrapper_scene.gen_sd_scene_from_rdf_database(rdf_graph)
+    print(repr(sd_scene))
+
+
 if __name__ == "__main__":
 
-    test_gen_rdf_graph()
-    test_gen_rdf_graph_from_gen_data()
-    test_gen_from_data_graph()
+    # test_gen_rdf_graph()
+    # test_gen_rdf_graph_from_gen_data()
+    # test_gen_from_data_graph()
+
+    test_graph_generation()

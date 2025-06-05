@@ -2,6 +2,7 @@ from typing import Dict
 
 from sdf.core.sdf_core import Action
 from sdf.core.sdf_core import Predicate
+from sdf.core.sdf_core import Scene
 from sdf.data.otype import OType
 
 
@@ -15,8 +16,7 @@ def hanoi_predicates() -> Dict[str, Predicate]:
     predicate_dict = {'smaller': smaller, 'is_on': is_on, 'clear': clear}
     return predicate_dict
 
-
-def actions_simple(predicate_dict):
+def actions_simple(predicate_dict, base_uri: str = 'http://example.org/knowledge#'):
 
     is_on = predicate_dict['is_on']
     clear = predicate_dict['clear']
@@ -24,15 +24,15 @@ def actions_simple(predicate_dict):
     # SPARQL Query according: https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QueryForms
     # prepared for rdflib in python: https://rdflib.readthedocs.io/en/stable/intro_to_sparql.html
 
-    move_precondition1 = """
-                PREFIX pre: <http://example.org/predicate#>
+    move_precondition1 = f"""
+                PREFIX pre: <{base_uri}>
                 SELECT ?disc ?from ?to ?clear
-                WHERE {
+                WHERE {{
                         ?disk pre:smaller ?to .
                         ?disc pre:is_on ?from .
                         ?disc pre:clear ?clear .
                         ?to pre:clear ?clear .
-                }
+                }}
             """
 
     move1 = Action(
@@ -55,12 +55,29 @@ def actions_simple(predicate_dict):
 
     return action_list
 
-
-def hanoi_heuristic(state, goal_scene):
+def hanoi_heuristic_sd(state: Scene, goal_scene: Scene):
     # count the number of facts in the goal scene that are not in the current state
-    return sum(1 for fact in goal_scene.scene_relations.items() if fact not in state.scene_relations.items())
-
+    state_facts = set(
+        (pred, *objs) for pred, obj_list in state.scene_relations.items() for objs in obj_list
+    )
+    return sum(
+        1
+        for pred, obj_list in goal_scene.scene_relations.items()
+        for objs in obj_list
+        if (pred, *objs) not in state_facts
+    )
 
 def hanoi_heuristic_rdf(state, goal_scene):
-    # count the number of facts in the goal scene that are not in the current state
-    return sum(1 for fact in goal_scene.scene_relations.items() if fact not in state.scene_relations.items())
+    """
+    Counts the number of triples in goal_graph that are not present in state_graph.
+
+    Args:
+        goal_graph (rdflib.Graph): The goal RDF graph.
+        state_graph (rdflib.Graph): The current state RDF graph.
+
+    Returns:
+        int: Number of triples in goal_graph missing from state_graph.
+    """
+    state_triples = set(state)
+    return sum(1 for triple in goal_scene if triple not in state_triples)
+
