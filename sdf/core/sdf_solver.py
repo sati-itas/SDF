@@ -14,8 +14,13 @@ from sdf.core.sdf_core import SDUtils
 
 
 class Solver:
-    @staticmethod
-    def dfs_sdscene(
+    """Solver class for solving discrete state transition systems (SDScenes) and RDF graphs."""
+
+    def __init__(self, object_template=None):
+        """Initialize the Solver class."""
+        self.object_template = object_template
+
+    def dfs_sdscene(self,
         current_scene: Scene,
         goal_scene: Scene,
         action_list: List[Action],
@@ -72,8 +77,7 @@ class Solver:
                             queue.append(new_node)
         return (plan, solution)
 
-    @staticmethod
-    def bfs_sdscene(
+    def bfs_sdscene(self,
         current_scene: Scene,
         goal_scene: Scene,
         action_list: List[Action],
@@ -133,8 +137,7 @@ class Solver:
                             queue.append(new_node)
         return (plan, solution)
 
-    @staticmethod
-    def astar_sdscene(
+    def astar_sdscene(self,
         current_scene: Scene,
         goal_scene: Scene,
         action_list: List[Action],
@@ -203,15 +206,14 @@ class Solver:
                         heapq.heappush(open_list, new_node)
         return None
 
-    @staticmethod
-    def initialize_rdf(
+    def initialize_rdf(self,
         current_scene: Scene, goal_scene: Scene, action_list: List[Action]
     ) -> Tuple[Graph, Graph]:
         # Initialize RDF graphs for current and goal scenes
-        current_scene_rdf_wrapper = current_scene.init_rdf_wrapper()
+        current_scene_rdf_wrapper = current_scene.init_rdf_wrapper(template=self.object_template)
         current_scene_rdf_graph = current_scene_rdf_wrapper.data_graph
 
-        goal_rdf_wrapper = goal_scene.init_rdf_wrapper()
+        goal_rdf_wrapper = goal_scene.init_rdf_wrapper(template=self.object_template)
         goal_rdf_graph = goal_rdf_wrapper.data_graph
 
         # Initialize actions with the current scene's RDF wrapper
@@ -220,8 +222,7 @@ class Solver:
 
         return goal_rdf_graph, current_scene_rdf_graph
 
-    @staticmethod
-    def dfs_rdf(
+    def dfs_rdf(self,
         current_scene: Scene,
         goal_scene: Scene,
         action_list: List[Action],
@@ -242,7 +243,7 @@ class Solver:
         solution = False
 
         # Init RDF graphs from current and goal scene
-        goal_scene, current_scene = Solver.initialize_rdf(
+        goal_scene, current_scene = self.initialize_rdf(
             current_scene, goal_scene, action_list
         )
 
@@ -278,8 +279,7 @@ class Solver:
                             queue.append(new_node)
         return (plan, solution)
 
-    @staticmethod
-    def bfs_rdf(
+    def bfs_rdf(self,
         current_scene: Scene,
         goal_scene: Scene,
         action_list: List[Action],
@@ -301,7 +301,7 @@ class Solver:
         visited = {}
         solution = False
         # Init RDF graphs from current and goal scene
-        goal_scene, current_scene = Solver.initialize_rdf(
+        goal_scene, current_scene = self.initialize_rdf(
             current_scene, goal_scene, action_list
         )
 
@@ -338,8 +338,7 @@ class Solver:
                             queue.append(new_node)
         return (plan, solution)
 
-    @staticmethod
-    def astar_rdf(
+    def astar_rdf(self,
         current_scene: Scene,
         goal_scene: Scene,
         action_list: List[Action],
@@ -352,7 +351,7 @@ class Solver:
             return (plan, True)
 
         # Init RDF graphs from current and goal scene
-        goal_scene, current_scene = Solver.initialize_rdf(
+        goal_scene, current_scene = self.initialize_rdf(
             current_scene, goal_scene, action_list
         )
         # Initialize the open list (priority queue) for A* search

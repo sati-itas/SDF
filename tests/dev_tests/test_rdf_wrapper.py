@@ -85,7 +85,7 @@ def test_gen_from_data_graph():
 def test_graph_generation():
     predicates = predicates_simple()
     actions = actions_simple(predicates)
-    CurrentScene, GoalScene, action_list = scenario_5(predicates, actions)
+    CurrentScene, GoalScene, action_list = scenario_20(predicates, actions)
     print(repr(CurrentScene))
 
 
@@ -98,8 +98,8 @@ def test_graph_generation():
 
 if __name__ == "__main__":
 
-    test_gen_rdf_graph()
-    test_gen_rdf_graph_from_gen_data()
-    test_gen_from_data_graph()
+    # test_gen_rdf_graph()
+    # test_gen_rdf_graph_from_gen_data()
+    # test_gen_from_data_graph()
 
     test_graph_generation()

@@ -21,7 +21,6 @@ from sdf.core.utility.timing_utils import time_tracker
 if TYPE_CHECKING:
     from sdf.core.sdf_core import Scene
 
-
 class RDFWrapper:
     """Wrapper for mapping SD structure to rdf (and vice versa)
 
@@ -104,7 +103,7 @@ class RDFWrapper:
         print(self.knowledge_graph.serialize(format="turtle"))
 
     @time_tracker('gen_rdf_graph_processing_time')
-    def generate_graph(self) -> Graph:
+    def generate_graph(self, object_template=None) -> Graph:
         """Generates a knowledge graph and data graph from the current scene.
         If no graph is provided, it generates a new knowledge graph based on the scene
         objects types and relations.
@@ -142,13 +141,13 @@ class RDFWrapper:
                 self.object_mapping_dict[sd_obj] = obj_uri
 
                 # add subject and object to data graph
-                # TODO use object_to_rdf function
-                # if (subj_uri, RDF.type, None) not in self.data_graph:
-                #     data_triples.append((subj_uri, RDF.type, self.KN[sd_subj.object_type.name]))
-                #     data_triples.append((subj_uri, RDFS.label, Literal(sd_subj.name)))
-                # if (obj_uri, RDF.type, None) not in self.data_graph:
-                #     data_triples.append((obj_uri, RDF.type, self.KN[sd_obj.object_type.name]))
-                #     data_triples.append((obj_uri, RDFS.label, Literal(sd_obj.name)))
+                # use object_to_rdf function
+                # to speed up the process comment this out
+                subj_data_triple = self.object_to_rdf(sd_subj, template=object_template)
+                data_triples.extend(subj_data_triple)
+                obj_data_triple = self.object_to_rdf(sd_obj, template=object_template)
+                data_triples.extend(obj_data_triple)
+
                 # Add the relation triple
                 data_triples.append((subj_uri, pred_uri, obj_uri))
 
@@ -180,11 +179,48 @@ class RDFWrapper:
 
     def obj_uri(self, obj):
         # helper function to generate URIRef for objects
-        return URIRef(self.DATA + quote(obj.name))
+        return URIRef(self.DATA + quote(obj.name)) #or URIRef(self.DATA + quote(obj.id))
 
-    def object_to_rdf(self):
-        # TODO
-        pass
+    def object_to_rdf(self, obj, template=None, knowledge_ns=None, data_ns=None):
+        # TODO currently: static Template for object to RDF
+        # conversion instead of using knowledge graph to get properties of an object type.
+        # TODO 
+        obj_data_triples = []
+
+        if template is None:
+            return obj_data_triples  # return empty list if no template is provided
+
+        if knowledge_ns is None:
+            knowledge_ns = self.KN
+        if data_ns is None:
+            data_ns = self.DATA
+
+        object_uri = self.obj_uri(obj)
+
+        # Typ-Tripel hinzufügen (z. B. ex:Vehicle)
+        obj_type = getattr(obj, "object_type", None)
+        if obj_type:
+            obj_data_triples.append((object_uri, RDF.type, knowledge_ns[obj_type.name]))
+
+        # obj_name = getattr(obj, "name", None)
+        # if obj_name:
+        #     obj_data_triples.append((object_uri, RDFS.label, Literal(obj_name)))
+
+        # obj_id = getattr(obj, "id", None)
+        # if obj_id:
+        #     obj_data_triples.append((object_uri, knowledge_ns["id"], Literal(obj_id)))
+
+        # Attribute als Properties einfügen
+        for attr in template:
+            if attr in {"id", "object_type", "name"}:
+                continue  # schon verarbeitet
+
+            if hasattr(obj, attr):
+                value = getattr(obj, attr)
+                if value is not None:
+                    obj_data_triples.append((object_uri, knowledge_ns[attr], Literal(value)))
+
+        return obj_data_triples
 
     def gen_sd_scene_from_rdf_database(self, new_graph) -> Scene:
         """generates new SD scene from manipulated RDF Database.
@@ -261,6 +297,11 @@ class RDFWrapper:
 
 class RDFUtils:
     """Utility class for RDF operations"""
+
+    @staticmethod
+    def show_graph(loaded_graph: Graph):
+        """Prints the RDF graph in turtle format."""
+        print(loaded_graph.serialize(format="turtle"))
 
     @staticmethod
     def get_predicates(self, loaded_graph: Graph):

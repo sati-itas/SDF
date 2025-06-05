@@ -197,7 +197,7 @@ class Scene(Thing):
         ]
         return obj_list
 
-    def init_rdf_wrapper(self):
+    def init_rdf_wrapper(self, template=None):
         """Initialize the RDF wrapper with the current scene
         and generate the corresponding RDF graph.
         Returns:
@@ -206,10 +206,14 @@ class Scene(Thing):
         from sdf.core.rdf_wrapper import RDFWrapper
 
         rdf_wrapper = RDFWrapper(self)
-
-        # Generate RDF graph and record processing time
-        rdf_wrapper.generate_graph()
-        self.graph_processing_time = rdf_wrapper.gen_rdf_graph_processing_time
+        if template is None:
+            # Generate RDF graph and record processing time
+            rdf_wrapper.generate_graph()
+            self.graph_processing_time = rdf_wrapper.gen_rdf_graph_processing_time
+        else:
+            # Generate RDF graph with a specific template and record processing time
+            rdf_wrapper.generate_graph(object_template=template)
+            self.graph_processing_time = rdf_wrapper.gen_rdf_graph_processing_time
 
         return rdf_wrapper
 
