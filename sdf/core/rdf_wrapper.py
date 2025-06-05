@@ -113,10 +113,10 @@ class RDFWrapper:
         data_triples = []
         for obj in self.scene_objects.values():
             # if object type is not in knowledge graph, add it
-            class_uri = self.KN[obj.object_type.name]
+            class_uri = self.KN[obj.object_type]
             if (class_uri, RDF.type, None) not in self.knowledge_graph:
                 # print(f"ObjectType '{obj.object_type}' not in ontology - adding it: {class_uri}")
-                class_uri = self.KN[obj.object_type.name]
+                class_uri = self.KN[obj.object_type]
                 knowledge_triples.append((class_uri, RDF.type, RDFS.Class))
                 knowledge_triples.append(
                     (class_uri, RDFS.label, Literal(f'{obj.object_type}'))
@@ -208,7 +208,7 @@ class RDFWrapper:
         # Typ-Tripel hinzufügen (z. B. ex:Vehicle)
         obj_type = getattr(obj, 'object_type', None)
         if obj_type:
-            obj_data_triples.append((object_uri, RDF.type, knowledge_ns[obj_type.name]))
+            obj_data_triples.append((object_uri, RDF.type, knowledge_ns[obj_type]))
 
         # obj_name = getattr(obj, "name", None)
         # if obj_name:
