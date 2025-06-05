@@ -1,5 +1,7 @@
 import heapq  # https://docs.python.org/3/library/heapq.html
-from collections import deque # https://docs.python.org/3/library/collections.html#deque-objects
+from collections import (
+    deque,
+)  # https://docs.python.org/3/library/collections.html#deque-objects
 from typing import Any
 from typing import List
 from typing import Optional
@@ -20,7 +22,8 @@ class Solver:
         """Initialize the Solver class."""
         self.object_template = object_template
 
-    def dfs_sdscene(self,
+    def dfs_sdscene(
+        self,
         current_scene: Scene,
         goal_scene: Scene,
         action_list: List[Action],
@@ -77,7 +80,8 @@ class Solver:
                             queue.append(new_node)
         return (plan, solution)
 
-    def bfs_sdscene(self,
+    def bfs_sdscene(
+        self,
         current_scene: Scene,
         goal_scene: Scene,
         action_list: List[Action],
@@ -137,7 +141,8 @@ class Solver:
                             queue.append(new_node)
         return (plan, solution)
 
-    def astar_sdscene(self,
+    def astar_sdscene(
+        self,
         current_scene: Scene,
         goal_scene: Scene,
         action_list: List[Action],
@@ -158,9 +163,7 @@ class Solver:
             h = heuristic(goal_scene, current_scene)
 
         # Initialize the open list (priority queue) for A* search
-        start_node = SearchNode(
-            None, current_scene, None, g=0, h=h
-        ) 
+        start_node = SearchNode(None, current_scene, None, g=0, h=h)
         heapq.heappush(open_list, start_node)
         visited = set()
 
@@ -188,14 +191,14 @@ class Solver:
                 )  #
                 if new_scene_action_dict:
                     for next_scene, action_eff in new_scene_action_dict.items():
-                        g_new = (
-                            parent_node.g + action.weight
-                        )  # accumulate action cost
+                        g_new = parent_node.g + action.weight  # accumulate action cost
                         # astar without heuristic is equivalent to uniform cost search (or Dijkstra's algorithm)
                         if heuristic is None:
                             h_new = 0
                         else:
-                            h_new = heuristic(goal_scene, next_scene) # Heuristic value for the new state
+                            h_new = heuristic(
+                                goal_scene, next_scene
+                            )  # Heuristic value for the new state
                         new_node = SearchNode(
                             [action, action_eff],
                             next_scene,
@@ -206,11 +209,13 @@ class Solver:
                         heapq.heappush(open_list, new_node)
         return None
 
-    def initialize_rdf(self,
-        current_scene: Scene, goal_scene: Scene, action_list: List[Action]
+    def initialize_rdf(
+        self, current_scene: Scene, goal_scene: Scene, action_list: List[Action]
     ) -> Tuple[Graph, Graph]:
         # Initialize RDF graphs for current and goal scenes
-        current_scene_rdf_wrapper = current_scene.init_rdf_wrapper(template=self.object_template)
+        current_scene_rdf_wrapper = current_scene.init_rdf_wrapper(
+            template=self.object_template
+        )
         current_scene_rdf_graph = current_scene_rdf_wrapper.data_graph
 
         goal_rdf_wrapper = goal_scene.init_rdf_wrapper(template=self.object_template)
@@ -222,7 +227,8 @@ class Solver:
 
         return goal_rdf_graph, current_scene_rdf_graph
 
-    def dfs_rdf(self,
+    def dfs_rdf(
+        self,
         current_scene: Scene,
         goal_scene: Scene,
         action_list: List[Action],
@@ -279,7 +285,8 @@ class Solver:
                             queue.append(new_node)
         return (plan, solution)
 
-    def bfs_rdf(self,
+    def bfs_rdf(
+        self,
         current_scene: Scene,
         goal_scene: Scene,
         action_list: List[Action],
@@ -338,7 +345,8 @@ class Solver:
                             queue.append(new_node)
         return (plan, solution)
 
-    def astar_rdf(self,
+    def astar_rdf(
+        self,
         current_scene: Scene,
         goal_scene: Scene,
         action_list: List[Action],
@@ -363,9 +371,7 @@ class Solver:
         else:
             h = heuristic(goal_scene, current_scene)
         # Initialize the start node with the current scene and heuristic value
-        start_node = SearchNode(
-            None, current_scene, None, g=0, h=h
-        )
+        start_node = SearchNode(None, current_scene, None, g=0, h=h)
 
         heapq.heappush(open_list, start_node)
         visited = set()
@@ -396,7 +402,9 @@ class Solver:
                         if heuristic is None:
                             h_new = 0
                         else:
-                            h_new = heuristic(goal_scene, next_scene) # Heuristic value for the new state
+                            h_new = heuristic(
+                                goal_scene, next_scene
+                            )  # Heuristic value for the new state
 
                         new_node = SearchNode(
                             [action, action_eff],

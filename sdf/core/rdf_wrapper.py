@@ -21,6 +21,7 @@ from sdf.core.utility.timing_utils import time_tracker
 if TYPE_CHECKING:
     from sdf.core.sdf_core import Scene
 
+
 class RDFWrapper:
     """Wrapper for mapping SD structure to rdf (and vice versa)
 
@@ -54,11 +55,11 @@ class RDFWrapper:
 
         # Define data_graphs and namespace for data
         self.data_graph = Graph()
-        self.DATA = Namespace(f"{self.base_uri}data#")
+        self.DATA = Namespace(f'{self.base_uri}data#')
         self.data_graph.bind('data', self.DATA)
         # Define knowledge_graph namespac for knowledge
         self.knowledge_graph = Graph()
-        self.KN = Namespace(f"{self.base_uri}knowledge#")
+        self.KN = Namespace(f'{self.base_uri}knowledge#')
         self.knowledge_graph.bind('scene', self.KN)
 
     def set_base_uri(self, uri: str):
@@ -98,9 +99,9 @@ class RDFWrapper:
         """Loads a knowledge graph from file, sets base URI, and binds the namespace."""
         self.knowledge_graph = self.load_rdf_graph(load_graph, 'ttl')
         self.get_base_uri(self.knowledge_graph)
-        self.KN = Namespace(f"{self.base_uri}knowledge#")
+        self.KN = Namespace(f'{self.base_uri}knowledge#')
         self.knowledge_graph.bind('scene', self.KN)
-        print(self.knowledge_graph.serialize(format="turtle"))
+        print(self.knowledge_graph.serialize(format='turtle'))
 
     @time_tracker('gen_rdf_graph_processing_time')
     def generate_graph(self, object_template=None) -> Graph:
@@ -117,7 +118,9 @@ class RDFWrapper:
                 # print(f"ObjectType '{obj.object_type}' not in ontology - adding it: {class_uri}")
                 class_uri = self.KN[obj.object_type.name]
                 knowledge_triples.append((class_uri, RDF.type, RDFS.Class))
-                knowledge_triples.append((class_uri, RDFS.label, Literal(f"{obj.object_type}")))
+                knowledge_triples.append(
+                    (class_uri, RDFS.label, Literal(f'{obj.object_type}'))
+                )
 
         # iterate over all relations in current scene and generate ObjectProperty
         for sd_predicate, pairs_list in self.scene_relation_dict.items():
@@ -129,8 +132,12 @@ class RDFWrapper:
             # if predicate is not in knowledge graph, add it
             if (pred_uri, RDF.type, None) not in self.knowledge_graph:
                 # print(f"Predicate '{sd_predicate.name}' not in ontology - adding it: {pred_uri}")
-                knowledge_triples.append((pred_uri, RDF.type, RDF.Property)) # OWL.ObjectProperty
-                knowledge_triples.append((pred_uri, RDFS.label, Literal(sd_predicate.name)))
+                knowledge_triples.append(
+                    (pred_uri, RDF.type, RDF.Property)
+                )  # OWL.ObjectProperty
+                knowledge_triples.append(
+                    (pred_uri, RDFS.label, Literal(sd_predicate.name))
+                )
 
             # Tripel hinzufügen
             for sd_subj, sd_obj in pairs_list:
@@ -179,12 +186,13 @@ class RDFWrapper:
 
     def obj_uri(self, obj):
         # helper function to generate URIRef for objects
-        return URIRef(self.DATA + quote(obj.name)) #or URIRef(self.DATA + quote(obj.id))
+        return URIRef(
+            self.DATA + quote(obj.name)
+        )  # or URIRef(self.DATA + quote(obj.id))
 
     def object_to_rdf(self, obj, template=None, knowledge_ns=None, data_ns=None):
-        # TODO currently: static Template for object to RDF
-        # conversion instead of using knowledge graph to get properties of an object type.
-        # TODO 
+        # TODO currently: static Template for object to RDF conversion
+        #  instead of using knowledge graph to get properties of an object type.
         obj_data_triples = []
 
         if template is None:
@@ -198,7 +206,7 @@ class RDFWrapper:
         object_uri = self.obj_uri(obj)
 
         # Typ-Tripel hinzufügen (z. B. ex:Vehicle)
-        obj_type = getattr(obj, "object_type", None)
+        obj_type = getattr(obj, 'object_type', None)
         if obj_type:
             obj_data_triples.append((object_uri, RDF.type, knowledge_ns[obj_type.name]))
 
@@ -212,13 +220,15 @@ class RDFWrapper:
 
         # Attribute als Properties einfügen
         for attr in template:
-            if attr in {"id", "object_type", "name"}:
+            if attr in {'id', 'object_type', 'name'}:
                 continue  # schon verarbeitet
 
             if hasattr(obj, attr):
                 value = getattr(obj, attr)
                 if value is not None:
-                    obj_data_triples.append((object_uri, knowledge_ns[attr], Literal(value)))
+                    obj_data_triples.append(
+                        (object_uri, knowledge_ns[attr], Literal(value))
+                    )
 
         return obj_data_triples
 
@@ -275,7 +285,9 @@ class RDFWrapper:
         Returns:
             Result: Query result or None if an error occurs.
         """
-        return RDFUtils.query_rdf_graph(graph, query=query, prepared_query=prepared_query)
+        return RDFUtils.query_rdf_graph(
+            graph, query=query, prepared_query=prepared_query
+        )
 
     def copy_rdf_graph(self, g: Graph) -> Graph:
         """Creates a copy of the given RDF graph from the given graph.
@@ -301,7 +313,7 @@ class RDFUtils:
     @staticmethod
     def show_graph(loaded_graph: Graph):
         """Prints the RDF graph in turtle format."""
-        print(loaded_graph.serialize(format="turtle"))
+        print(loaded_graph.serialize(format='turtle'))
 
     @staticmethod
     def get_predicates(self, loaded_graph: Graph):
@@ -349,8 +361,10 @@ class RDFUtils:
         Returns:
             URIRef: The converted URIRef object.
         """
-        if not value.startswith("http://") and not value.startswith("https://"):
-            raise ValueError(f"Invalid URI: {value}. Must start with 'http://' or 'https://'.")
+        if not value.startswith('http://') and not value.startswith('https://'):
+            raise ValueError(
+                f"Invalid URI: {value}. Must start with 'http://' or 'https://'."
+            )
         return URIRef(value)
 
     @staticmethod
@@ -458,7 +472,8 @@ class RDFUtils:
             DELETE WHERE {
                 <{subject}> ?p ?o .
                 }
-            """)
+            """
+        )
 
         delete_template.execute(graph=graph, subject=subject)
         return graph
@@ -477,7 +492,8 @@ class RDFUtils:
                 INSERT DATA {
                     <{subject}> <{predicate}> "{value}" .
                 }
-            """)
+            """
+        )
 
         insert_template.execute(graph=graph, subject=subject)
         return graph
@@ -498,7 +514,7 @@ class RDFUtils:
         return graph_copy
         # return g + Graph()
 
-    #@time_tracker_static('query_rdf_graph_processing_time')
+    # @time_tracker_static('query_rdf_graph_processing_time')
     @staticmethod
     def query_rdf_graph(graph: Graph, query: str = None, prepared_query=None):
         """
@@ -520,7 +536,7 @@ class RDFUtils:
             else:
                 raise ValueError("Either 'query' or 'prepared_query' must be provided.")
         except Exception as e:
-            print(f"Error while querying RDF graph: {e}")
+            print(f'Error while querying RDF graph: {e}')
             return None
 
     @staticmethod
