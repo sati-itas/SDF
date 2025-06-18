@@ -149,6 +149,27 @@ class Scene(Thing):
     ):  # This method is necessary to be able to use the class as a key in a dictionary
         return hash(self.id)
 
+    def get_relations_for_object(
+        self, object_name: str
+    ) -> Dict[Predicate, List[Union[List[int], Tuple[int, int]]]]:
+        """Get all relations for a specific object in the scene.
+
+        Args:
+            object_name (str): name of the object to search for
+
+        Returns:
+            Dict[Predicate, List[Union[List[int], Tuple[int, int]]]]: Dictionary of predicates and their corresponding relations
+        """
+        relations = {}
+
+        for predicate, objects in self.scene_relations.items():
+            for obj_pair in objects:
+                if isinstance(obj_pair, list):
+                    if any(o.name == object_name for o in obj_pair):
+                        relations.setdefault(predicate, []).append(obj_pair)
+
+        return relations
+
     def search_relation(self, predicate: Predicate) -> List[SDObject]:
         """Searching a SDObject in scene_relation with the given predicate and returns SDObject instance
 
@@ -205,17 +226,29 @@ class Scene(Thing):
         """
         from sdf.core.rdf_wrapper import RDFWrapper
 
-        rdf_wrapper = RDFWrapper(self)
+        self.rdf_wrapper = RDFWrapper(self)
         if template is None:
             # Generate RDF graph and record processing time
-            rdf_wrapper.generate_graph()
-            self.graph_processing_time = rdf_wrapper.gen_rdf_graph_processing_time
+            self.rdf_wrapper.generate_graph()
+            self.graph_processing_time = self.rdf_wrapper.gen_rdf_graph_processing_time
         else:
             # Generate RDF graph with a specific template and record processing time
-            rdf_wrapper.generate_graph(object_template=template)
-            self.graph_processing_time = rdf_wrapper.gen_rdf_graph_processing_time
+            self.rdf_wrapper.generate_graph(object_template=template)
+            self.graph_processing_time = self.rdf_wrapper.gen_rdf_graph_processing_time
 
-        return rdf_wrapper
+        return self.rdf_wrapper
+
+    def get_scene_wrapper(self):
+        """Get the RDF wrapper for the current scene.
+
+        Returns:
+            rdf_wrapper (RDFWrapper): The RDF wrapper associated with the scene.
+        """
+        if not hasattr(self, 'rdf_wrapper'):
+            raise ValueError(
+                'RDF wrapper is not initialized. Call init_rdf_wrapper() first.'
+            )
+        return self.rdf_wrapper
 
     def get_graph_processing_time(self):
         """graph_processing_time time of rdf-graph generation
@@ -432,7 +465,7 @@ class Action(Thing):
                 print_graph = self.rdf_wrapper.gen_sd_scene_from_rdf_database(
                     _new_graph
                 )
-                print(f'print_graph: dlist before: \n {print_graph}')
+                print(f'print_graph: dlist before: \n {repr(print_graph)}')
             for d_dictonary in self.d_list:
                 for pred, select_parameters in d_dictonary.items():
                     # Process the select parameters to extract the subject (sub) and object (obj)
@@ -461,7 +494,7 @@ class Action(Thing):
                 print_graph = self.rdf_wrapper.gen_sd_scene_from_rdf_database(
                     _new_graph
                 )
-                print(f'print_graph: dlist after == alist before: \n {print_graph}')
+                print(f'print_graph: dlist after == alist before: \n {repr(print_graph)}')
             # add new_graph to new_graph_list
             new_graph_list.append(_new_graph)
         return new_graph_list
@@ -526,7 +559,7 @@ class Action(Thing):
                 print_graph = self.rdf_wrapper.gen_sd_scene_from_rdf_database(
                     _new_graph
                 )
-                print(f'print_graph: alist after: \n {print_graph}')
+                print(f'print_graph: alist after: \n {repr(print_graph)}\n -----------------------------')
 
             _new_graph_list.append(_new_graph)
 

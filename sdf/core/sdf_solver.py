@@ -176,7 +176,7 @@ class Solver:
 
             if SDUtils.check_subset_pair(goal_scene, parent_node.state):
                 solution = True
-                plan = parent_node.act_sequence()
+                plan = parent_node.path()
                 return (plan, solution)
 
             # Check if the state has already been visited
@@ -207,7 +207,7 @@ class Solver:
                             h=h_new,
                         )
                         heapq.heappush(open_list, new_node)
-        return None
+        return ([], solution)
 
     def initialize_rdf(
         self, current_scene: Scene, goal_scene: Scene, action_list: List[Action]
@@ -217,7 +217,7 @@ class Solver:
             template=self.object_template
         )
         current_scene_rdf_graph = current_scene_rdf_wrapper.data_graph
-
+        #RDFUtils.show_graph(current_scene_rdf_graph)
         goal_rdf_wrapper = goal_scene.init_rdf_wrapper(template=self.object_template)
         goal_rdf_graph = goal_rdf_wrapper.data_graph
 
@@ -275,7 +275,7 @@ class Solver:
                         if RDFUtils.is_subset(goal_scene, next_rdf_scene):
                             solution = True
                             # path = new_node.path()
-                            plan = new_node.act_sequence()
+                            plan = new_node.path()
                             return (plan, solution)
                         elif parent_node.in_path(
                             next_rdf_scene, RDFUtils.is_equal
@@ -334,7 +334,7 @@ class Solver:
                         )
                         if RDFUtils.is_subset(goal_scene, next_scene):
                             solution = True
-                            plan = new_node.act_sequence()
+                            plan = new_node.path()
                             return (plan, solution)
                         # Check if the next scene has already been visited
                         next_key = RDFUtils.canonical_rdf_signature(next_scene)
@@ -381,7 +381,7 @@ class Solver:
 
             if RDFUtils.is_subset(goal_scene, parent_node.state):
                 solution = True
-                plan = parent_node.act_sequence()
+                plan = parent_node.path()
                 return (plan, solution)
 
             # Check if the state has already been visited
@@ -414,7 +414,7 @@ class Solver:
                             h=h_new,
                         )
                         heapq.heappush(open_list, new_node)
-        return None
+        return ([], solution)
 
 
 class SearchNode:
