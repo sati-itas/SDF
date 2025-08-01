@@ -111,6 +111,7 @@ class RDFWrapper:
         """
         knowledge_triples = []
         data_triples = []
+
         for obj in self.scene_objects.values():
             # if object type is not in knowledge graph, add it
             class_uri = self.KN[obj.object_type]
@@ -226,9 +227,14 @@ class RDFWrapper:
             if hasattr(obj, attr):
                 value = getattr(obj, attr)
                 if value is not None:
+                    # add the attribute as a triple
                     obj_data_triples.append(
                         (object_uri, knowledge_ns[attr], Literal(value))
                     )
+                    from sdf.core.sdf_core import Predicate
+                    # generate sd_predicates from template
+                    sd_predicate = Predicate(attr)
+                    self.predicate_mapping_dict[sd_predicate] = knowledge_ns[attr]
 
         return obj_data_triples
 
