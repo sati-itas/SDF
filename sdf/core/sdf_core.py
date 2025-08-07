@@ -1,3 +1,7 @@
+from logging import DEBUG
+from logging import INFO
+from logging import basicConfig
+from logging import getLogger
 from typing import Dict
 from typing import List
 from typing import Tuple
@@ -6,6 +10,11 @@ from typing import Union
 from rdflib import Graph
 
 from .utility.timing_utils import time_tracker
+
+
+basicConfig(level=INFO)
+logger = getLogger(__name__)
+# logger.setLevel(DEBUG)
 
 
 class Thing:
@@ -77,14 +86,14 @@ class Predicate(Thing):
 
     def __eq__(self, other):
         if isinstance(other, self.__class__):
-            return self.id == other.id
+            return self.name == other.name
         else:
             return False
 
     def __hash__(
         self,
     ):  # This method is necessary to be able to use the class as a key in a dictionary
-        return hash(self.id)
+        return hash(self.name)
 
 
 class Scene(Thing):
@@ -198,7 +207,7 @@ class Scene(Thing):
                 counter += 1
 
         except Exception as e:
-            print(
+            logger.info(
                 f'{e}: Exception occured: {object_name} not an member of self.object_map'
             )
 
@@ -218,7 +227,7 @@ class Scene(Thing):
         ]
         return obj_list
 
-    def init_rdf_wrapper(self, template=None):
+    def init_rdf_wrapper(self, template=None, rules=None, predicates=None):
         """Initialize the RDF wrapper with the current scene
         and generate the corresponding RDF graph.
         Returns:
@@ -233,8 +242,10 @@ class Scene(Thing):
             self.graph_processing_time = self.rdf_wrapper.gen_rdf_graph_processing_time
         else:
             # Generate RDF graph with a specific template and record processing time
-            self.rdf_wrapper.generate_graph(object_template=template)
+            self.rdf_wrapper.generate_graph(object_template=template, predicates=predicates)
             self.graph_processing_time = self.rdf_wrapper.gen_rdf_graph_processing_time
+
+            self.rdf_wrapper.init_ruler(rules=rules)
 
         return self.rdf_wrapper
 
@@ -321,7 +332,7 @@ class Action(Thing):
             self.rdf_wrapper = rdf_wrapper
         self.prep_query = self.rdf_wrapper.prepare_sparql_query(self.precondition)
 
-    def check_precondition_on_rdf(self, rdf_scene: Graph, debug=True) -> bool:
+    def check_precondition_on_rdf(self, rdf_scene: Graph) -> bool:
         self.select_dict = {}
         self.select_dict_list = []
 
@@ -343,30 +354,23 @@ class Action(Thing):
                 for var in self.select:
                     selected = row[var]
                     self.select_dict.update({var: selected})
-                # if debug:
-                #     print(f'{self.name}.check_precondition(): select_dict={self.select_dict}\n')
                 self.select_dict_list.append(self.select_dict)
-            if debug:
-                # print(f'{self.name}.check_precondition(): scene database: {scene!r}')
-                print(
-                    f'{self.name}.check_precondition(): self.select_dict_list={self.select_dict_list}\n'
-                )
+            logger.debug(
+                f'{self.name}.check_precondition(): self.select_dict_list={self.select_dict_list}\n')
             return True
         else:
-            if debug:
-                print(f'{self.name}.check_precondition(): precondition not satisfied')
-                # print(f'scene database: {scene!r}')
+            logger.debug(f'{self.name}.check_precondition(): precondition not satisfied')
+            # logger.debug(f'scene database: {scene!r}')
             return False
 
     @time_tracker('execute_processing_time')
-    def execute_action_on_rdf(self, rdf_scene: Graph, debug=False):
+    def execute_action_on_rdf(self, rdf_scene: Graph):
         """Executes the action in a given rdf graph if possible.
         This includes action precondition checks and generating the follow-up rdf_scenes.
         If the precondition check generate a list of possible actions, all follow-up rdf_scenes will be build.
 
         Args:
             scene (Graph): scene, in which action shell by executed
-            debug (bool, optional): _description_. Defaults to False.
 
         Returns:
             new_scene_action_dict (Dict[Graph:{Predicate:[SD subject,SD object]}):
@@ -380,11 +384,9 @@ class Action(Thing):
         self.effect_processing_time = 0.0
 
         # precondition of action
-        if self.check_precondition_on_rdf(rdf_scene, debug=debug):
+        if self.check_precondition_on_rdf(rdf_scene):
             # effect of action
-            new_graph_list, sd_rel_action_effect_list = self.action_effect_on_rdf(
-                rdf_scene, debug=debug
-            )
+            new_graph_list, sd_rel_action_effect_list = self.action_effect_on_rdf(rdf_scene)
 
             if len(new_graph_list) == len(sd_rel_action_effect_list):
                 new_scene_action_dict = dict(
@@ -397,7 +399,7 @@ class Action(Thing):
             return False
 
     @time_tracker('execute_processing_time')
-    def execute_action_on_sdscene(self, scene: Scene, debug=False):
+    def execute_action_on_sdscene(self, scene: Scene):
         """Executes the action in a given scene if possible.
         Therefore, the scene is initialized with the RDF wrapper and the RDF graph is generated.
         The action is then executed on the RDF graph.
@@ -406,7 +408,6 @@ class Action(Thing):
 
         Args:
             scene (Scene): scene, in which action shell by executed
-            debug (bool, optional): _description_. Defaults to False.
 
         Returns:
             new_scene_action_dict (Dict[Scene:{Predicate:[SD subject,SD object]}):
@@ -420,11 +421,9 @@ class Action(Thing):
         self.rdf_wrapper = scene_rdf_wrapper
         self.graph_processing_time = scene.graph_processing_time
         # precondition of action
-        if self.check_precondition_on_rdf(scene_rdf_wrapper.data_graph, debug=debug):
+        if self.check_precondition_on_rdf(scene_rdf_wrapper.data_graph):
             # effect of action
-            new_graph_list, sd_rel_action_effect_list = self.action_effect_on_rdf(
-                scene_rdf_wrapper.data_graph, debug=debug
-            )
+            new_graph_list, sd_rel_action_effect_list = self.action_effect_on_rdf(scene_rdf_wrapper.data_graph)
             # map RDF Database in SD scene
             new_scene_list = []
             for graph in new_graph_list:
@@ -441,14 +440,12 @@ class Action(Thing):
             return False
 
     @time_tracker('effect_processing_time')
-    def action_effect_on_rdf(self, rdf_scene: Graph, debug=False):
-        new_graph_list = self.remove_triplets_from_rdf(rdf_scene, debug=debug)
-        new_graph_list, sd_rel_action_effect_list = self.add_triplets_to_rdf(
-            new_graph_list, debug=debug
-        )
+    def action_effect_on_rdf(self, rdf_scene: Graph):
+        new_graph_list = self.remove_triplets_from_rdf(rdf_scene)
+        new_graph_list, sd_rel_action_effect_list = self.add_triplets_to_rdf(new_graph_list)
         return new_graph_list, sd_rel_action_effect_list
 
-    def remove_triplets_from_rdf(self, rdf_scene, debug=False):
+    def remove_triplets_from_rdf(self, rdf_scene):
         """
         remove the RDF triplet from the graph from d_list
         d_list: Dict {SD_Predicate: [select param 1 (type: string), select param 2 (type: string)]}
@@ -460,17 +457,16 @@ class Action(Thing):
         new_graph_list = []
         for select_dict in self.select_dict_list:
             _new_graph = self.rdf_wrapper.copy_rdf_graph(rdf_scene)
-            if debug:
-                print(f'select_dict: {select_dict}')
-                print_graph = self.rdf_wrapper.gen_sd_scene_from_rdf_database(
-                    _new_graph
-                )
-                print(f'print_graph: dlist before: \n {repr(print_graph)}')
+            if logger.isEnabledFor(DEBUG):
+                logger.debug(f'[SDL.ACTION.remove_triplets_from_rdf] select_dict: {select_dict}')
+                from sdf.core.rdf_wrapper import RDFUtils
+                logger.debug(f'[SDL.ACTION.remove_triplets_from_rdf] RDF GRAPH: dlist before: \n {RDFUtils.show_graph(_new_graph)}')
+                # logger.debug(f'[SDL.ACTION.remove_triplets_from_rdf] SD GRAPH: dlist before: \n {repr(self.rdf_wrapper.gen_sd_scene_from_rdf_database(_new_graph))}')
             for d_dictonary in self.d_list:
                 for pred, select_parameters in d_dictonary.items():
                     # Process the select parameters to extract the subject (sub) and object (obj)
                     sub, obj = self.process_select_parameters(
-                        select_parameters, select_dict, debug=debug
+                        select_parameters, select_dict
                     )
 
                     # Retrieve the predicate URI from sd_rdf_dict
@@ -485,21 +481,21 @@ class Action(Thing):
                         _new_graph = self.rdf_wrapper.remove_triplets(
                             _new_graph, [triplet]
                         )
-                        if debug:
-                            print(f'Deleted RDF triplet: {triplet}')
+                        logger.debug(f'[SDL.ACTION.remove_triplets_from_rdf] Deleted RDF triplet: {triplet}')
                     except Exception as e:
-                        print(f'Error while removing d_list from current scene: {e}')
+                        logger.info(f'Error while removing d_list from current scene: {e}')
 
-            if debug:
-                print_graph = self.rdf_wrapper.gen_sd_scene_from_rdf_database(
-                    _new_graph
-                )
-                print(f'print_graph: dlist after == alist before: \n {repr(print_graph)}')
+            if logger.isEnabledFor(DEBUG):
+                from sdf.core.rdf_wrapper import RDFUtils
+                logger.debug(f'[SDL.ACTION.remove_triplets_from_rdf] RDF GRAPH: dlist after == alist before: \n {RDFUtils.show_graph(_new_graph)}')
+
+                # logger.debug(f'[SDL.ACTION.remove_triplets_from_rdf] SD GRAPH: dlist after == alist before: \n {repr(repr(self.rdf_wrapper.gen_sd_scene_from_rdf_database(_new_graph)))}')
+
             # add new_graph to new_graph_list
             new_graph_list.append(_new_graph)
         return new_graph_list
 
-    def add_triplets_to_rdf(self, new_graph_list, debug=False):
+    def add_triplets_to_rdf(self, new_graph_list):
         """
         add the RDF triplet to the graph from a_list
         1. map SELECT parameter to RDF subjects/objects-> result: rdf_rel={Predicate:[rdflib subject,rdflib object]}
@@ -518,8 +514,7 @@ class Action(Thing):
                 for pred, select_parameters in a_dictonary.items():
                     # Process the select parameters to extract the subject (sub) and object (obj)
                     sub, obj = self.process_select_parameters(
-                        select_parameters, select_dict, debug=debug
-                    )
+                        select_parameters, select_dict)
                     rdf_rel = {pred: [sub, obj]}
 
                     for sd_pred, rdf_sub_obj in rdf_rel.items():
@@ -527,13 +522,8 @@ class Action(Thing):
                         sd_sub = rdf_to_sd_dict.get(rdf_sub_obj[0])
                         sd_obj = rdf_to_sd_dict.get(rdf_sub_obj[1])
 
-                        if sd_sub is None or sd_obj is None:
-                            print(
-                                f'Mapping for RDF subject/object not found: {rdf_sub_obj}'
-                            )
-                            continue
 
-                        # Construct sd_rel and the RDF triplet
+                        # Construct RDF triplet
                         sd_rel = {sd_pred: [sd_sub, sd_obj]}
                         triplet = (
                             rdf_sub_obj[0],
@@ -546,33 +536,42 @@ class Action(Thing):
                             _new_graph = self.rdf_wrapper.add_triplets(
                                 _new_graph, [triplet]
                             )
+                            # Apply rules to the new graph
+                            _new_graph = self.rdf_wrapper.apply_rules(_new_graph)
+
+                            # update sd relation action effect, if sd_sub and sd_obj are not None and mapping exists
+                            if sd_sub is None or sd_obj is None:
+                                logger.info(
+                                    f'SD Mapping for RDF subject/object not found: {rdf_sub_obj}'
+                                )
+                            # Construct sd_rel anyway, even if sd_sub or sd_obj is None
+                            sd_rel = {sd_pred: [sd_sub, sd_obj]}
                             sd_rel_action_effect.update(sd_rel)
+
                         except Exception as e:
-                            print(
+                            logger.info(
                                 f'Error while adding triplet {triplet} to new scene: {e}'
                             )
 
             sd_rel_action_effect_list.append(sd_rel_action_effect)
             sd_rel_action_effect = {}
 
-            if debug:
-                print_graph = self.rdf_wrapper.gen_sd_scene_from_rdf_database(
-                    _new_graph
-                )
-                print(f'print_graph: alist after: \n {repr(print_graph)}\n -----------------------------')
+            if logger.isEnabledFor(DEBUG):
+                from sdf.core.rdf_wrapper import RDFUtils
+                logger.debug(f'[SDL.ACTION.add_triplets_to_rdf] RDF GRAPH: alist after: \n {RDFUtils.show_graph(_new_graph)}')
+                # logger.debug(f'[SDL.ACTION.add_triplets_to_rdf] SD GRAPH: alist after: \n {repr(self.rdf_wrapper.gen_sd_scene_from_rdf_database(_new_graph))}\n -----------------------------')
 
             _new_graph_list.append(_new_graph)
 
         return [_new_graph_list, sd_rel_action_effect_list]
 
-    def process_select_parameters(self, select_parameters, select_dict, debug=False):
+    def process_select_parameters(self, select_parameters, select_dict):
         """
         Recursively process select_parameters to extract subject (sub) and object (obj).
 
         Args:
             select_parameters (list): The list of parameters to process.
             select_dict (dict): The dictionary containing mappings for SELECT variables.
-            debug (bool): Whether to print debug information.
 
         Returns:
             Tuple: A tuple (sub, obj) representing the processed URIs
@@ -583,18 +582,22 @@ class Action(Thing):
         for item in select_parameters:
             if isinstance(item, list):
                 # Recursively process nested lists
-                sub, obj = self.process_select_parameters(item, select_dict, debug)
+                sub, obj = self.process_select_parameters(item, select_dict)
                 if sub is not None and obj is not None:
                     break  # Stop processing if valid sub and obj are found
             elif isinstance(item, str):
                 if item.startswith('http://') or item.startswith('https://'):
                     sub = self.rdf_wrapper.to_uri(item)
                     obj = select_dict.get(select_parameters[1])
+                    if obj is None and (isinstance(select_parameters[1], int) or isinstance(select_parameters[1], float)):
+                        obj = self.rdf_wrapper.to_literal(select_parameters[1])
+                    logger.debug(f'[SDL.ACTION.process_select_parameters] Processed item: {item}, sub: {sub}, obj: {obj}')
                 elif len(select_parameters) >= 1:
                     sub = select_dict.get(select_parameters[0])
+                    if obj is None and (isinstance(obj, int) or isinstance(obj, float)):
+                        obj = self.rdf_wrapper.to_literal(select_parameters[1])
                     obj = select_dict.get(select_parameters[1])
-                if debug:
-                    print(f'Processed item: {item}, sub: {sub}, obj: {obj}')
+                    logger.debug(f'[SDL.ACTION.process_select_parameters] Processed item: {item}, sub: {sub}, obj: {obj}')
                 break
 
         return sub, obj
