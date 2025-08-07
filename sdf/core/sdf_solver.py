@@ -2,6 +2,10 @@ import heapq  # https://docs.python.org/3/library/heapq.html
 from collections import (
     deque,
 )  # https://docs.python.org/3/library/collections.html#deque-objects
+from logging import DEBUG
+from logging import INFO
+from logging import basicConfig
+from logging import getLogger
 from typing import Any
 from typing import List
 from typing import Optional
@@ -15,12 +19,38 @@ from sdf.core.sdf_core import Scene
 from sdf.core.sdf_core import SDUtils
 
 
+basicConfig(level=INFO)
+logger = getLogger(__name__)
+
+# logger.setLevel(DEBUG)  # Set logger to DEBUG level for detailed output
+
+
 class Solver:
     """Solver class for solving discrete state transition systems (SDScenes) and RDF graphs."""
 
-    def __init__(self, object_template=None):
+    def __init__(self, object_template=None, rdf_graph_rules=None, predicates=None):
         """Initialize the Solver class."""
-        self.object_template = object_template
+
+        # Check object_template structure
+        if object_template is not None:
+            if not isinstance(object_template, list):
+                raise TypeError("object_template must be a list of lists.")
+            if len(object_template) == 1:
+                self.object_template = object_template[0]
+                self.goal_template = object_template[0]
+                raise Warning("goal_template is set to object_template[0]. This is deprecated. " \
+                "Please provide a separate goal_template for more controllability.")
+            elif len(object_template) == 2:
+                self.object_template = object_template[0]
+                self.goal_template = object_template[1]
+            else:
+                raise ValueError("object_template must be a list containing one or two lists (for object and goal template).")
+        else:
+            self.object_template = None
+            self.goal_template = None
+
+        self.rdf_graph_rules = rdf_graph_rules
+        self.predicates = predicates
 
     def dfs_sdscene(
         self,
@@ -57,9 +87,7 @@ class Solver:
         while queue:
             parent_node = queue.pop()  # stack: last-in, first-out
             for action in action_list:
-                new_scene_action_dict = action.execute_action_on_sdscene(
-                    parent_node.state, debug=False
-                )
+                new_scene_action_dict = action.execute_action_on_sdscene(parent_node.state)
                 if new_scene_action_dict:
                     for next_scene, action_eff in new_scene_action_dict.items():
                         new_node = SearchNode(
@@ -119,9 +147,7 @@ class Solver:
             parent_node = queue.popleft()  # first-in, first-out
 
             for action in action_list:
-                new_scene_action_dict = action.execute_action_on_sdscene(
-                    parent_node.state, debug=False
-                )  # pruning Scenes: which action is executable in Scene, if executable generate Scene
+                new_scene_action_dict = action.execute_action_on_sdscene(parent_node.state)  # pruning Scenes: which action is executable in Scene, if executable generate Scene
 
                 if new_scene_action_dict:
                     for next_scene, action_eff in new_scene_action_dict.items():
@@ -186,9 +212,7 @@ class Solver:
             visited.add(key)
 
             for action in action_list:
-                new_scene_action_dict = action.execute_action_on_sdscene(
-                    parent_node.state, debug=False
-                )  #
+                new_scene_action_dict = action.execute_action_on_sdscene(parent_node.state)  #
                 if new_scene_action_dict:
                     for next_scene, action_eff in new_scene_action_dict.items():
                         g_new = parent_node.g + action.weight  # accumulate action cost
@@ -214,12 +238,13 @@ class Solver:
     ) -> Tuple[Graph, Graph]:
         # Initialize RDF graphs for current and goal scenes
         current_scene_rdf_wrapper = current_scene.init_rdf_wrapper(
-            template=self.object_template
-        )
+            template=self.object_template, rules=self.rdf_graph_rules, predicates=self.predicates
+            )
         current_scene_rdf_graph = current_scene_rdf_wrapper.data_graph
-        #RDFUtils.show_graph(current_scene_rdf_graph)
-        goal_rdf_wrapper = goal_scene.init_rdf_wrapper(template=self.object_template)
+        logger.info(f'[SDL.SOLVER.initialize_rdf] RDF STATE: \n {RDFUtils.show_graph(current_scene_rdf_graph)}')
+        goal_rdf_wrapper = goal_scene.init_rdf_wrapper(template=self.goal_template)
         goal_rdf_graph = goal_rdf_wrapper.data_graph
+        logger.info(f'[SDL.SOLVER.initialize_rdf] RDF GOAL: \n {RDFUtils.show_graph(goal_rdf_graph)}')
 
         # Initialize actions with the current scene's RDF wrapper
         for action in action_list:
@@ -263,8 +288,7 @@ class Solver:
             parent_node = queue.pop()  # stack: last-in, first-out
             for action in action_list:
                 new_rdf_scene_action_dict = action.execute_action_on_rdf(
-                    parent_node.state, debug=False
-                )
+                    parent_node.state)
                 if new_rdf_scene_action_dict:
                     for next_rdf_scene, action_eff in new_rdf_scene_action_dict.items():
                         new_node = SearchNode(
@@ -324,8 +348,7 @@ class Solver:
 
             for action in action_list:
                 new_scene_action_dict = action.execute_action_on_rdf(
-                    parent_node.state, debug=False
-                )  # pruning Scenes: which action is executable in Scene, if executable generate Scene
+                    parent_node.state)  # pruning Scenes: which action is executable in Scene, if executable generate Scene
 
                 if new_scene_action_dict:
                     for next_scene, action_eff in new_scene_action_dict.items():
@@ -391,9 +414,7 @@ class Solver:
             visited.add(key)
 
             for action in action_list:
-                new_scene_action_dict = action.execute_action_on_rdf(
-                    parent_node.state, debug=False
-                )  #
+                new_scene_action_dict = action.execute_action_on_rdf(parent_node.state)
                 if new_scene_action_dict:
                     for next_scene, action_eff in new_scene_action_dict.items():
                         g_new = parent_node.g + action.weight  # accumulate action cost
