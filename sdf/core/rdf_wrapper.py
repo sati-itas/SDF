@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from logging import DEBUG
+from logging import INFO
+from logging import basicConfig
+from logging import getLogger
 from typing import TYPE_CHECKING
 from typing import Dict
 from urllib.parse import quote
@@ -16,6 +20,12 @@ from rdflib.namespace import XSD
 from rdflib.plugins.sparql import prepareQuery
 
 from sdf.core.utility.timing_utils import time_tracker
+
+
+basicConfig(level=INFO)
+logger = getLogger(__name__)
+
+logger.setLevel(DEBUG)  # Set logger to DEBUG level for detailed output 
 
 
 if TYPE_CHECKING:
@@ -70,6 +80,10 @@ class RDFWrapper:
         """Converts a string to an URIRef using RDFUtils."""
         return RDFUtils.to_uri(value)
 
+    def to_literal(self, value: float | int) -> Literal:
+        """Converts a number to a Literal with xsd:float or xsd:integer type."""
+        return RDFUtils.number_to_literal(value)
+
     def get_base_uri(self, loaded_graph: Graph):
         """get base uri from loaded graph"""
         if any(loaded_graph.subjects(RDF.type, OWL.Ontology)):
@@ -86,7 +100,7 @@ class RDFWrapper:
 
     def get_predicates(self, loaded_graph: Graph):
         """get all predicates/properties from graph if they are marked with OWL.ObjectProperty"""
-        return RDFUtils.get_predicates(self, loaded_graph)
+        return RDFUtils.get_predicates(loaded_graph)
 
     def load_rdf_graph(self, data_graph: str, format_: str):
         """loads RDF graph from file"""
@@ -104,10 +118,8 @@ class RDFWrapper:
         print(self.knowledge_graph.serialize(format='turtle'))
 
     @time_tracker('gen_rdf_graph_processing_time')
-    def generate_graph(self, object_template=None) -> Graph:
-        """Generates a knowledge graph and data graph from the current scene.
-        If no graph is provided, it generates a new knowledge graph based on the scene
-        objects types and relations.
+    def generate_graph(self, object_template=None, predicates=None) -> Graph:
+        """Generates a knowledge and data graph from the current scene.
         """
         knowledge_triples = []
         data_triples = []
@@ -122,13 +134,20 @@ class RDFWrapper:
                 knowledge_triples.append(
                     (class_uri, RDFS.label, Literal(f'{obj.object_type}'))
                 )
-
+        # add predicates to knowledge graph
+        if predicates is not None:
+            for sd_predicate in predicates.values():
+                pred_uri = self.KN[sd_predicate.name]
+                # add predicate mapping
+                if sd_predicate not in self.predicate_mapping_dict:
+                    self.predicate_mapping_dict[sd_predicate] = pred_uri
         # iterate over all relations in current scene and generate ObjectProperty
         for sd_predicate, pairs_list in self.scene_relation_dict.items():
             pred_uri = self.KN[sd_predicate.name]
 
             # add predicate mapping
-            self.predicate_mapping_dict[sd_predicate] = pred_uri
+            if sd_predicate not in self.predicate_mapping_dict:
+                self.predicate_mapping_dict[sd_predicate] = pred_uri
 
             # if predicate is not in knowledge graph, add it
             if (pred_uri, RDF.type, None) not in self.knowledge_graph:
@@ -232,9 +251,11 @@ class RDFWrapper:
                         (object_uri, knowledge_ns[attr], Literal(value))
                     )
                     from sdf.core.sdf_core import Predicate
+
                     # generate sd_predicates from template
                     sd_predicate = Predicate(attr)
-                    self.predicate_mapping_dict[sd_predicate] = knowledge_ns[attr]
+                    if sd_predicate not in self.predicate_mapping_dict:
+                        self.predicate_mapping_dict[sd_predicate] = knowledge_ns[attr]
 
         return obj_data_triples
 
@@ -312,17 +333,78 @@ class RDFWrapper:
         """adds triplets to the RDF graph using RDFUtils"""
         return RDFUtils.add_triplets(_graph, a_list)
 
+    def init_ruler(self, rules=None):
+        """Initializes the RDF ruler with predefined rules."""
+        self.rules = rules if rules is not None else []
+        # Apply initial rules to the data graph
+        self.data_graph = self.apply_rules(self.data_graph)
+        logger.info(f'[RDFWrapper] Initialized with {len(self.rules)} rules.')
+
+    def apply_rules(self, graph: Graph) -> Graph:
+        """
+        Applies predefined rules to the RDF graph.
+
+        Args:
+            graph (Graph): The RDF graph to which rules will be applied.
+
+        Returns:
+            Graph: The updated RDF graph after applying rules.
+
+        Raises:
+            TypeError: If the input is not an rdflib.Graph.
+            Exception: If a rule application fails.
+
+        Information:
+            - self.rules should be a list of dicts, each with keys:
+                'type': 'python' or 'sparql'
+                'function': Python function ('python')
+                'query': SPARQL query string ('sparql')
+            - The function logs info about each rule application and errors.
+        """
+        if not isinstance(graph, Graph):
+            logger.error("[RDFWrapper] Input 'graph' must be an rdflib.Graph instance.")
+            raise TypeError("[RDFWrapper] Input 'graph' must be an rdflib.Graph instance.")
+
+        if not self.rules:
+            logger.info('[RDFWrapper] No rules to apply.')
+            return graph
+
+        try:
+            for idx, rule in enumerate(self.rules):
+                if not isinstance(rule, dict) or 'type' not in rule:
+                    logger.error(f"[RDFWrapper] Rule at index {idx} is not a valid dict with a 'type' key.")
+                    raise ValueError(f"[RDFWrapper] Rule at index {idx} is not a valid dict with a 'type' key.")
+
+                if rule['type'] == 'python':
+                    if 'function' not in rule or not callable(rule['function']):
+                        logger.error(f"[RDFWrapper] Python rule at index {idx} missing or invalid 'function'.")
+                        raise ValueError(f"[RDFWrapper] Python rule at index {idx} missing or invalid 'function'.")
+                    graph = rule['function'](graph)
+                elif rule['type'] == 'sparql':
+                    if 'query' not in rule or not isinstance(rule['query'], str):
+                        logger.error(f"[RDFWrapper] SPARQL rule at index {idx} missing or invalid 'query'.")
+                        raise ValueError(f"[RDFWrapper] SPARQL rule at index {idx} missing or invalid 'query'.")
+                    prepared_query = self.prepare_sparql_query(rule['query'])
+                    graph.update(prepared_query)
+                else:
+                    logger.error(f"[RDFWrapper] Unknown rule type '{rule['type']}' at index {idx}.")
+                    raise ValueError(f"[RDFWrapper] Unknown rule type '{rule['type']}' at index {idx}.")
+        except Exception as e:
+            logger.error(f"[RDFWrapper] Error applying rule {idx + 1}: {e}")
+
+        return graph
+
 
 class RDFUtils:
     """Utility class for RDF operations"""
 
     @staticmethod
     def show_graph(loaded_graph: Graph):
-        """Prints the RDF graph in turtle format."""
-        print(loaded_graph.serialize(format='turtle'))
+        """Displays the RDF graph in Turtle format if you call it with print(RDFUtils.show_graph(loaded_graph))"""
+        return loaded_graph.serialize(format='turtle')
 
     @staticmethod
-    def get_predicates(self, loaded_graph: Graph):
+    def get_predicates(loaded_graph: Graph):
         """get all predicates/properties from graph if they marked with OWL.ObjectProperty"""
         predicates = set()
         for pred in loaded_graph.subjects(RDF.type, OWL.ObjectProperty):
@@ -372,6 +454,16 @@ class RDFUtils:
                 f"Invalid URI: {value}. Must start with 'http://' or 'https://'."
             )
         return URIRef(value)
+
+    @staticmethod
+    def number_to_literal(value: float | int) -> Literal:
+        """Converts a number to a Literal with xsd:float type."""
+        if isinstance(value, float):
+            return Literal(value, datatype=XSD.float)
+        elif isinstance(value, int):
+            return Literal(value, datatype=XSD.integer)
+        else:
+            raise TypeError(f"Unsupported type for conversion to Literal: {type(value)}")
 
     @staticmethod
     def remove_triplets(_graph: Graph, d_list):
