@@ -41,7 +41,7 @@ def test_scenario20():
 
     scene_tuple = scenario_20(predicates, actions)
 
-    solver = Solver(object_template=SDOBJECT_TEMPLATE)
+    solver = Solver(object_template=[SDOBJECT_TEMPLATE])
     bfs_sd = solver.bfs_sdscene
     dfs_sd = solver.dfs_sdscene
     dfs_rdf = solver.dfs_rdf
