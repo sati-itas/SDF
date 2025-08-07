@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from logging import DEBUG
 from logging import INFO
+from logging import WARNING
 from logging import basicConfig
 from logging import getLogger
 from typing import TYPE_CHECKING
@@ -22,10 +23,10 @@ from rdflib.plugins.sparql import prepareQuery
 from sdf.core.utility.timing_utils import time_tracker
 
 
-basicConfig(level=INFO)
+basicConfig(level=WARNING)
 logger = getLogger(__name__)
 
-logger.setLevel(DEBUG)  # Set logger to DEBUG level for detailed output 
+# logger.setLevel(WARNING)  # Set logger to DEBUG level for detailed output 
 
 
 if TYPE_CHECKING:
@@ -48,6 +49,8 @@ class RDFWrapper:
             self.scene_relation_dict = scene.scene_relations
         # else:
         #     print('WARNING: no scene passed to the constructor')
+
+        self.rules = []
 
         self.list_of_triplets = []
         self.rdf_triplet_list = []

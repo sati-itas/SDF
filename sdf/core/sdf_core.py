@@ -1,5 +1,6 @@
 from logging import DEBUG
 from logging import INFO
+from logging import WARNING
 from logging import basicConfig
 from logging import getLogger
 from typing import Dict
@@ -12,7 +13,7 @@ from rdflib import Graph
 from .utility.timing_utils import time_tracker
 
 
-basicConfig(level=INFO)
+basicConfig(level=WARNING)
 logger = getLogger(__name__)
 # logger.setLevel(DEBUG)
 
@@ -541,7 +542,7 @@ class Action(Thing):
 
                             # update sd relation action effect, if sd_sub and sd_obj are not None and mapping exists
                             if sd_sub is None or sd_obj is None:
-                                logger.info(
+                                logger.warning(
                                     f'SD Mapping for RDF subject/object not found: {rdf_sub_obj}'
                                 )
                             # Construct sd_rel anyway, even if sd_sub or sd_obj is None
@@ -549,7 +550,7 @@ class Action(Thing):
                             sd_rel_action_effect.update(sd_rel)
 
                         except Exception as e:
-                            logger.info(
+                            logger.warning(
                                 f'Error while adding triplet {triplet} to new scene: {e}'
                             )
 

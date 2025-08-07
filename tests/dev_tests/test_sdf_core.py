@@ -46,10 +46,10 @@ def test_sdf_actions_sdscene():
             print(row)
         # TEST check_precondition
         scene_rdf_wrapper = CurrentScene.init_rdf_wrapper()
-        act.check_precondition_on_rdf(scene_rdf_wrapper.data_graph, debug=False)
+        act.check_precondition_on_rdf(scene_rdf_wrapper.data_graph)
         # precondition
         # TEST check_precondition
-        new_scene_action_dict = act.execute_action_on_sdscene(CurrentScene, debug=False)
+        new_scene_action_dict = act.execute_action_on_sdscene(CurrentScene)
         print(f'\n CurrentScene: {CurrentScene}')
         if new_scene_action_dict:
             print(f'\n new_scene_action_dict: {[key for key in new_scene_action_dict.keys()][0]}')
@@ -102,10 +102,10 @@ def test_sdf_actions_rdf():
             print(row)
 
         # TEST check_precondition
-        print(f'{act.name}.check_precondition_improve() => {act.check_precondition_on_rdf(CurrentScene_graph, debug=False)}\n')
+        print(f'{act.name}.check_precondition_improve() => {act.check_precondition_on_rdf(CurrentScene_graph)}\n')
 
         # TEST execute_select_dict_list_improve
-        print(f'{act.name}.execute_select_dict_list_improve() => {act.execute_action_on_rdf(CurrentScene_graph, debug=False)}\n')
+        print(f'{act.name}.execute_select_dict_list_improve() => {act.execute_action_on_rdf(CurrentScene_graph)}\n')
 if __name__ == "__main__":
     test_sdf_actions_sdscene()
     test_sdf_actions_rdf()

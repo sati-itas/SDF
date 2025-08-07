@@ -4,6 +4,7 @@ from collections import (
 )  # https://docs.python.org/3/library/collections.html#deque-objects
 from logging import DEBUG
 from logging import INFO
+from logging import WARNING
 from logging import basicConfig
 from logging import getLogger
 from typing import Any
@@ -19,7 +20,7 @@ from sdf.core.sdf_core import Scene
 from sdf.core.sdf_core import SDUtils
 
 
-basicConfig(level=INFO)
+basicConfig(level=WARNING)
 logger = getLogger(__name__)
 
 # logger.setLevel(DEBUG)  # Set logger to DEBUG level for detailed output
@@ -38,7 +39,7 @@ class Solver:
             if len(object_template) == 1:
                 self.object_template = object_template[0]
                 self.goal_template = object_template[0]
-                raise Warning("goal_template is set to object_template[0]. This is deprecated. " \
+                logger.warning("goal_template is set to object_template[0]. This is deprecated. " \
                 "Please provide a separate goal_template for more controllability.")
             elif len(object_template) == 2:
                 self.object_template = object_template[0]
