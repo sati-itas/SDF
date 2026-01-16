@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-from logging import DEBUG
-from logging import INFO
-from logging import WARNING
-from logging import basicConfig
 from logging import getLogger
 from typing import TYPE_CHECKING
 from typing import Dict
@@ -23,7 +19,6 @@ from rdflib.plugins.sparql import prepareQuery
 from sdf.core.utility.timing_utils import time_tracker
 
 
-basicConfig(level=WARNING)
 logger = getLogger(__name__)
 
 # logger.setLevel(WARNING)  # Set logger to DEBUG level for detailed output 
@@ -393,7 +388,7 @@ class RDFWrapper:
                     logger.error(f"[RDFWrapper] Unknown rule type '{rule['type']}' at index {idx}.")
                     raise ValueError(f"[RDFWrapper] Unknown rule type '{rule['type']}' at index {idx}.")
         except Exception as e:
-            logger.error(f"[RDFWrapper] Error applying rule {idx + 1}: {e}")
+            logger.info(f"[RDFWrapper] Error applying rule {idx + 1}: {e}")
 
         return graph
 

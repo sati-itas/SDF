@@ -2,10 +2,6 @@ import heapq  # https://docs.python.org/3/library/heapq.html
 from collections import (
     deque,
 )  # https://docs.python.org/3/library/collections.html#deque-objects
-from logging import DEBUG
-from logging import INFO
-from logging import WARNING
-from logging import basicConfig
 from logging import getLogger
 from typing import Any
 from typing import List
@@ -20,7 +16,6 @@ from sdf.core.sdf_core import Scene
 from sdf.core.sdf_core import SDUtils
 
 
-basicConfig(level=WARNING)
 logger = getLogger(__name__)
 
 # logger.setLevel(DEBUG)  # Set logger to DEBUG level for detailed output
@@ -242,10 +237,10 @@ class Solver:
             template=self.object_template, rules=self.rdf_graph_rules, predicates=self.predicates
             )
         current_scene_rdf_graph = current_scene_rdf_wrapper.data_graph
-        logger.info(f'[SDL.SOLVER.initialize_rdf] RDF STATE: \n {RDFUtils.show_graph(current_scene_rdf_graph)}')
+        logger.info(f'[SDF.SOLVER.initialize_rdf] RDF STATE: \n {RDFUtils.show_graph(current_scene_rdf_graph)}')
         goal_rdf_wrapper = goal_scene.init_rdf_wrapper(template=self.goal_template)
         goal_rdf_graph = goal_rdf_wrapper.data_graph
-        logger.info(f'[SDL.SOLVER.initialize_rdf] RDF GOAL: \n {RDFUtils.show_graph(goal_rdf_graph)}')
+        logger.info(f'[SDF.SOLVER.initialize_rdf] RDF GOAL: \n {RDFUtils.show_graph(goal_rdf_graph)}')
 
         # Initialize actions with the current scene's RDF wrapper
         for action in action_list:

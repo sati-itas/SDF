@@ -1,7 +1,4 @@
 from logging import DEBUG
-from logging import INFO
-from logging import WARNING
-from logging import basicConfig
 from logging import getLogger
 from typing import Dict
 from typing import List
@@ -13,9 +10,7 @@ from rdflib import Graph
 from .utility.timing_utils import time_tracker
 
 
-basicConfig(level=WARNING)
 logger = getLogger(__name__)
-# logger.setLevel(DEBUG)
 
 
 class Thing:
@@ -358,9 +353,11 @@ class Action(Thing):
                 self.select_dict_list.append(self.select_dict)
             logger.debug(
                 f'{self.name}.check_precondition(): self.select_dict_list={self.select_dict_list}\n')
+            print(f'{self.name}.check_precondition(): {True}')# --- IGNORE ---
             return True
         else:
             logger.debug(f'{self.name}.check_precondition(): precondition not satisfied')
+            print(f'{self.name}.check_precondition(): {False}')# --- IGNORE ---
             # logger.debug(f'scene database: {scene!r}')
             return False
 
@@ -459,10 +456,10 @@ class Action(Thing):
         for select_dict in self.select_dict_list:
             _new_graph = self.rdf_wrapper.copy_rdf_graph(rdf_scene)
             if logger.isEnabledFor(DEBUG):
-                logger.debug(f'[SDL.ACTION.remove_triplets_from_rdf] select_dict: {select_dict}')
+                logger.debug(f'[SDF.ACTION.remove_triplets_from_rdf] select_dict: {select_dict}')
                 from sdf.core.rdf_wrapper import RDFUtils
-                logger.debug(f'[SDL.ACTION.remove_triplets_from_rdf] RDF GRAPH: dlist before: \n {RDFUtils.show_graph(_new_graph)}')
-                # logger.debug(f'[SDL.ACTION.remove_triplets_from_rdf] SD GRAPH: dlist before: \n {repr(self.rdf_wrapper.gen_sd_scene_from_rdf_database(_new_graph))}')
+                logger.debug(f'[SDF.ACTION.remove_triplets_from_rdf] RDF GRAPH: dlist before: \n {RDFUtils.show_graph(_new_graph)}')
+                # logger.debug(f'[SDF.ACTION.remove_triplets_from_rdf] SD GRAPH: dlist before: \n {repr(self.rdf_wrapper.gen_sd_scene_from_rdf_database(_new_graph))}')
             for d_dictonary in self.d_list:
                 for pred, select_parameters in d_dictonary.items():
                     # Process the select parameters to extract the subject (sub) and object (obj)
@@ -482,15 +479,15 @@ class Action(Thing):
                         _new_graph = self.rdf_wrapper.remove_triplets(
                             _new_graph, [triplet]
                         )
-                        logger.debug(f'[SDL.ACTION.remove_triplets_from_rdf] Deleted RDF triplet: {triplet}')
+                        logger.debug(f'[SDF.ACTION.remove_triplets_from_rdf] Deleted RDF triplet: {triplet}')
                     except Exception as e:
                         logger.info(f'Error while removing d_list from current scene: {e}')
 
             if logger.isEnabledFor(DEBUG):
                 from sdf.core.rdf_wrapper import RDFUtils
-                logger.debug(f'[SDL.ACTION.remove_triplets_from_rdf] RDF GRAPH: dlist after == alist before: \n {RDFUtils.show_graph(_new_graph)}')
+                logger.debug(f'[SDF.ACTION.remove_triplets_from_rdf] RDF GRAPH: dlist after == alist before: \n {RDFUtils.show_graph(_new_graph)}')
 
-                # logger.debug(f'[SDL.ACTION.remove_triplets_from_rdf] SD GRAPH: dlist after == alist before: \n {repr(repr(self.rdf_wrapper.gen_sd_scene_from_rdf_database(_new_graph)))}')
+                # logger.debug(f'[SDF.ACTION.remove_triplets_from_rdf] SD GRAPH: dlist after == alist before: \n {repr(repr(self.rdf_wrapper.gen_sd_scene_from_rdf_database(_new_graph)))}')
 
             # add new_graph to new_graph_list
             new_graph_list.append(_new_graph)
@@ -543,7 +540,7 @@ class Action(Thing):
                             # update sd relation action effect, if sd_sub and sd_obj are not None and mapping exists
                             if sd_sub is None or sd_obj is None:
                                 logger.warning(
-                                    f'SD Mapping for RDF subject/object not found: {rdf_sub_obj}'
+                                    f'SD Mapping for RDF subject/object not found: {rdf_sub_obj} \\ Construct sd_rel anyway, even if sd_sub({sd_sub}) or sd_obj({sd_obj}) is None '
                                 )
                             # Construct sd_rel anyway, even if sd_sub or sd_obj is None
                             sd_rel = {sd_pred: [sd_sub, sd_obj]}
@@ -559,8 +556,8 @@ class Action(Thing):
 
             if logger.isEnabledFor(DEBUG):
                 from sdf.core.rdf_wrapper import RDFUtils
-                logger.debug(f'[SDL.ACTION.add_triplets_to_rdf] RDF GRAPH: alist after: \n {RDFUtils.show_graph(_new_graph)}')
-                # logger.debug(f'[SDL.ACTION.add_triplets_to_rdf] SD GRAPH: alist after: \n {repr(self.rdf_wrapper.gen_sd_scene_from_rdf_database(_new_graph))}\n -----------------------------')
+                logger.debug(f'[SDF.ACTION.add_triplets_to_rdf] RDF GRAPH: alist after: \n {RDFUtils.show_graph(_new_graph)}')
+                # logger.debug(f'[SDF.ACTION.add_triplets_to_rdf] SD GRAPH: alist after: \n {repr(self.rdf_wrapper.gen_sd_scene_from_rdf_database(_new_graph))}\n -----------------------------')
 
             _new_graph_list.append(_new_graph)
 
@@ -592,13 +589,13 @@ class Action(Thing):
                     obj = select_dict.get(select_parameters[1])
                     if obj is None and (isinstance(select_parameters[1], int) or isinstance(select_parameters[1], float)):
                         obj = self.rdf_wrapper.to_literal(select_parameters[1])
-                    logger.debug(f'[SDL.ACTION.process_select_parameters] Processed item: {item}, sub: {sub}, obj: {obj}')
+                    logger.debug(f'[SDF.ACTION.process_select_parameters] Processed item: {item}, sub: {sub}, obj: {obj}')
                 elif len(select_parameters) >= 1:
                     sub = select_dict.get(select_parameters[0])
                     if obj is None and (isinstance(obj, int) or isinstance(obj, float)):
                         obj = self.rdf_wrapper.to_literal(select_parameters[1])
                     obj = select_dict.get(select_parameters[1])
-                    logger.debug(f'[SDL.ACTION.process_select_parameters] Processed item: {item}, sub: {sub}, obj: {obj}')
+                    logger.debug(f'[SDF.ACTION.process_select_parameters] Processed item: {item}, sub: {sub}, obj: {obj}')
                 break
 
         return sub, obj
