@@ -4,14 +4,18 @@ from collections import (
 )  # https://docs.python.org/3/library/collections.html#deque-objects
 from logging import getLogger
 from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Union
 
 from rdflib import Graph
 
 from sdf.core.rdf_wrapper import RDFUtils
+from sdf.core.rdf_wrapper import RDFWrapper
 from sdf.core.sdf_core import Action
+from sdf.core.sdf_core import Predicate
 from sdf.core.sdf_core import Scene
 from sdf.core.sdf_core import SDUtils
 
@@ -24,7 +28,7 @@ logger = getLogger(__name__)
 class Solver:
     """Solver class for solving discrete state transition systems (SDScenes) and RDF graphs."""
 
-    def __init__(self, object_template=None, rdf_graph_rules=None, predicates=None):
+    def __init__(self, object_template=None, rdf_graph_rules=None, predicates: Dict[str, Predicate]=None, current_scene_rdf_wrapper:RDFWrapper=None, fo_rewrite = False):
         """Initialize the Solver class."""
 
         # Check object_template structure
@@ -47,6 +51,12 @@ class Solver:
 
         self.rdf_graph_rules = rdf_graph_rules
         self.predicates = predicates
+        #self.KN_graph = knowledge_graph
+        self.current_scene_rdf_wrapper = current_scene_rdf_wrapper
+        self.fo_rewrite = fo_rewrite
+        if fo_rewrite and self.current_scene_rdf_wrapper is None:
+            raise Exception('[SDF.SOLVER] First-order logic rewriting is enabled but no current_scene_rdf_wrapper is provided.' \
+            'Actions cannot be rewritten without loaded knowledge graph (TBox).')
 
     def dfs_sdscene(
         self,
@@ -198,7 +208,7 @@ class Solver:
 
             if SDUtils.check_subset_pair(goal_scene, parent_node.state):
                 solution = True
-                plan = parent_node.path()
+                plan = parent_node.act_sequence()
                 return (plan, solution)
 
             # Check if the state has already been visited
@@ -230,28 +240,43 @@ class Solver:
         return ([], solution)
 
     def initialize_rdf(
-        self, current_scene: Scene, goal_scene: Scene, action_list: List[Action]
+        self, current_scene: Union[Scene, Graph], goal_scene: Union[Scene, Graph], action_list: List[Action]
     ) -> Tuple[Graph, Graph]:
-        # Initialize RDF graphs for current and goal scenes
-        current_scene_rdf_wrapper = current_scene.init_rdf_wrapper(
-            template=self.object_template, rules=self.rdf_graph_rules, predicates=self.predicates
-            )
-        current_scene_rdf_graph = current_scene_rdf_wrapper.data_graph
-        logger.info(f'[SDF.SOLVER.initialize_rdf] RDF STATE: \n {RDFUtils.show_graph(current_scene_rdf_graph)}')
-        goal_rdf_wrapper = goal_scene.init_rdf_wrapper(template=self.goal_template)
-        goal_rdf_graph = goal_rdf_wrapper.data_graph
-        logger.info(f'[SDF.SOLVER.initialize_rdf] RDF GOAL: \n {RDFUtils.show_graph(goal_rdf_graph)}')
+        """Initialize RDF graphs from SDScenes or use existing RDF graphs."""
 
-        # Initialize actions with the current scene's RDF wrapper
-        for action in action_list:
-            action.init_action_with_rdf(current_scene_rdf_wrapper)
+        if isinstance(current_scene, Scene) and isinstance(goal_scene, Scene):
+            logger.info('[SDF.SOLVER.initialize_rdf] Initializing RDF graphs from SDScenes.')
+            # Initialize RDF graph for current scene
+            current_scene_rdf_wrapper = current_scene.init_rdf_wrapper(
+                template=self.object_template, rules=self.rdf_graph_rules, predicates=self.predicates
+                )
+            current_scene_rdf_graph = current_scene_rdf_wrapper.data_graph
+            logger.info(f'[SDF.SOLVER.initialize_rdf] RDF STATE: \n {RDFUtils.show_graph(current_scene_rdf_graph)}')
+            # Initialize RDF graph for goal scene
+            goal_rdf_wrapper = goal_scene.init_rdf_wrapper(template=self.goal_template, rules=self.rdf_graph_rules, predicates=self.predicates)
+            goal_rdf_graph = goal_rdf_wrapper.data_graph
+            logger.info(f'[SDF.SOLVER.initialize_rdf] RDF GOAL: \n {RDFUtils.show_graph(goal_rdf_graph)}')
+
+            # Initialize actions with the current scene's RDF wrapper
+            for action in action_list:
+                action.init_action_with_rdf(current_scene_rdf_wrapper)
+
+        elif isinstance(current_scene, Graph) and isinstance(goal_scene, Graph):
+            logger.info('[SDF.SOLVER.initialize_rdf] RDF graphs are already initialized.')
+            current_scene_rdf_graph = current_scene
+            goal_rdf_graph = goal_scene
+            # Initialize actions with the current scene's RDF wrapper
+            for action in action_list:
+                action.init_action_with_rdf(self.current_scene_rdf_wrapper, rewrite=self.fo_rewrite)
+        else:
+            raise TypeError("current_scene and goal_scene must both be either Scene or Graph instances.")
 
         return goal_rdf_graph, current_scene_rdf_graph
 
     def dfs_rdf(
         self,
-        current_scene: Scene,
-        goal_scene: Scene,
+        current_scene: Union[Scene, Graph],
+        goal_scene: Union[Scene, Graph],
         action_list: List[Action],
     ) -> Tuple[List[Any], bool]:
         """Deep First Search algorithm for finding path between current_scene and goal_scene in
@@ -271,8 +296,8 @@ class Solver:
 
         # Init RDF graphs from current and goal scene
         goal_scene, current_scene = self.initialize_rdf(
-            current_scene, goal_scene, action_list
-        )
+                current_scene, goal_scene, action_list
+            )
 
         if RDFUtils.is_subset(goal_scene, current_scene):
             solution = True
@@ -307,8 +332,8 @@ class Solver:
 
     def bfs_rdf(
         self,
-        current_scene: Scene,
-        goal_scene: Scene,
+        current_scene: Union[Scene, Graph],
+        goal_scene: Union[Scene, Graph],
         action_list: List[Action],
     ) -> Tuple[List[Any], bool]:
         """Breadth First Search algorithm for finding path between current_scene and goal_scene in
@@ -327,10 +352,11 @@ class Solver:
         queue = deque()  # using deque for efficient FIFO queue operations
         visited = {}
         solution = False
+
         # Init RDF graphs from current and goal scene
         goal_scene, current_scene = self.initialize_rdf(
-            current_scene, goal_scene, action_list
-        )
+                current_scene, goal_scene, action_list
+            )
 
         if RDFUtils.is_subset(goal_scene, current_scene):
             solution = True
@@ -366,24 +392,25 @@ class Solver:
 
     def astar_rdf(
         self,
-        current_scene: Scene,
-        goal_scene: Scene,
+        current_scene: Union[Scene, Graph],
+        goal_scene: Union[Scene, Graph],
         action_list: List[Action],
         heuristic: Optional[callable] = None,
     ) -> Tuple[List[Any], bool]:
+
         plan = []
         solution = False
-
-        if SDUtils.check_subset_pair(goal_scene, current_scene):
-            return (plan, True)
-
-        # Init RDF graphs from current and goal scene
-        goal_scene, current_scene = self.initialize_rdf(
-            current_scene, goal_scene, action_list
-        )
         # Initialize the open list (priority queue) for A* search
         open_list = []
 
+        # Init RDF graphs from current and goal scene
+        goal_scene, current_scene = self.initialize_rdf(
+                current_scene, goal_scene, action_list
+            )
+
+        # Check if the goal is already achieved
+        if RDFUtils.is_subset(goal_scene, current_scene):
+            return (plan, True)
         # astar without heuristic is equivalent to uniform cost search (or Dijkstra's algorithm)
         if heuristic is None:
             h = 0

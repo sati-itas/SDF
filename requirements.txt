@@ -2,6 +2,12 @@
 
 rdflib
 
+#reasoning
+owlrl
+
+# persistent store
+#sqlalchemy
+
 numpy
 
 pyyaml

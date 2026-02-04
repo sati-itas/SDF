@@ -6,3 +6,6 @@ ruff
 
 # Type Checker
 # pyright (comes with pylance)
+
+# Testing
+pytest

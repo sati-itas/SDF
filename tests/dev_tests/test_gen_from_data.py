@@ -67,7 +67,7 @@ def test_gen():
     print(predicate_dict)
 
 def enum_gen():
-    generator = DataGenerator('test_scene.ttl')
+    generator = DataGenerator('test_scene1.ttl')
 
     ##########
     py_file_otypes = 'domain_otypes'

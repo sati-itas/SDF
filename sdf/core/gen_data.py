@@ -24,7 +24,7 @@ class DataGenerator:
 
     def gen_enum_types(self, class_type: str, py_file: str, import_modul=False):
         subcls = self.rdf_wrapper.get_subclasses(
-            self._graph_datagen, f'{self.rdf_wrapper.base_uri}#{class_type}'
+            self._graph_datagen, f'{self.rdf_wrapper.base_uri}{class_type}'
         )
         self.gen_enumfile_from_subcls(self.gen_path, py_file, subcls, class_type)
 

@@ -17,48 +17,43 @@ from sdf.data._gen.domain_location import Location
 from sdf.data._gen.domain_self import SelfRepresentation
 
 
-def actions_light(predicate_dict, base):
-
-    has_lane_assignment = 'has_lane_assignment'
-    print(base)
-    base_uri = 'http://example.org/predicate#'
+def actions_light(predicate_dict):
+    KN_uri = 'http://example.org/Scene#'
+    ego_uri = 'http://example.org/data#ego'
 
 
     # SPARQL Query according: https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QueryForms
     # prepared for rdflib in python: https://rdflib.readthedocs.io/en/stable/intro_to_sparql.html
     lc_right_precondition = f"""
-                PREFIX ex: <{base_uri}>
-                PREFIX ego: <http://example.org/SelfRepresentation.EGO#>
-                SELECT ?x ?y ?v ?e
+                PREFIX ex: <{KN_uri}>
+                PREFIX ego: <http://example.org/data#ego>
+                SELECT ?x ?y ?v
                 WHERE {{
-                        ?e ex:has_lane_assignment ?x .
+                        ego: ex:has_lane_assignment ?x .
                         ?x ex:has_right_neighbour ?y .
                         FILTER NOT EXISTS {{?v ex:has_lane_assignment ?y .}} 
-                        FILTER (?e = ego:ego)
                 }}
             """
 
     lc_left_precondition = f"""
-                PREFIX ex: <{base_uri}>
-                PREFIX ego: <http://example.org/SelfRepresentation.EGO#>
-                SELECT ?y ?x ?v ?e
+                PREFIX ex: <{KN_uri}>
+                PREFIX ego: <http://example.org/data#ego>
+                SELECT ?x ?y ?v
                 WHERE {{
-                        ?e ex:has_lane_assignment ?x .
+                        ego: ex:has_lane_assignment ?x .
                         ?x ex:has_left_neighbour ?y .
                         FILTER NOT EXISTS {{ ?v ex:has_lane_assignment ?y.}}
-                        FILTER (?e = ego:ego)
                 }}
             """
 
     l_keep_precondition = f"""
-                PREFIX ex: <{base_uri}>
-                PREFIX ego: <http://example.org/SelfRepresentation.EGO#>
-                SELECT ?y ?x ?v ?e
+                PREFIX ex: <{KN_uri}>
+                PREFIX ego: <http://example.org/data#ego>
+                SELECT ?x ?y ?v
                 WHERE {{
-                        ?e ex:has_lane_assignment ?x .
+                        ego: ex:has_lane_assignment ?x .
                         ?x ex:has_successor ?y .
                         FILTER NOT EXISTS {{ ?v ex:has_lane_assignment ?y}}
-                        FILTER (?e = ego:ego)
                 }}
             """
     
@@ -67,26 +62,77 @@ def actions_light(predicate_dict, base):
     lc_right = Action(
         'LANE_CHANGE_RIGHT',
         lc_right_precondition,
-        [{has_lane_assignment: ["e", "y"]}],
-        [{has_lane_assignment: ["e", "x"]}],
-        ["e", "y", "x", "v"],
+        [{has_lane_assignment: [ego_uri, "y"]}],
+        [{has_lane_assignment: [ego_uri, "x"]}],
+        ["y", "x", "v"],
     )
     lc_left = Action(
         'LANE_CHANGE_LEFT',
         lc_left_precondition,
-        [{has_lane_assignment: ["e", "y"]}],
-        [{has_lane_assignment: ["e", "x"]}],
-        ["e", "y", "x", "v"],
+        [{has_lane_assignment: [ego_uri, "y"]}],
+        [{has_lane_assignment: [ego_uri, "x"]}],
+        ["y", "x", "v"],
     )
     lc_keep = Action(
         'LANE_KEEPING',
         l_keep_precondition,
-        [{has_lane_assignment: ["e", "y"]}],
-        [{has_lane_assignment: ["e", "x"]}],
-        ["e", "y", "x", "v"],
+        [{has_lane_assignment: [ego_uri, "y"]}],
+        [{has_lane_assignment: [ego_uri, "x"]}],
+        ["y", "x", "v"],
     )
 
     action_list = [lc_right, lc_left, lc_keep]
+
+    return action_list
+
+def actions_rewrite(predicate_dict):
+    KN_uri = 'http://example.org/Scene#'
+    ego_uri = 'http://example.org/data#ego'
+
+
+    # SPARQL Query according: https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QueryForms
+    # prepared for rdflib in python: https://rdflib.readthedocs.io/en/stable/intro_to_sparql.html
+    lc_precondition = f"""
+                PREFIX ex: <{KN_uri}>
+                PREFIX ego: <http://example.org/data#ego>
+                SELECT ?x ?y ?v
+                WHERE {{
+                        ego: ex:has_lane_assignment ?x .
+                        ?x ex:hasLateralNeighbour ?y .
+                        FILTER NOT EXISTS {{?v ex:has_lane_assignment ?y .}} 
+                }}
+            """
+
+    l_keep_precondition = f"""
+                PREFIX ex: <{KN_uri}>
+                PREFIX ego: <http://example.org/data#ego>
+                SELECT ?x ?y ?v
+                WHERE {{
+                        ego: ex:has_lane_assignment ?x .
+                        ?x ex:has_successor ?y .
+                        FILTER NOT EXISTS {{ ?v ex:has_lane_assignment ?y}}
+                }}
+            """
+    
+    has_lane_assignment = predicate_dict['has_lane_assignment']
+    # Definition of Actions
+    lc = Action(
+        'LANE_CHANGE',
+        lc_precondition,
+        [{has_lane_assignment: [ego_uri, "y"]}],
+        [{has_lane_assignment: [ego_uri, "x"]}],
+        ["y", "x", "v"],
+    )
+
+    keep = Action(
+        'LANE_KEEPING',
+        l_keep_precondition,
+        [{has_lane_assignment: [ego_uri, "y"]}],
+        [{has_lane_assignment: [ego_uri, "x"]}],
+        ["y", "x", "v"],
+    )
+
+    action_list = [lc, keep]
 
     return action_list
 
@@ -94,14 +140,14 @@ def actions_light(predicate_dict, base):
 def scenario_5gen(predicates, actions):
 
     # instantiate sdf objects
-    Agent = SDObject("ego", SelfRepresentation.EGO)
-    Car1 = SDObject("car1", DynamicObject.ROADUSER)
-    lane1 = SDObject("lane1", Scenery.LANESEGMENT)
-    lane2 = SDObject("lane2", Scenery.LANESEGMENT)
-    lane3 = SDObject("lane3", Scenery.LANESEGMENT)
-    lane4 = SDObject("lane4", Scenery.LANESEGMENT)
-    lane5 = SDObject("lane5", Scenery.LANESEGMENT)
-    lane6 = SDObject("lane6", Scenery.LANESEGMENT)
+    Agent = SDObject("ego", SelfRepresentation.EGO.value)
+    Car1 = SDObject("car1", DynamicObject.ROADUSER.value)
+    lane1 = SDObject("lane1", Scenery.LANESEGMENT.value)
+    lane2 = SDObject("lane2", Scenery.LANESEGMENT.value)
+    lane3 = SDObject("lane3", Scenery.LANESEGMENT.value)
+    lane4 = SDObject("lane4", Scenery.LANESEGMENT.value)
+    lane5 = SDObject("lane5", Scenery.LANESEGMENT.value)
+    lane6 = SDObject("lane6", Scenery.LANESEGMENT.value)
 
     object_map = {
         Agent.name: Agent,

@@ -91,6 +91,15 @@ class Predicate(Thing):
     ):  # This method is necessary to be able to use the class as a key in a dictionary
         return hash(self.name)
 
+    @classmethod
+    def gen_predicates(cls, predicates: set) -> Dict[str, "Predicate"]:
+        """Generate Predicate instances from an iterable of names."""
+        predicate_dict: Dict[str, "Predicate"] = {}
+        for pred_str in predicates:
+            predicate = cls(pred_str)
+            predicate_dict[pred_str] = predicate
+        return predicate_dict
+
 
 class Scene(Thing):
     """Scene class for creating scenes from existing objects and predicates.
@@ -223,7 +232,7 @@ class Scene(Thing):
         ]
         return obj_list
 
-    def init_rdf_wrapper(self, template=None, rules=None, predicates=None):
+    def init_rdf_wrapper(self, template=None, rules=None, predicates=None, knowledge_graph=None):
         """Initialize the RDF wrapper with the current scene
         and generate the corresponding RDF graph.
         Returns:
@@ -236,12 +245,29 @@ class Scene(Thing):
             # Generate RDF graph and record processing time
             self.rdf_wrapper.generate_graph()
             self.graph_processing_time = self.rdf_wrapper.gen_rdf_graph_processing_time
-        else:
+        elif template is not None and predicates is not None:
             # Generate RDF graph with a specific template and record processing time
             self.rdf_wrapper.generate_graph(object_template=template, predicates=predicates)
             self.graph_processing_time = self.rdf_wrapper.gen_rdf_graph_processing_time
 
-            self.rdf_wrapper.init_ruler(rules=rules)
+            if rules is not None:
+                self.rdf_wrapper.init_ruler(rules=rules)
+
+        elif knowledge_graph is not None:
+            # loaded_graph = self.rdf_wrapper.load_rdf_graph(knowledge_graph)
+            # attributes, predicates = self.rdf_wrapper.prepare_knowledge_graph(loaded_graph)
+            # # predicates = Predicate.gen_predicates(predicates)
+
+            # self.rdf_wrapper.generate_data_graph(object_attributes=attributes)
+            # self.graph_processing_time = self.rdf_wrapper.gen_rdf_graph_processing_time
+
+            if rules is not None:
+                self.rdf_wrapper.init_ruler(rules=rules)
+
+        else:
+            raise ValueError(
+                '[SDF.SCENE.init_rdf_wrapper] If arguments are provided, either template and predicates or knowledge_graph must be provided.'
+            )
 
         return self.rdf_wrapper
 
@@ -316,7 +342,7 @@ class Action(Thing):
         self.rdf_wrapper = RDFWrapper()
         self.prep_query = self.rdf_wrapper.prepare_sparql_query(self.precondition)
 
-    def init_action_with_rdf(self, rdf_wrapper):
+    def init_action_with_rdf(self, rdf_wrapper, rewrite: bool = False):
         """Initialize the RDF wrapper with the given scene and prepare the SPARQL query.
         By generate a bytecode of the SPARQL query and store it in self.prep_query.
 
@@ -326,7 +352,10 @@ class Action(Thing):
         """
         if self.rdf_wrapper is None:
             self.rdf_wrapper = rdf_wrapper
-        self.prep_query = self.rdf_wrapper.prepare_sparql_query(self.precondition)
+        if rewrite:
+            self.prep_query = self.rdf_wrapper.rewrite_sparql_query(self.precondition)
+        else:
+            self.prep_query = self.rdf_wrapper.prepare_sparql_query(self.precondition)
 
     def check_precondition_on_rdf(self, rdf_scene: Graph) -> bool:
         self.select_dict = {}
@@ -353,11 +382,11 @@ class Action(Thing):
                 self.select_dict_list.append(self.select_dict)
             logger.debug(
                 f'{self.name}.check_precondition(): self.select_dict_list={self.select_dict_list}\n')
-            print(f'{self.name}.check_precondition(): {True}')# --- IGNORE ---
+            # print(f'{self.name}.check_precondition(): {True}')# --- IGNORE ---
             return True
         else:
             logger.debug(f'{self.name}.check_precondition(): precondition not satisfied')
-            print(f'{self.name}.check_precondition(): {False}')# --- IGNORE ---
+            # print(f'{self.name}.check_precondition(): {False}')# --- IGNORE ---
             # logger.debug(f'scene database: {scene!r}')
             return False
 

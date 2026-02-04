@@ -86,7 +86,7 @@ class SDSceneGoalValidatorTests:
         self.goal_checker(CurrentScene, GoalScene1)
 
     def test_goal_gen_road(self):
-        generator = DataGenerator('test_scene.ttl')
+        generator = DataGenerator('test_scene1.ttl')
         predicate_dict = generator.gen_predicates()
         generator.rdf_wrapper.get_base_uri(generator._graph_datagen)
         base_uri = generator.rdf_wrapper.base_uri
@@ -113,7 +113,7 @@ class SDSceneGoalValidatorTests:
 
         ############
 
-        actions = actions_light(predicate_dict, base_uri)
+        actions = actions_light(predicate_dict)
 
 
         CurrentScene, Goal_scene, action_list = scenario_5gen(predicate_dict, actions)

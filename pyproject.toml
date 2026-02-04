@@ -1,3 +1,24 @@
+[project]
+name = "sdf"
+version = "0.1"
+description = "SDF project"
+requires-python = ">=3.8"
+dependencies = [
+    'rdflib', 'numpy', 'pyyaml', 'matplotlib'
+]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore::ResourceWarning",
+    "ignore::UserWarning",
+    "ignore:.*rdflib.*:DeprecationWarning",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
 [tool.ruff]
 line-length = 88
 indent-width = 4
@@ -58,13 +79,6 @@ max-statements = 50
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
-
-[project]
-name = "sdf"
-version = "0.1"
-dependencies = [
-    'rdflib', 'numpy', 'pyyaml', 'matplotlib'
-]
 
 [tool.setuptools.packages.find]
 include = ["sdf", "sdf.*"]
