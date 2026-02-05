@@ -337,7 +337,7 @@ class RDFWrapper:
             **self.object_mapping_dict,
         }
         # to use the knowledge graph in the data graph by binding the namespace
-        self.data_graph.bind('scene', self.KN)
+        # self.data_graph.bind('scene', self.KN)
 
         # print(self.knowledge_graph.serialize(format="turtle"))
         # print(self.data_graph.serialize(format="turtle"))
@@ -372,17 +372,17 @@ class RDFWrapper:
         object_uri = self.obj_uri(obj)
 
         # Typ-Tripel hinzufügen (z.B. ex:Vehicle)
-        obj_type = getattr(obj, 'object_type', None) #TODO
-        if obj_type:
-            obj_data_triples.append((object_uri, RDF.type, knowledge_ns[obj_type]))
+        # obj_type = getattr(obj, 'object_type', None) #TODO
+        # if obj_type:
+        #     obj_data_triples.append((object_uri, RDF.type, knowledge_ns[obj_type]))
 
-        obj_name = getattr(obj, "name", None)
-        if obj_name:
-            obj_data_triples.append((object_uri, RDFS.label, Literal(obj_name)))
+        # obj_name = getattr(obj, "name", None)
+        # if obj_name:
+        #     obj_data_triples.append((object_uri, RDFS.label, Literal(obj_name)))
 
-        obj_id = getattr(obj, "id", None)
-        if obj_id:
-            obj_data_triples.append((object_uri, knowledge_ns["id"], Literal(obj_id)))
+        # obj_id = getattr(obj, "id", None)
+        # if obj_id:
+        #     obj_data_triples.append((object_uri, knowledge_ns["id"], Literal(obj_id)))
 
         # Attribute als Properties einfügen
         for attr in template:
@@ -477,7 +477,9 @@ class RDFWrapper:
         Returns:
             Graph: A new RDF graph that is a copy of the original.
         """
-        return RDFUtils.copy_graph(g)
+        g = RDFUtils.copy_graph(g)
+        self.nsr.bind_all(g)
+        return g
 
     def remove_triplets(self, _graph: Graph, d_list):
         """removes triplets from RDF graph using RDFUtils"""
@@ -491,7 +493,7 @@ class RDFWrapper:
         """Initializes the RDF ruler with predefined rules."""
         self.rules = rules if rules is not None else []
         # Apply initial rules to the data graph
-        self.data_graph = self.apply_rules(self.data_graph)
+        self.abox = self.apply_rules(self.abox)
         logger.info(f'[RDFWrapper] Initialized with {len(self.rules)} rules.')
 
     def apply_rules(self, graph: Graph) -> Graph:

@@ -75,7 +75,7 @@ def test_sdf_init_rdf_wrapper_C3():
     # assert len(rdf_wrapper.data_graph) > 0
     # serialize directly to a test_data_dir file (avoid wrapper path assumptions)
     out_file = test_data_dir / "output_test_sdf_init_rdf_wrapper_case3.ttl"
-    rdf_wrapper.data_graph.serialize(destination=str(out_file), format="turtle")
+    rdf_wrapper.abox.serialize(destination=str(out_file), format="turtle")
 
 
 def test_rdf_sdscene_generation_and_query_processing_KN():
@@ -226,11 +226,11 @@ def test_sdf_actions_rdfscene():
 
 if __name__ == "__main__":
     # with loading knowledge graph (check namespace self.KN default)
-    test_sdf_init_rdf_wrapper_C2()
-    test_rdf_sdscene_generation_and_query_processing_KN()
-    test_sdf_actions_sdscene() # generator inside
+    # test_sdf_init_rdf_wrapper_C2()
+    # test_rdf_sdscene_generation_and_query_processing_KN()
+    # test_sdf_actions_sdscene() # generator inside
     
     ## without loading knowledge graph (check namespace self.KN default)
-    # test_sdf_init_rdf_wrapper_C3()
-    # test_sdf_actions_rdfscene()
+    test_sdf_init_rdf_wrapper_C3()
+    test_sdf_actions_rdfscene()
     
