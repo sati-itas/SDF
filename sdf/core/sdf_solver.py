@@ -263,8 +263,12 @@ class Solver:
 
         elif isinstance(current_scene, Graph) and isinstance(goal_scene, Graph):
             logger.info('[SDF.SOLVER.initialize_rdf] RDF graphs are already initialized.')
-            current_scene_rdf_graph = current_scene
             goal_rdf_graph = goal_scene
+            if self.rdf_graph_rules is not None:
+                logger.info('[SDF.SOLVER.initialize_rdf] Applying RDF graph rules to the current scene graph.')
+                current_scene_rdf_graph = self.current_scene_rdf_wrapper.apply_rules(current_scene, rules=self.rdf_graph_rules)
+            else:
+                current_scene_rdf_graph = current_scene
             # Initialize actions with the current scene's RDF wrapper
             for action in action_list:
                 action.init_action_with_rdf(self.current_scene_rdf_wrapper, rewrite=self.fo_rewrite)

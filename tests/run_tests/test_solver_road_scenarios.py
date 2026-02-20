@@ -112,12 +112,9 @@ def test_scenario_KN():
     #     print(row)
 
 
-
-    scene_tuple = (current_rdf_graph, goal_rdf_graph, actions)
+    situation_tuple = (current_rdf_graph, goal_rdf_graph, actions)
 
     solver = Solver(current_scene_rdf_wrapper=wrapper, fo_rewrite=True)
-
-
 
     bfs_sd = solver.bfs_sdscene
     dfs_sd = solver.dfs_sdscene
@@ -137,7 +134,7 @@ def test_scenario_KN():
         # elif solver == astar_sd:
         #     print(f'\n testing solver: {solver.__name__} with heuristic sd')
         #     testbase.test_solver(scene_tuple, solver, loops, heuristic_sd)
-        testbase.test_solver(scene_tuple, solver, loops)
+        testbase.test_solver(situation_tuple, solver, loops)
 
 def test_scenario5gen():
     testbase = TestBase()

@@ -140,7 +140,7 @@ def actions_rewrite(predicate_dict):
 def scenario_5gen(predicates, actions):
 
     # instantiate sdf objects
-    Agent = SDObject("ego", SelfRepresentation.EGO.value)
+    Agent = SDObject("ego", SelfRepresentation.EGO.value, **{"hasValueX": 0, "hasValueY": 0})
     Car1 = SDObject("car1", DynamicObject.ROADUSER.value)
     lane1 = SDObject("lane1", Scenery.LANESEGMENT.value)
     lane2 = SDObject("lane2", Scenery.LANESEGMENT.value)
@@ -148,6 +148,16 @@ def scenario_5gen(predicates, actions):
     lane4 = SDObject("lane4", Scenery.LANESEGMENT.value)
     lane5 = SDObject("lane5", Scenery.LANESEGMENT.value)
     lane6 = SDObject("lane6", Scenery.LANESEGMENT.value)
+
+    #     # instantiate sdf objects
+    # Agent = SDObject("ego", 'EGO', **{"hasValueX": 0, "hasValueY": 0})
+    # Car1 = SDObject("car1", 'ROADUSER')
+    # lane1 = SDObject("lane1",'LANESEGMENT')
+    # lane2 = SDObject("lane2",'LANESEGMENT')
+    # lane3 = SDObject("lane3",'LANESEGMENT')
+    # lane4 = SDObject("lane4",'LANESEGMENT')
+    # lane5 = SDObject("lane5",'LANESEGMENT')
+    # lane6 = SDObject("lane6",'LANESEGMENT')
 
     object_map = {
         Agent.name: Agent,

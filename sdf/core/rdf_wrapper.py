@@ -260,7 +260,7 @@ class RDFWrapper:
                 data_triples.append((subj_uri, pred_uri, obj_uri))
         # Batch add all triples
         for triple in data_triples:
-            self.data_graph.add(triple)
+            self.abox.add(triple)
 
         # merge all mappings into sd_rdf_dict
         self.sd_rdf_dict = {
@@ -268,7 +268,7 @@ class RDFWrapper:
             **self.subject_mapping_dict,
             **self.object_mapping_dict,
         }
-        return self.data_graph
+        return self.abox
 
     @time_tracker('gen_rdf_graph_processing_time')
     def generate_graph(self, object_template=None, predicates=None) -> Graph:
@@ -496,7 +496,7 @@ class RDFWrapper:
         self.abox = self.apply_rules(self.abox)
         logger.info(f'[RDFWrapper] Initialized with {len(self.rules)} rules.')
 
-    def apply_rules(self, graph: Graph) -> Graph:
+    def apply_rules(self, graph: Graph, rules=None) -> Graph:
         """
         Applies predefined rules to the RDF graph.
 
@@ -517,6 +517,8 @@ class RDFWrapper:
                 'query': SPARQL query string ('sparql')
             - The function logs info about each rule application and errors.
         """
+        if rules is not None:
+            self.rules = rules
         if not isinstance(graph, Graph):
             logger.error("[RDFWrapper] Input 'graph' must be an rdflib.Graph instance.")
             raise TypeError("[RDFWrapper] Input 'graph' must be an rdflib.Graph instance.")
