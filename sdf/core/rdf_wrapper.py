@@ -42,6 +42,7 @@ class NameSpaceRegistry:
         self.KN = Namespace(base + "knowledge#")
         self.DATA = Namespace(base + "data#")
         self.SCENE = Namespace(base + "Scene#")
+        self.SITU = Namespace(base + "Situ#")
         self.EX = Namespace(base)
 
         self.RDF = RDF
@@ -53,6 +54,7 @@ class NameSpaceRegistry:
             "kn": self.KN,
             "data": self.DATA,
             "scene": self.SCENE,
+            "situ": self.SITU,
             "ex": self.EX,
             "rdf": self.RDF,
             "rdfs": self.RDFS,
@@ -120,7 +122,7 @@ class RDFWrapper:
         #self.KN = self.nsr.KN # --> not loading graph
         ##testing without KN loading from file: test_rdf_wrapper_copy.py, test_rdf_wrapper.py will  # noqa: E265
 
-        self.KN = self.nsr.SCENE #--> load graph
+        self.KN = self.nsr.SITU #--> load graph
         ## testing with KN loading from file (here the namespace should adopt if you load a different KN graph with different Namespace)  # noqa: E266
         ## testing with test_rdf_wrapper_copy.py and test_rdf_wrapper.py will generate wrong namspaces  # noqa: E266
 
@@ -230,6 +232,15 @@ class RDFWrapper:
         if sd_predicate not in self.predicate_mapping_dict:
             self.predicate_mapping_dict[sd_predicate] = pred_uri
         return pred_uri
+    
+    def create_predicate_mapping_dict(self, predicates, KN=None):
+        """Create predicate mapping dict for given predicates. where predicates is a dict with sd_predicates as values.
+        This is useful if you want to create the predicate mapping dict before loading
+        the graph and getting the predicates from the graph."""
+        if KN is None:
+            KN = self.KN
+        for sd_predicate in predicates.values():
+            self._ensure_predicate_mapping(sd_predicate, KN=KN)
 
     @time_tracker('gen_rdf_datagraph_processing_time')
     def generate_data_graph(self, object_attributes) -> Graph:
@@ -966,29 +977,46 @@ class RDFSRewriter:
         return rewritten
 
     def rewrite_triple(self, s, p, o, idx):
-        alts = []
+        alts = set()
 
         # CASE 1: rdf:type C
         if p == RDF.type:
             classes = idx["subClass"].get(o, set()) | {o}
             for c in classes:
-                alts.append((s, RDF.type, c))
+                alts.add((s, RDF.type, c))
 
         # CASE 2: Property
         else:
             props = idx["subProperty"].get(p, set()) | {p}
             for pr in props:
-                alts.append((s, pr, o))
+                alts.add((s, pr, o))
 
                 # DOMAIN
                 if pr in idx["domain"]:
-                    alts.append((s, RDF.type, idx["domain"][pr]))
+                    alts.add((s, RDF.type, idx["domain"][pr]))
 
                 # # RANGE
                 # if pr in idx["range"]:
-                #     alts.append((o, RDF.type, idx["range"][pr]))
+                #     alts.add((o, RDF.type, idx["range"][pr]))
 
-        return list(alts)
+        return alts
+    
+    def prune_combinations(self, combos): # Prune combinations that are dominated by others (i.e., subsets)
+        pruned = []
+
+        for c in combos:
+            c_set = set(c)
+            dominated = False
+
+            for other in combos:
+                if c != other and c_set.issuperset(set(other)):
+                    dominated = True
+                    break
+
+            if not dominated:
+                pruned.append(c)
+
+        return pruned
 
     def build_union_ast(self, alternatives_per_triple):
         """
@@ -997,9 +1025,11 @@ class RDFSRewriter:
             [(s2,p2,o2)],          # Triple 2 alternatives
         ]
         """
-        ## TODO pruning avoid combinatorial explosion of alternatives per triple
 
-        all_combinations = product(*alternatives_per_triple)
+        all_combinations = list(product(*alternatives_per_triple))
+
+        # Prune combinations that are dominated by others
+        all_combinations = self.prune_combinations(all_combinations)
 
         seen = set()
         bgps = []
@@ -1018,15 +1048,6 @@ class RDFSRewriter:
         for b in bgps[1:]:
             u = Union(u, b)
         return u
-
-    # def extract_bgp(self, q):
-    #     """Extracts triples from the WHERE clause of a SPARQL query."""
-    #     for project in q.algebra.values():
-    #         test = project.values()
-    #         for p in project.values():
-    #             if p.name == 'BGP':
-    #                 return p.triples
-    #     raise ValueError("No BGP found")
 
     def extract_bgp(self, q):
         """Extracts triples from the WHERE clause of a SPARQL query."""

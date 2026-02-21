@@ -370,6 +370,7 @@ class Action(Thing):
         result = self.rdf_wrapper.query_rdf_graph(
             rdf_scene, prepared_query=self.prep_query
         )
+        #result = set(result)  #TODO Convert to set to remove duplicates
         self.query_processing_time = self.rdf_wrapper.query_rdf_graph_processing_time
 
         # If query successful, generate a list of dicts with the selected variables
@@ -380,12 +381,12 @@ class Action(Thing):
                     selected = row[var]
                     self.select_dict.update({var: selected})
                 self.select_dict_list.append(self.select_dict)
-            logger.debug(
+            logger.info(
                 f'{self.name}.check_precondition(): self.select_dict_list={self.select_dict_list}\n')
             # print(f'{self.name}.check_precondition(): {True}')# --- IGNORE ---
             return True
         else:
-            logger.debug(f'{self.name}.check_precondition(): precondition not satisfied')
+            logger.info(f'{self.name}.check_precondition(): precondition not satisfied')
             # print(f'{self.name}.check_precondition(): {False}')# --- IGNORE ---
             # logger.debug(f'scene database: {scene!r}')
             return False
@@ -510,7 +511,7 @@ class Action(Thing):
                         )
                         logger.debug(f'[SDF.ACTION.remove_triplets_from_rdf] Deleted RDF triplet: {triplet}')
                     except Exception as e:
-                        logger.info(f'Error while removing d_list from current scene: {e}')
+                        logger.warning(f'Error while removing d_list from current scene: {e}')
 
             if logger.isEnabledFor(DEBUG):
                 from sdf.core.rdf_wrapper import RDFUtils
