@@ -493,25 +493,47 @@ class Action(Thing):
             for d_dictonary in self.d_list:
                 for pred, select_parameters in d_dictonary.items():
                     # Process the select parameters to extract the subject (sub) and object (obj)
-                    sub, obj = self.process_select_parameters(
-                        select_parameters, select_dict
-                    )
+                    for item in select_parameters:
+                        if isinstance(item, list):
+                            sub, obj = self.process_select_parameters(
+                                item, select_dict
+                            )
+                            # Retrieve the predicate URI from sd_rdf_dict
+                            predicate_uri = self.rdf_wrapper.sd_rdf_dict.get(pred)
 
-                    # Retrieve the predicate URI from sd_rdf_dict
-                    predicate_uri = self.rdf_wrapper.sd_rdf_dict.get(pred)
+                            if not predicate_uri:
+                                raise KeyError(f'Predicate {pred} not found in sd_rdf_dict.')
 
-                    if not predicate_uri:
-                        raise KeyError(f'Predicate {pred} not found in sd_rdf_dict.')
+                            # Create and remove the RDF triplet
+                            triplet = (sub, predicate_uri, obj)
+                            try:
+                                _new_graph = self.rdf_wrapper.remove_triplets(
+                                    _new_graph, [triplet]
+                                )
+                                logger.debug(f'[SDF.ACTION.remove_triplets_from_rdf] Deleted RDF triplet: {triplet}')
+                                print(f'\n[SDF.ACTION.remove_triplets_from_rdf] Deleted RDF triplet: \n{triplet}')
+                            except Exception as e:
+                                logger.warning(f'Error while removing d_list from current scene: {e}')
+                        else:
+                            sub, obj = self.process_select_parameters(
+                                select_parameters, select_dict
+                            )
+                            # Retrieve the predicate URI from sd_rdf_dict
+                            predicate_uri = self.rdf_wrapper.sd_rdf_dict.get(pred)
 
-                    # Create and remove the RDF triplet
-                    triplet = (sub, predicate_uri, obj)
-                    try:
-                        _new_graph = self.rdf_wrapper.remove_triplets(
-                            _new_graph, [triplet]
-                        )
-                        logger.debug(f'[SDF.ACTION.remove_triplets_from_rdf] Deleted RDF triplet: {triplet}')
-                    except Exception as e:
-                        logger.warning(f'Error while removing d_list from current scene: {e}')
+                            if not predicate_uri:
+                                raise KeyError(f'Predicate {pred} not found in sd_rdf_dict.')
+
+                            # Create and remove the RDF triplet
+                            triplet = (sub, predicate_uri, obj)
+                            try:
+                                _new_graph = self.rdf_wrapper.remove_triplets(
+                                    _new_graph, [triplet]
+                                )
+                                logger.debug(f'[SDF.ACTION.remove_triplets_from_rdf] Deleted RDF triplet: {triplet}')
+                                #print(f'\n[SDF.ACTION.remove_triplets_from_rdf] Deleted RDF triplet: \n{triplet}')
+                            except Exception as e:
+                                logger.warning(f'Error while removing d_list from current scene: {e}')
 
             if logger.isEnabledFor(DEBUG):
                 from sdf.core.rdf_wrapper import RDFUtils
