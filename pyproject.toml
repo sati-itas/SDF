@@ -4,7 +4,8 @@ version = "0.1"
 description = "SDF project"
 requires-python = ">=3.8"
 dependencies = [
-    'rdflib', 'numpy', 'pyyaml', 'matplotlib'
+    'rdflib', 'numpy', 'matplotlib',
+    'sparql-rdfs-rewriter @ git+https://github.com/sati-itas/sparql-rdfs-rewriter.git@main'
 ]
 
 [tool.pytest.ini_options]
