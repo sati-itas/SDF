@@ -13,15 +13,8 @@ base_dir = os.path.join(parent_dir, '..')
 # append parent and base direction
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
-from sdf.core.gen_data import DataGenerator
-from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple, make_road_heuristic_sd, make_road_heuristic_rdf
-
-from sdf.core.sdf_solver import Solver
-from tests.env_sets.road_test_scenarios import *
-from tests.env_sets.gen_road_scenario import actions_light, actions_rewrite, scenario_5gen
-
-from tests.run_tests.test_base import TestBase
-from rdflib import Graph
+from tests.env_sets.road_test_scenarios import scenario_5gen
+from tests.env_sets.road_test_predicates_actions import actions_light, actions_rewrite
 
 # set logger level to error to avoid too much output during tests
 import logging
@@ -33,7 +26,7 @@ def test_dataset_closure_materialization():
     rdf_wrapper = RDFWrapper()
 
     # parse KN graph with rdflib
-    graph = rdf_wrapper.load_knowledge_graph('sdf/data/test_scene1.ttl')
+    graph = rdf_wrapper.load_knowledge_graph('sdf/data/situation_tbox_rdfs_v1.1.ttl')
 
     attr, predicates = rdf_wrapper.get_attrs_and_pred_kg()
     predicate_dict = Predicate.gen_predicates(predicates)
@@ -51,12 +44,12 @@ def test_dataset_closure_materialization():
     
     #print((tbox).serialize(format='turtle'))
     query3 = """SELECT ?lane WHERE {
-        <http://example.org/data#lane1> <http://example.org/Scene#hasLateralNeighbour> ?lane .
+        <http://example.org/data#lane1> <http://example.org/Situ#hasLateralNeighbour> ?lane .
         }
     """
     results = union.query(query3)
     for row in results:
-        print(row)
+        print(row) #expected test relult: no output, as the relation is defined in the TBox and not materialized in the ABox
     start_time = time.time()
     # materialize RDFS closure on abox
     DeductiveClosure(RDFS_Semantics, improved_datatypes=False, rdfs_closure=True, datatype_axioms=False, axiomatic_triples=False).expand(union)
@@ -67,7 +60,7 @@ def test_dataset_closure_materialization():
     start_time = time.time()
     results = union.query(query3)
     for row in results:
-        print(row)
+        print(row) # expected test result: rdflib.term.URIRef('http://example.org/data#lane2'),
     query_time = time.time() - start_time
     print(f"Query after RDFS Closure took {query_time} seconds\n")
     print(f"Total time for materialization and querying: {closure_time + query_time} seconds\n")
@@ -76,7 +69,7 @@ def test_closure_materialization_action():
     rdf_wrapper = RDFWrapper()
 
     # parse KN graph with rdflib
-    graph = rdf_wrapper.load_knowledge_graph('sdf/data/test_scene1.ttl')
+    graph = rdf_wrapper.load_knowledge_graph('sdf/data/situation_tbox_rdfs_v1.1.ttl')
 
     attr, predicates = rdf_wrapper.get_attrs_and_pred_kg()
     predicate_dict = Predicate.gen_predicates(predicates)
@@ -94,12 +87,12 @@ def test_closure_materialization_action():
     
     #print((abox+tbox).serialize(format='turtle'))
     query3 = """SELECT ?lane WHERE {
-        <http://example.org/data#lane1> <http://example.org/Scene#hasLateralNeighbour> ?lane .
+        <http://example.org/data#lane1> <http://example.org/Situ#hasLateralNeighbour> ?lane .
         }
     """
     results = union.query(query3)
     for row in results:
-        print(row)
+        print(row) #expected test relult: no output, as the relation is defined in the TBox and not materialized in the ABox
     start_time = time.time()
     # materialize RDFS closure on abox
     DeductiveClosure(RDFS_Semantics, improved_datatypes=False, rdfs_closure=True, datatype_axioms=False, axiomatic_triples=False).expand(union)
@@ -110,7 +103,7 @@ def test_closure_materialization_action():
     start_time = time.time()
     results = union.query(query3)
     for row in results:
-        print(row)
+        print(row) # expected test result: rdflib.term.URIRef('http://example.org/data#lane2')
     query_time = time.time() - start_time
     print(f"Query after RDFS Closure took {query_time} seconds\n")
     print(f"Total time for materialization and querying: {closure_time + query_time} seconds\n")
@@ -130,11 +123,21 @@ def test_closure_materialization_action():
         # TEST execute_select_dict_list_improve
         print(f'{act.name}.execute_select_dict_list_improve() => {act.execute_action_on_rdf(union)}\n')
 
+        # expected: 
+        # LANE_CHANGE
+        # (rdflib.term.URIRef('http://example.org/data#lane1'), rdflib.term.URIRef('http://example.org/data#lane2'), None)
+        # LANE_CHANGE.check_precondition_improve() => True
+
+        # LANE_KEEPING
+        # LANE_KEEPING.check_precondition_improve() => False
+        # LANE_KEEPING.execute_select_dict_list_improve() => False
+
+
 def test_dataset_closure_rewriting():
     rdf_wrapper = RDFWrapper()
 
     # parse KN graph with rdflib
-    graph = rdf_wrapper.load_knowledge_graph('sdf/data/test_scene1.ttl')
+    graph = rdf_wrapper.load_knowledge_graph('sdf/data/situation_tbox_rdfs_v1.1.ttl')
 
     attr, predicates = rdf_wrapper.get_attrs_and_pred_kg()
     predicate_dict = Predicate.gen_predicates(predicates)
@@ -154,7 +157,7 @@ def test_dataset_closure_rewriting():
     #print((abox+tbox).serialize(format='turtle'))
 
     query3 = """SELECT ?lane WHERE {
-        <http://example.org/data#lane1> <http://example.org/Scene#hasLateralNeighbour> ?lane .
+        <http://example.org/data#lane1> <http://example.org/Situ#hasLateralNeighbour> ?lane .
         }
     """
     results = merge.query(query3)
@@ -163,7 +166,7 @@ def test_dataset_closure_rewriting():
     start_time = time.time()
     # rewrite queries according to RDFS rules
     rewriter = RDFSRewriter(tbox)
-    rewritten_queries = rewriter.rewrite(query3)
+    rewritten_queries = rewriter.rewrite_query_str(query3)
     print("Rewritten query:\n", rewritten_queries, "\n")
     rewritten_time = time.time() - start_time
     print(f"RDFS Closure rewriting took {rewritten_time} seconds\n")
@@ -182,7 +185,7 @@ def test_closure_rewriting_action():
     rdf_wrapper = RDFWrapper()
 
     # parse KN graph with rdflib
-    graph = rdf_wrapper.load_knowledge_graph('sdf/data/test_scene1.ttl')
+    graph = rdf_wrapper.load_knowledge_graph('sdf/data/situation_tbox_rdfs_v1.1.ttl')
 
     attr, predicates = rdf_wrapper.get_attrs_and_pred_kg()
     predicate_dict = Predicate.gen_predicates(predicates)
@@ -202,7 +205,7 @@ def test_closure_rewriting_action():
     #print((abox+tbox).serialize(format='turtle'))
 
     query3 = """SELECT ?lane WHERE {
-        <http://example.org/data#lane1> <http://example.org/Scene#hasLateralNeighbour> ?lane .
+        <http://example.org/data#lane1> <http://example.org/Situ#hasLateralNeighbour> ?lane .
         }
     """
     results = merge.query(query3)
@@ -211,7 +214,7 @@ def test_closure_rewriting_action():
     start_time = time.time()
     # rewrite queries according to RDFS rules
     rewriter = RDFSRewriter(tbox)
-    rewritten_queries = rewriter.rewrite(query3)
+    rewritten_queries = rewriter.rewrite_query_str(query3)
     print("Rewritten query:\n", rewritten_queries, "\n")
     rewritten_time = time.time() - start_time
     print(f"RDFS Closure rewriting took {rewritten_time} seconds\n")
@@ -242,7 +245,7 @@ def test_closure_rewriting_action():
     
 if __name__ == "__main__":
     test_dataset_closure_materialization()
-    test_dataset_closure_rewriting()
     test_closure_materialization_action()
+    test_dataset_closure_rewriting()
     test_closure_rewriting_action()
 

@@ -144,8 +144,8 @@ def test_prepare_sparql_query_returns_prepared():
 def loaded_graph():
     base = 'http://example.org/Env'
     rdf_wrapper = RDFWrapper(base_uri=base)
-    #graph = rdf_wrapper.load_rdf_graph('test_scene1.ttl', 'ttl')
-    graph = rdf_wrapper.load_knowledge_graph('sdf/data/test_scene1.ttl')
+    #graph = rdf_wrapper.load_rdf_graph('situation_tbox_rdfs_v1.1.ttl', 'ttl')
+    graph = rdf_wrapper.load_knowledge_graph('sdf/data/situation_tbox_rdfs_v1.1.ttl')
     return graph, rdf_wrapper
 
 def test_load_rdf_graph_and_helpers():
@@ -153,7 +153,7 @@ def test_load_rdf_graph_and_helpers():
     rdf_wrapper = RDFWrapper(base_uri=initial_base)
 
     # parse graph with rdflib
-    graph = rdf_wrapper.load_knowledge_graph('sdf/data/test_scene1.ttl')
+    graph = rdf_wrapper.load_knowledge_graph('sdf/data/situation_tbox_rdfs_v1.1.ttl')
 
     # TODO test namespace bindings
 
@@ -194,7 +194,7 @@ def test_load_n_prepare_knowledge_graph(loaded_graph: tuple):
 def test_sdgraph_generation_KN():
     rdf_wrapper = RDFWrapper()
 
-    graph = rdf_wrapper.load_knowledge_graph('sdf/data/test_scene1.ttl')
+    graph = rdf_wrapper.load_knowledge_graph('sdf/data/situation_tbox_rdfs_v1.1.ttl')
 
     attr, preds = rdf_wrapper.get_attrs_and_pred_kg()
     preds = Predicate.gen_predicates(preds)  # convert to SD Predicates Dict

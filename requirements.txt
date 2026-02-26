@@ -1,6 +1,8 @@
 ####### requirements.txt #######
 
 rdflib
+git+https://github.com/sati-itas/sparql-rdfs-rewriter.git@main
+
 
 #reasoning
 owlrl
@@ -9,8 +11,6 @@ owlrl
 #sqlalchemy
 
 numpy
-
-pyyaml
 
 matplotlib
 

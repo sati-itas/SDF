@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from itertools import product
 from logging import getLogger
 from typing import TYPE_CHECKING
 from typing import Dict
@@ -17,32 +16,29 @@ from rdflib.namespace import OWL
 from rdflib.namespace import RDF
 from rdflib.namespace import RDFS
 from rdflib.namespace import XSD
-from rdflib.plugins.sparql import algebra
-from rdflib.plugins.sparql import parser
 from rdflib.plugins.sparql import prepareQuery
-from rdflib.plugins.sparql.algebra import BGP
-from rdflib.plugins.sparql.algebra import Union
 from rdflib.plugins.sparql.sparql import Query
+from sparql_rdfs_rewriter import RDFSRewriter
 
 from sdf.core.utility.timing_utils import time_tracker
 
 
 logger = getLogger(__name__)
 
-# logger.setLevel(WARNING)  # Set logger to DEBUG level for detailed output 
-
 
 if TYPE_CHECKING:
     from sdf.core.sdf_core import Scene
 
+
 class NameSpaceRegistry:
     """Registry for commonly used namespaces in RDF graphs."""
-    def __init__(self, base="http://example.org/"):
+
+    def __init__(self, base='http://example.org/'):
         self.BASE = base
-        self.KN = Namespace(base + "knowledge#")
-        self.DATA = Namespace(base + "data#")
-        self.SCENE = Namespace(base + "Scene#")
-        self.SITU = Namespace(base + "Situ#")
+        self.KN = Namespace(base + 'knowledge#')
+        self.DATA = Namespace(base + 'data#')
+        self.SCENE = Namespace(base + 'Scene#')
+        self.SITU = Namespace(base + 'Situ#')
         self.EX = Namespace(base)
 
         self.RDF = RDF
@@ -51,15 +47,15 @@ class NameSpaceRegistry:
         self.XSD = XSD
 
         self.all = {
-            "kn": self.KN,
-            "data": self.DATA,
-            "scene": self.SCENE,
-            "situ": self.SITU,
-            "ex": self.EX,
-            "rdf": self.RDF,
-            "rdfs": self.RDFS,
-            "owl": self.OWL,
-            "xsd": self.XSD,
+            'kn': self.KN,
+            'data': self.DATA,
+            'scene': self.SCENE,
+            'situ': self.SITU,
+            'ex': self.EX,
+            'rdf': self.RDF,
+            'rdfs': self.RDFS,
+            'owl': self.OWL,
+            'xsd': self.XSD,
         }
 
     def bind_all(self, graph):
@@ -95,7 +91,7 @@ class RDFWrapper:
         self.predicate_mapping_dict = {}
         self.sd_rdf_dict = {}
 
-        ## load Namespaces from NameSpaceRegistry
+        ## load Namespaces from NameSpaceRegistry # noqa: E266
         # initialize base uri and namespace registry (default to example.org)
         if not base_uri:
             base_uri = 'http://example.org/'
@@ -104,12 +100,12 @@ class RDFWrapper:
 
         # Dataset for multiple graphs
         persistent_store = False
-        # create persistent store (sqlite) for dataset
+        # create persistent store for dataset
         if persistent_store:
-            # TODO make the store 
+            # TODO make the store
             # https://rdflib.readthedocs.io/en/latest/apidocs/rdflib.plugins.stores.berkeleydb/#rdflib.plugins.stores.berkeleydb.has_bsddb
-            self.dataset = Dataset("BerkeleyDB")
-            self.dataset.open("rdf_store", create=True)
+            self.dataset = Dataset('BerkeleyDB')
+            self.dataset.open('rdf_store', create=True)
 
         else:
             self.dataset = Dataset()
@@ -118,13 +114,11 @@ class RDFWrapper:
         self.abox = self.dataset.graph(URIRef(f'{self.base_uri}/graphs/abox'))
 
         self.knowledge_graph = self.tbox
-        ## TODO currently a little hacky, fix later  # noqa: E266
-        #self.KN = self.nsr.KN # --> not loading graph
-        ##testing without KN loading from file: test_rdf_wrapper_copy.py, test_rdf_wrapper.py will  # noqa: E265
 
-        self.KN = self.nsr.SITU #--> load graph
-        ## testing with KN loading from file (here the namespace should adopt if you load a different KN graph with different Namespace)  # noqa: E266
-        ## testing with test_rdf_wrapper_copy.py and test_rdf_wrapper.py will generate wrong namspaces  # noqa: E266
+        ## TODO currently a little hacky, fix later  # noqa: E266
+        # namespace should adopt if you load a different graph with different Namespaces
+        self.KN = self.nsr.SITU  # --> load graph
+        ## testing with SITU loading from file # noqa: E266
 
         self.nsr.bind_all(self.tbox)
 
@@ -165,8 +159,12 @@ class RDFWrapper:
                     self.base_uri += '#'
                 break
         else:
-            print(f'[RDFWrapper]: No base uri found; wrapper base uri set to {self.base_uri}\n')
-            print(f'[RDFWrapper]: You can set base uri manually via rdf_wrapper.set_base_uri(uri:str) method.\n')
+            print(
+                f'[RDFWrapper]: No base uri found; wrapper base uri set to {self.base_uri}\n'
+            )
+            print(
+                f'[RDFWrapper]: You can set base uri manually via rdf_wrapper.set_base_uri(uri:str) method.\n'
+            )
             # self.base_uri = next(iter(loaded_graph.namespaces()))[1]
 
     def get_subclasses(self, loaded_graph: Graph, class_uri: str):
@@ -193,27 +191,25 @@ class RDFWrapper:
         return loaded_graph
 
     def load_knowledge_graph(self, path: str) -> Graph:
-        # TODO add tbox to self.knowledge_graph ?
         g = Graph()
-        g.parse(path, format="turtle")
+        g.parse(path, format='turtle')
         self.tbox += g
         return g
 
     def get_attrs_and_pred_kg(self):
-        """ Everything comes from the loaded knowledge graph in self.tbox (self.knowledge_graph)
+        """Everything comes from the loaded knowledge graph in self.tbox (self.knowledge_graph)
 
         Returns:
             attributes (set): set of attribute names (data properties)
             predicates (set): set of predicate names (object properties)
         """
 
-        #TODO
+        # TODO
         # self.data_graph = self.create_data_graph(self.knowledge_graph)
 
         # self.merged_graph = self.knowledge_graph + self.data_graph
-        #self.tbox += self.knowledge_graph
-        #self.abox += self.data_graph
-
+        # self.tbox += self.knowledge_graph
+        # self.abox += self.data_graph
 
         # print(f'[RDFWrapper] Knowledge graph prepared with namespaces:\n')
         # for prefix, ns in self.knowledge_graph.namespaces():
@@ -224,7 +220,7 @@ class RDFWrapper:
         predicates = self.get_predicates(self.knowledge_graph)
         return attributes, predicates
 
-    def _ensure_predicate_mapping(self, sd_predicate, KN= None):
+    def _ensure_predicate_mapping(self, sd_predicate, KN=None):
         """Ensure mapping exists for sd_predicate and return its URIRef."""
         if KN is None:
             KN = self.KN
@@ -232,7 +228,7 @@ class RDFWrapper:
         if sd_predicate not in self.predicate_mapping_dict:
             self.predicate_mapping_dict[sd_predicate] = pred_uri
         return pred_uri
-    
+
     def create_predicate_mapping_dict(self, predicates, KN=None):
         """Create predicate mapping dict for given predicates. where predicates is a dict with sd_predicates as values.
         This is useful if you want to create the predicate mapping dict before loading
@@ -262,7 +258,9 @@ class RDFWrapper:
                 # add subject and object to data graph
                 # use object_to_rdf function
                 # to speed up the process comment this out
-                subj_data_triple = self.object_to_rdf(sd_subj, template=object_attributes)
+                subj_data_triple = self.object_to_rdf(
+                    sd_subj, template=object_attributes
+                )
                 data_triples.extend(subj_data_triple)
                 obj_data_triple = self.object_to_rdf(sd_obj, template=object_attributes)
                 data_triples.extend(obj_data_triple)
@@ -283,8 +281,7 @@ class RDFWrapper:
 
     @time_tracker('gen_rdf_graph_processing_time')
     def generate_graph(self, object_template=None, predicates=None) -> Graph:
-        """Generates a knowledge and data graph from the current scene.
-        """
+        """Generates a knowledge and data graph from the current scene."""
         knowledge_triples = []
         data_triples = []
 
@@ -354,10 +351,6 @@ class RDFWrapper:
         # print(self.data_graph.serialize(format="turtle"))
         # for key, value in self.sd_rdf_dict.items():
         #     print(f'\tkey (sd object): {key} \n \tvalue (rdf object): {value}\n \n')
-
-        # TODO warmup graph (load graph in memory)
-        # if warmup:
-        #   self.graph.query(("ASK { ?s ?p ?o }"))
 
         return self.data_graph
 
@@ -460,9 +453,11 @@ class RDFWrapper:
     def rewrite_sparql_query(self, query: str):
         """Rewrites the SPARQL query for the RDF graph using RDFSRewriter."""
         if not hasattr(self, 'tbox') and self.tbox is None:
-            raise Exception('[RDFWrapper] TBox not found for query rewriting. Please load a knowledge graph first.')
-        rdfs_rewriter = RDFSRewriter(tbox=self.tbox)
-        return rdfs_rewriter.rewrite_sparql_query(query)
+            raise Exception(
+                '[RDFWrapper] TBox not found for query rewriting. Please load a knowledge graph first.'
+            )
+        rdfs_rewriter = RDFSRewriter(self.tbox)
+        return rdfs_rewriter.rewrite_query_str(query)
 
     @time_tracker('query_rdf_graph_processing_time')
     def query_rdf_graph(self, graph: Graph, query: str = None, prepared_query=None):
@@ -532,7 +527,9 @@ class RDFWrapper:
             self.rules = rules
         if not isinstance(graph, Graph):
             logger.error("[RDFWrapper] Input 'graph' must be an rdflib.Graph instance.")
-            raise TypeError("[RDFWrapper] Input 'graph' must be an rdflib.Graph instance.")
+            raise TypeError(
+                "[RDFWrapper] Input 'graph' must be an rdflib.Graph instance."
+            )
 
         if not self.rules:
             logger.info('[RDFWrapper] No rules to apply.')
@@ -541,25 +538,41 @@ class RDFWrapper:
         try:
             for idx, rule in enumerate(self.rules):
                 if not isinstance(rule, dict) or 'type' not in rule:
-                    logger.error(f"[RDFWrapper] Rule at index {idx} is not a valid dict with a 'type' key.")
-                    raise ValueError(f"[RDFWrapper] Rule at index {idx} is not a valid dict with a 'type' key.")
+                    logger.error(
+                        f"[RDFWrapper] Rule at index {idx} is not a valid dict with a 'type' key."
+                    )
+                    raise ValueError(
+                        f"[RDFWrapper] Rule at index {idx} is not a valid dict with a 'type' key."
+                    )
 
                 if rule['type'] == 'python':
                     if 'function' not in rule or not callable(rule['function']):
-                        logger.error(f"[RDFWrapper] Python rule at index {idx} missing or invalid 'function'.")
-                        raise ValueError(f"[RDFWrapper] Python rule at index {idx} missing or invalid 'function'.")
+                        logger.error(
+                            f"[RDFWrapper] Python rule at index {idx} missing or invalid 'function'."
+                        )
+                        raise ValueError(
+                            f"[RDFWrapper] Python rule at index {idx} missing or invalid 'function'."
+                        )
                     graph = rule['function'](graph)
                 elif rule['type'] == 'sparql':
                     if 'query' not in rule or not isinstance(rule['query'], str):
-                        logger.error(f"[RDFWrapper] SPARQL rule at index {idx} missing or invalid 'query'.")
-                        raise ValueError(f"[RDFWrapper] SPARQL rule at index {idx} missing or invalid 'query'.")
+                        logger.error(
+                            f"[RDFWrapper] SPARQL rule at index {idx} missing or invalid 'query'."
+                        )
+                        raise ValueError(
+                            f"[RDFWrapper] SPARQL rule at index {idx} missing or invalid 'query'."
+                        )
                     prepared_query = self.prepare_sparql_query(rule['query'])
                     graph.update(prepared_query)
                 else:
-                    logger.error(f"[RDFWrapper] Unknown rule type '{rule['type']}' at index {idx}.")
-                    raise ValueError(f"[RDFWrapper] Unknown rule type '{rule['type']}' at index {idx}.")
+                    logger.error(
+                        f"[RDFWrapper] Unknown rule type '{rule['type']}' at index {idx}."
+                    )
+                    raise ValueError(
+                        f"[RDFWrapper] Unknown rule type '{rule['type']}' at index {idx}."
+                    )
         except Exception as e:
-            logger.info(f"[RDFWrapper] Error applying rule {idx + 1}: {e}")
+            logger.info(f'[RDFWrapper] Error applying rule {idx + 1}: {e}')
 
         return graph
 
@@ -601,7 +614,8 @@ class RDFUtils:
                 continue
             # consider it an object property if any range is not an XSD datatype
             is_object_property = any(
-                not (isinstance(r, URIRef) and str(r).startswith(str(XSD))) for r in ranges
+                not (isinstance(r, URIRef) and str(r).startswith(str(XSD)))
+                for r in ranges
             )
             if is_object_property:
                 predicates.add(pred.split('#')[-1])
@@ -627,7 +641,8 @@ class RDFUtils:
                 continue
             # consider it as datatype property if any range is an XSD datatype
             is_datatype = any(
-                isinstance(r, URIRef) and str(r).startswith(str(XSD))
+                (isinstance(r, URIRef)
+                and str(r).startswith(str(XSD)))
                 or r == RDFS.Literal
                 or isinstance(r, Literal)
                 for r in ranges
@@ -688,7 +703,9 @@ class RDFUtils:
         elif isinstance(value, int):
             return Literal(value, datatype=XSD.integer)
         else:
-            raise TypeError(f"Unsupported type for conversion to Literal: {type(value)}")
+            raise TypeError(
+                f'Unsupported type for conversion to Literal: {type(value)}'
+            )
 
     @staticmethod
     def remove_triplets(_graph: Graph, d_list):
@@ -820,7 +837,9 @@ class RDFUtils:
             """
         )
 
-        insert_template.execute(graph=graph, subject=subject, predicate=predicate, value=value)
+        insert_template.execute(
+            graph=graph, subject=subject, predicate=predicate, value=value
+        )
         return graph
 
     @staticmethod
@@ -901,194 +920,9 @@ class SPARQLTemplate:
         def _repl(match):
             key = match.group(1)
             return str(kwargs.get(key, match.group(0)))
+
         return re.sub(r'\{(\w+)\}', _repl, self.template)
 
     def execute(self, graph, **kwargs):
         query = self.render(**kwargs)
         return graph.update(query)
-
-
-class RDFSRewriter:
-    """RDFS Query Rewriter for SPARQL queries based on a TBox graph."""
-    # https://titan.dcs.bbk.ac.uk/~michael/sw15/slides/SPARQL.pdf
-    # https://doi.org/10.1007/s13218-020-00671-w
-
-    def __init__(self, tbox):
-        self.idx = self.build_rdfs_index(tbox)
-
-        self.parser = SPARQLParser()
-
-    def rewrite_sparql_query(self, query: str) -> Query:
-        """Rewrites the given SPARQL query based on implicit TBox knowledge and returns the rewritten Query object."""
-        q = self.parser.parse(query)
-
-        #
-        bgp = self.extract_bgp(q)
-        rewritten = self.rewrite_bgp(bgp, self.idx)
-        union_set = self.build_union_ast(rewritten)
-        q = self.inject_union(q, union_set)
-
-        return q
-
-    def rewrite(self, sparql: str) -> str:
-        """Rewrites the given SPARQL query based on implicit TBox knowledge and returns the rewritten SPARQL string."""
-        q = self.parser.parse(sparql)
-
-        #
-        bgp = self.extract_bgp(q)
-        rewritten = self.rewrite_bgp(bgp, self.idx)
-        union_set = self.build_union_ast(rewritten)
-        q = self.inject_union(q, union_set)
-
-        # algebra translate to SPARQL-String
-        rewritten_query = self.parser.get_sparql_string(q)
-        return rewritten_query
-
-    def build_rdfs_index(self, tbox):
-        idx = {
-            "subClass": {},
-            "subProperty": {},
-            "domain": {},
-            "range": {}
-        }
-
-        for s, _, o in tbox.triples((None, RDFS.subClassOf, None)):
-            idx["subClass"].setdefault(o, set()).add(s)
-
-        for s, _, o in tbox.triples((None, RDFS.subPropertyOf, None)):
-            idx["subProperty"].setdefault(o, set()).add(s)
-
-        for s, _, o in tbox.triples((None, RDFS.domain, None)):
-            idx["domain"][s] = o
-
-        for s, _, o in tbox.triples((None, RDFS.range, None)):
-            idx["range"][s] = o
-
-        return idx
-
-    def rewrite_bgp(self, patterns, idx):
-        """ Basic Graph Pattern rewriting """
-        rewritten = []
-
-        for s, p, o in patterns:
-            alts = self.rewrite_triple(s, p, o, idx)
-            rewritten.append(alts)
-
-        return rewritten
-
-    def rewrite_triple(self, s, p, o, idx):
-        alts = set()
-
-        # CASE 1: rdf:type C
-        if p == RDF.type:
-            classes = idx["subClass"].get(o, set()) | {o}
-            for c in classes:
-                alts.add((s, RDF.type, c))
-
-        # CASE 2: Property
-        else:
-            props = idx["subProperty"].get(p, set()) | {p}
-            for pr in props:
-                alts.add((s, pr, o))
-
-                # DOMAIN
-                if pr in idx["domain"]:
-                    alts.add((s, RDF.type, idx["domain"][pr]))
-
-                # # RANGE
-                # if pr in idx["range"]:
-                #     alts.add((o, RDF.type, idx["range"][pr]))
-
-        return alts
-    
-    def prune_combinations(self, combos): # Prune combinations that are dominated by others (i.e., subsets)
-        pruned = []
-
-        for c in combos:
-            c_set = set(c)
-            dominated = False
-
-            for other in combos:
-                if c != other and c_set.issuperset(set(other)):
-                    dominated = True
-                    break
-
-            if not dominated:
-                pruned.append(c)
-
-        return pruned
-
-    def build_union_ast(self, alternatives_per_triple):
-        """
-        alternatives_per_triple = [
-            [(s,p,o), (s,p,o2)],   # Triple 1 alternatives
-            [(s2,p2,o2)],          # Triple 2 alternatives
-        ]
-        """
-
-        all_combinations = list(product(*alternatives_per_triple))
-
-        # Prune combinations that are dominated by others
-        all_combinations = self.prune_combinations(all_combinations)
-
-        seen = set()
-        bgps = []
-        ## remove duplicates
-        for combo in all_combinations:
-            canon = tuple(sorted(combo))   # canonical form
-            if canon not in seen:
-                seen.add(canon)
-                bgps.append(BGP(list(combo)))
-
-        # All BGPs to a nested Union
-        if not bgps:
-            return None
-
-        u = bgps[0]
-        for b in bgps[1:]:
-            u = Union(u, b)
-        return u
-
-    def extract_bgp(self, q):
-        """Extracts triples from the WHERE clause of a SPARQL query."""
-        bgps = []
-
-        def finder(node):
-            # algebra nodes have .name
-            if hasattr(node, "name") and node.name == "BGP":
-                bgps.append(node.triples)
-            return None  # keep everything else
-
-        algebra.traverse(q.algebra, finder)
-        if not bgps:
-            raise ValueError("No BGP found")
-        elif len(bgps) == 1:
-            return bgps[0]
-        else:
-            # merge multiple BGPs
-            merged = []
-            for b in bgps:
-                merged.extend(b)
-            return merged
-
-    def inject_union(self, q, union_node):
-        """Injects the union node into the query algebra, replacing the original BGP."""
-
-        def updater(node):
-            # algebra nodes have .name
-            if hasattr(node, "name") and node.name == "BGP":
-                return union_node   # replace BGP
-            return None             # keep everything else
-
-        q.algebra = algebra.traverse(q.algebra, updater)
-        return q
-
-
-class SPARQLParser:
-    def parse(self, sparql: str):
-        parsed = parser.parseQuery(sparql)
-        return algebra.translateQuery(parsed)
-
-    def get_sparql_string(self, query) -> str:
-
-        return algebra.translateAlgebra(query)

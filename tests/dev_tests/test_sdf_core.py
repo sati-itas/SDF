@@ -18,9 +18,6 @@ from sdf.data.otype import OType
 from tests.env_sets.road_test_predicates_actions import predicates_simple, actions_simple
 from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple
 from tests.env_sets.road_test_scenarios import scenario_20, scenario_30
-from tests.env_sets.hanoi_predicates_actions import hanoi_predicates
-from tests.env_sets.hanoi_sceanario import hanoi_classic
-from sdf.core.gen_data import DataGenerator
 from sdf.core.rdf_wrapper import RDFUtils
 import pytest
 from sdf.core.sdf_core import SDObject, Predicate, Scene, SDUtils
@@ -85,8 +82,7 @@ def test_sdf_init_rdf_wrapper_C2(sample_scene: tuple[Scene, Scene, list[Action],
     test_data_dir.mkdir(parents=True, exist_ok=True)
 
     # Case 2 with knowledge graph
-    knowledge_graph_file_1 = 'sdf/data/test_scene1.ttl'
-    knowledge_graph_file_2 = 'sdf/data/test_scene1.ttl'
+    knowledge_graph_file_1 = 'sdf/data/situation_tbox_rdfs_v1.1.ttl'
     rdf_wrapper = RDFWrapper(CurrentScene)
     loaded_graph_1 = rdf_wrapper.load_knowledge_graph(knowledge_graph_file_1)
     attributes, predicates = rdf_wrapper.get_attrs_and_pred_kg()

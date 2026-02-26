@@ -10,12 +10,11 @@ base_dir = os.path.join(parent_dir, '..')
 # append parent and base direction
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
-from sdf.core.gen_data import DataGenerator
-from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple, make_road_heuristic_sd, make_road_heuristic_rdf
+from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple, make_road_heuristic_rdf,actions_rewrite
 
 from sdf.core.sdf_solver import Solver
-from tests.env_sets.road_test_scenarios import *
-from tests.env_sets.gen_road_scenario import actions_light, actions_rewrite, scenario_5gen
+from tests.env_sets.road_test_scenarios import scenario_20, scenario_5gen
+#from tests.env_sets.gen_road_scenario import actions_light, actions_rewrite, scenario_5gen
 
 from tests.run_tests.test_base import TestBase
 
@@ -45,31 +44,22 @@ def test_scenario20():
     predicates = predicates_simple()
     actions = actions_simple(predicates)
 
-    heuristic_sd = make_road_heuristic_sd(predicates)
     heuristic_rdf = make_road_heuristic_rdf()
 
     scene_tuple = scenario_20(predicates, actions)
 
     solver = Solver([SDOBJECT_TEMPLATE], predicates=predicates)
-    bfs_sd = solver.bfs_sdscene
-    dfs_sd = solver.dfs_sdscene
     dfs_rdf = solver.dfs_rdf
     bfs_rdf = solver.bfs_rdf
-    astar_sd = solver.astar_sdscene
     astar_rdf = solver.astar_rdf
 
     solver_list = [bfs_rdf, dfs_rdf, astar_rdf]
-    #solver_list = [bfs_rdf, dfs_rdf]# 
-    #
-    solver_list = [bfs_sd, bfs_rdf, dfs_rdf, dfs_sd, astar_sd, astar_rdf]# bfs_sd, bfs_rdf, dfs_rdf, dfs_sd, 
+
 
     for solver in solver_list:
         if solver == astar_rdf:
             print(f'\n testing solver: {solver.__name__} with heuristic rdf')
             testbase.test_solver(scene_tuple, solver, loops, heuristic_rdf)
-        elif solver == astar_sd:
-            print(f'\n testing solver: {solver.__name__} with heuristic sd')
-            testbase.test_solver(scene_tuple, solver, loops, heuristic_sd)
         testbase.test_solver(scene_tuple, solver, loops)
 
 def test_scenario_KN():
@@ -84,11 +74,9 @@ def test_scenario_KN():
     """
     #TODO heuristics
 
-
-
     ## wrapper for current scene from KN graph
     wrapper = RDFWrapper()
-    graph = wrapper.load_knowledge_graph('sdf/data/test_scene1.ttl')
+    graph = wrapper.load_knowledge_graph('sdf/data/situation_tbox_rdfs_v1.1.ttl')
     attr, predicates = wrapper.get_attrs_and_pred_kg()
     print(wrapper.base_uri)
     predicate_dict = Predicate.gen_predicates(predicates)
@@ -116,51 +104,21 @@ def test_scenario_KN():
 
     solver = Solver(current_scene_rdf_wrapper=wrapper, fo_rewrite=True)
 
-    bfs_sd = solver.bfs_sdscene
-    dfs_sd = solver.dfs_sdscene
     dfs_rdf = solver.dfs_rdf
     bfs_rdf = solver.bfs_rdf
-    astar_sd = solver.astar_sdscene
     astar_rdf = solver.astar_rdf
 
     solver_list = [bfs_rdf, dfs_rdf, astar_rdf] 
-    #solver_list = [dfs_rdf] 
-    #solver_list = [bfs_sd, bfs_rdf, dfs_rdf, dfs_sd, astar_sd, astar_rdf]# bfs_sd, bfs_rdf, dfs_rdf, dfs_sd, 
+
 
     for solver in solver_list:
         # if solver == astar_rdf:
         #     print(f'\n testing solver: {solver.__name__} with heuristic rdf')
         #     testbase.test_solver(scene_tuple, solver, loops, heuristic_rdf)
-        # elif solver == astar_sd:
-        #     print(f'\n testing solver: {solver.__name__} with heuristic sd')
-        #     testbase.test_solver(scene_tuple, solver, loops, heuristic_sd)
         testbase.test_solver(situation_tuple, solver, loops)
-
-def test_scenario5gen():
-    testbase = TestBase()
-    generator = DataGenerator('test_scene1.ttl')
-    predicate_dict = generator.gen_predicates()
-    generator.rdf_wrapper.get_base_uri(generator._graph_datagen)
-    base_uri = generator.rdf_wrapper.base_uri
-
-    
-    loops = 10
-
-    actions = actions_light(predicate_dict)
-
-    scene_tuple = scenario_5gen(predicate_dict, actions)
-
-    bfs_sd = Solver.bfs_sdscene
-    dfs_sd = Solver.dfs_sdscene
-
-    solver_list = [dfs_sd, bfs_sd]
-
-    for solver in solver_list:
-        testbase.test_solver(scene_tuple, solver, loops)
 
 
 if __name__ == "__main__":
 
-    #test_scenario20()
+    test_scenario20()
     test_scenario_KN()
-    #test_scenario5gen()

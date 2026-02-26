@@ -18,7 +18,6 @@ from tests.env_sets.road_test_scenarios import *
 from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple
 
 from tests.env_sets.gen_road_scenario import actions_light, scenario_5gen
-from sdf.core.gen_data import DataGenerator
 
 def ctest_gen_rdf_graph():
 
@@ -34,43 +33,12 @@ def ctest_gen_rdf_graph():
 
     print(f'\ngraph_processing_time: {rdf_wrapper.gen_rdf_graph_processing_time*1000}ms')
 
-def ctest_gen_rdf_graph_from_gen_data():
-
-    generator = DataGenerator('test_scene1.ttl')
-    predicate_dict = generator.gen_predicates('gen_pred_list2.txt')
-    for key,value in predicate_dict.items():
-        print(f'{key}: {value}')
-
-    generator.rdf_wrapper.get_base_uri(generator._graph_datagen)
-    base_uri = generator.rdf_wrapper.base_uri
-
-    actions = actions_light(predicate_dict)
-
-    CurrentScene, GoalScene, action_list = scenario_5gen(predicate_dict, actions)
-
-    print(CurrentScene)
-
-    rdf_wrapper = RDFWrapper(CurrentScene)
-    graph = rdf_wrapper.generate_graph()
-    print(graph)
-    for act in action_list:
-        print(act.name)
-        act.precondition
-        pre = graph.query(act.precondition)
-        for row in pre:
-            print(row)
-
-    rdf_wrapper.serialize_rdf_graph('out_test_gen_rdf_graph_from_gen_data')
-
-    print(f'\ngraph_processing_time: {rdf_wrapper.gen_rdf_graph_processing_time*1000}ms')
-
-
 def ctest_extract_rdf_components():
     rdf_wrapper = RDFWrapper(base_uri='http://example.org/Env')
 
 
     # parse knowledge graph with rdflib
-    graph = rdf_wrapper.load_knowledge_graph('sdf/data/test_scene1.ttl')
+    graph = rdf_wrapper.load_knowledge_graph('sdf/data/situation_tbox_rdfs_v1.1.ttl')
 
     # generate enum for types
     class_type = 'DomainTypes'
@@ -111,11 +79,10 @@ def ctest_graph_preparation():
     test_data_dir = os.path.join(tests_dir, "tests_data")
     os.makedirs(test_data_dir, exist_ok=True)
 
-
     rdf_wrapper = RDFWrapper()
 
     # parse knowledge graph with rdflib
-    graph = rdf_wrapper.load_knowledge_graph('sdf/data/test_scene1.ttl')
+    graph = rdf_wrapper.load_knowledge_graph('sdf/data/situation_tbox_rdfs_v1.1.ttl')
     attr, predicates = rdf_wrapper.get_attrs_and_pred_kg()
 
     out_file = os.path.join(test_data_dir, "output_test_ctest_graph_preparation.ttl")
@@ -150,7 +117,7 @@ def ctest_sdgraph_generation_KN():
 
 
     # parse knowledge graph with rdflib
-    graph = rdf_wrapper.load_knowledge_graph('sdf/data/test_scene1.ttl')
+    graph = rdf_wrapper.load_knowledge_graph('sdf/data/situation_tbox_rdfs_v1.1.ttl')
     attr, predicates = rdf_wrapper.get_attrs_and_pred_kg()
 
     predicates = Predicate.gen_predicates(predicates) #! convert to SD Predicates Dict
@@ -163,11 +130,8 @@ def ctest_sdgraph_generation_KN():
     sd_scene1 = rdf_wrapper.gen_sd_scene_from_rdf_database(rdf_graph1)
     print(repr(sd_scene1))
 
-
 if __name__ == "__main__":
-
 
     ctest_extract_rdf_components()
     ctest_graph_preparation()
-    ctest_gen_rdf_graph_from_gen_data()
     ctest_sdgraph_generation_KN()

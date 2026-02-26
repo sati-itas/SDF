@@ -12,17 +12,9 @@ sys.path.append(parent_dir)
 sys.path.append(base_dir)
 
 from sdf.core.rdf_wrapper import RDFWrapper
-from sdf.core.sdf_core import Action, Predicate, Scene
-from sdf.data.otype import OType 
-
-# from tests.env_sets.gen_road_scenario import actions_light, scenario_30, scenario_5gen
-from tests.env_sets.road_test_predicates_actions import predicates_simple, actions_simple
-from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple
-from tests.env_sets.road_test_scenarios import scenario_20, scenario_30
-from tests.env_sets.gen_road_scenario import actions_light, scenario_5gen
-from tests.env_sets.hanoi_predicates_actions import hanoi_predicates
-from tests.env_sets.hanoi_sceanario import hanoi_classic
-from sdf.core.gen_data import DataGenerator
+from sdf.core.sdf_core import Predicate 
+from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple, actions_light, predicates_simple, actions_simple
+from tests.env_sets.road_test_scenarios import scenario_20, scenario_30, scenario_5gen
 from sdf.core.rdf_wrapper import RDFUtils
 
 SDOBJECT_TEMPLATE = [
@@ -48,7 +40,7 @@ def test_sdf_init_rdf_wrapper_C2():
     test_data_dir.mkdir(parents=True, exist_ok=True)
 
     # Case 2 with knowledge graph
-    knowledge_graph_file_1 = 'sdf/data/test_scene1.ttl'
+    knowledge_graph_file_1 = 'sdf/data/situation_tbox_rdfs_v1.1.ttl'
     rdf_wrapper = RDFWrapper(CurrentScene)
     loaded_graph_1 = rdf_wrapper.load_knowledge_graph(knowledge_graph_file_1)
     attributes, predicates = rdf_wrapper.get_attrs_and_pred_kg()
@@ -82,7 +74,7 @@ def test_rdf_sdscene_generation_and_query_processing_KN():
     rdf_wrapper = RDFWrapper()
 
     # parse KN graph with rdflib
-    graph = rdf_wrapper.load_knowledge_graph('sdf/data/test_scene1.ttl')
+    graph = rdf_wrapper.load_knowledge_graph('sdf/data/situation_tbox_rdfs_v1.1.ttl')
 
     attr, predicates = rdf_wrapper.get_attrs_and_pred_kg()
     predicate_dict = Predicate.gen_predicates(predicates)
@@ -101,12 +93,12 @@ def test_rdf_sdscene_generation_and_query_processing_KN():
     }
     """
     query2 = """SELECT ?lane ?predecessor WHERE {
-        ?lane <http://example.org/Scene#has_predecessor> ?predecessor .
+        ?lane <http://example.org/Situ#hasPredecessor> ?predecessor .
         }
     """
 
     query3 = """SELECT ?lane WHERE {
-        <http://example.org/data#ego> <http://example.org/Scene#has_lane_assignment> ?lane .
+        <http://example.org/data#ego> <http://example.org/Situ#isOnLane> ?lane .
         }
     """
     results = graph.query(query1)
@@ -127,47 +119,6 @@ def test_rdf_sdscene_generation_and_query_processing_KN():
 
         # TEST execute_select_dict_list_improve
         print(f'{act.name}.execute_select_dict_list_improve() => {act.execute_action_on_rdf(rdf_wrapper.data_graph)}\n')
-
-
-def test_sdf_actions_sdscene():
-
-    generator = DataGenerator('test_scene1.ttl')
-    predicate_dict = generator.gen_predicates('gen_pred_list2.txt')
-
-    generator.rdf_wrapper.get_base_uri(generator._graph_datagen)
-    base_uri = generator.rdf_wrapper.base_uri
-    print(base_uri)
-
-    rdf_wrapper = RDFWrapper()
-
-    actions = actions_light(predicate_dict)
-    CurrentScene, GoalScene, action_list = scenario_5gen(predicate_dict, actions)
-
-
-    
-    rdf_wrapper.load_scene(CurrentScene)
-    graph = rdf_wrapper.generate_graph()
-    print(graph.serialize(format='turtle'))
-
-    # SPARQL proof
-    for act in action_list:
-        act.init_action()
-        print(act.name)
-        act.precondition
-        pre = graph.query(act.precondition)
-        for row in pre:
-            print(row)
-        # TEST check_precondition
-        scene_rdf_wrapper = CurrentScene.init_rdf_wrapper()
-        act.check_precondition_on_rdf(scene_rdf_wrapper.data_graph)
-        # precondition
-        # TEST check_precondition
-        new_scene_action_dict = act.execute_action_on_sdscene(CurrentScene)
-        print(f'\n CurrentScene: {CurrentScene}')
-        if new_scene_action_dict:
-            print(f'\n new_scene_action_dict: {[key for key in new_scene_action_dict.keys()][0]}')
-        else: 
-            print(f'\n new_scene_action_dict: {new_scene_action_dict}')
 
 def test_sdf_actions_rdfscene():
 
@@ -226,9 +177,8 @@ def test_sdf_actions_rdfscene():
 
 if __name__ == "__main__":
     # with loading knowledge graph (check namespace self.KN default)
-    # test_sdf_init_rdf_wrapper_C2()
-    # test_rdf_sdscene_generation_and_query_processing_KN()
-    # test_sdf_actions_sdscene() # generator inside
+    test_sdf_init_rdf_wrapper_C2()
+    test_rdf_sdscene_generation_and_query_processing_KN()
     
     ## without loading knowledge graph (check namespace self.KN default)
     test_sdf_init_rdf_wrapper_C3()

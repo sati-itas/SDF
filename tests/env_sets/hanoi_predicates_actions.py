@@ -2,8 +2,6 @@ from typing import Dict
 
 from sdf.core.sdf_core import Action
 from sdf.core.sdf_core import Predicate
-from sdf.core.sdf_core import Scene
-from sdf.data.otype import OType
 
 
 def hanoi_predicates() -> Dict[str, Predicate]:
@@ -16,7 +14,7 @@ def hanoi_predicates() -> Dict[str, Predicate]:
     predicate_dict = {'smaller': smaller, 'is_on': is_on, 'clear': clear}
     return predicate_dict
 
-def actions_simple(predicate_dict, base_uri: str = 'http://example.org/knowledge#'):
+def actions_simple(predicate_dict, base_uri: str = 'http://example.org/Situ#'):
 
     is_on = predicate_dict['is_on']
     clear = predicate_dict['clear']
@@ -54,18 +52,6 @@ def actions_simple(predicate_dict, base_uri: str = 'http://example.org/knowledge
     action_list = [move1]
 
     return action_list
-
-def hanoi_heuristic_sd(state: Scene, goal_scene: Scene):
-    # count the number of facts in the goal scene that are not in the current state
-    state_facts = set(
-        (pred, *objs) for pred, obj_list in state.scene_relations.items() for objs in obj_list
-    )
-    return sum(
-        1
-        for pred, obj_list in goal_scene.scene_relations.items()
-        for objs in obj_list
-        if (pred, *objs) not in state_facts
-    )
 
 def hanoi_heuristic_rdf(state, goal_scene):
     """
