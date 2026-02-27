@@ -10,7 +10,7 @@ The framework serves as a mapping layer between data and semantic instance graph
 * Rules for deriving implicit information
 * Basic RDFS rewriting
 
-Based on the semantic instance graph, SDF applies classical graph search algorithms (DFS, BFS, UCS, and A*) to RDF data.Actions, their preconditions, and their effects are described semantically and determined at runtime through rule-based or query-based mechanisms.
+Based on the semantic instance graph, SDF applies classical graph search algorithms (DFS, BFS, UCS, and A*) to RDF data. Actions, their preconditions, and their effects are described semantically and determined at runtime through rule-based or query-based mechanisms.
 
 ---
 ### Installation
@@ -30,7 +30,7 @@ pip install -r requirements.txt
 ---
 
 ### Examples
-#### Solve the Hanoitower
+#### Solve the Hanoi Tower
 To solve the hanoi tower with simple Graph-based planning, see:
 ```
 python tests/run_tests/test_solver_hanoi_scenario.py
