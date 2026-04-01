@@ -49,4 +49,4 @@ python tests/run_tests/test_solver_road_scenarios.py
 
 ---
 ### In the development phase
-This repository is under development and no documentation exists. For any questions, remarks or issues feel free to create an [issue](https://github.com/sati-itas/SDF/issues) or open a [discussion](https://github.com/sati-itas/SDF/discussions).
+This repository is under development and no documentation exists. It should be considered experimental. For any questions, remarks or issues feel free to create an [issue](https://github.com/sati-itas/SDF/issues) or open a [discussion](https://github.com/sati-itas/SDF/discussions).
