@@ -1,0 +1,341 @@
+@prefix : <http://example.org/Situ#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@base <http://example.org/Situ#> .
+
+
+#################################################################
+#    Object Properties
+#################################################################
+
+###  http://example.org/Situ#free
+:free a rdf:Property ;
+      rdfs:domain :VehicleEntity ;
+      rdfs:range :Lane .
+
+###  http://example.org/Situ#freeFront
+:freeFront a rdf:Property ;
+        rdfs:subPropertyOf :free;
+        rdfs:domain :VehicleEntity ;
+        rdfs:range :Lane .
+
+###  http://example.org/Situ#freeLeft
+:freeLeft a rdf:Property ;
+        rdfs:subPropertyOf :free;
+        rdfs:domain :VehicleEntity ;
+        rdfs:range :Lane .
+
+###  http://example.org/Situ#freeRight
+:freeRight a rdf:Property ;
+        rdfs:subPropertyOf :free;
+        rdfs:domain :VehicleEntity ;
+        rdfs:range :Lane .
+
+###  http://example.org/Situ#hasLateralNeighbour
+:hasLateralNeighbour a rdf:Property ;
+                rdfs:subPropertyOf :hasOrderedNeighbour ;
+                rdfs:domain :Lane ;
+                rdfs:range :Lane .
+
+###  http://example.org/Situ#hasLeftNeighbour
+:hasLeftNeighbour a rdf:Property ;
+                rdfs:subPropertyOf :hasLateralNeighbour ;
+                rdfs:domain :Lane ;
+                rdfs:range :Lane .
+
+###  http://example.org/Situ#hasLongitudinalNeighbour
+:hasLongitudinalNeighbour a rdf:Property ;
+                rdfs:subPropertyOf :hasOrderedNeighbour ;
+                rdfs:domain :Lane ;
+                rdfs:range :Lane .
+
+###  http://example.org/Situ#hasOrderedNeighbour
+:hasOrderedNeighbour a rdf:Property ;
+                     rdfs:domain :Lane ;
+                     rdfs:range :Lane .
+
+
+###  http://example.org/Situ#hasRelativePosition
+:hasRelativePosition a rdf:Property ;
+        rdfs:domain :DynamicObject ;
+        rdfs:range :Position .
+
+
+###  http://example.org/Situ#isOnLane
+:isOnLane a rdf:Property ;
+          rdfs:domain :VehicleEntity ;
+          rdfs:range :Lane .
+
+:hasPoint a rdf:Property ;
+          rdfs:domain :DynamicObject, :Self ;
+          rdfs:range :Point .
+
+###  http://example.org/Situ#hasPos
+:hasPos a rdf:Property ;
+        rdfs:subPropertyOf :hasPoint ;
+        rdfs:domain :DynamicObject, :Self ;
+        rdfs:range :Position .
+
+:hasLine a rdf:Property ;
+         rdfs:domain :Lane ;
+         rdfs:range :Line .
+
+###  http://example.org/Situ#before
+:before a rdf:Property ;
+        rdfs:domain :VehicleEntity ;
+        rdfs:range :Position .
+
+:relativeTo a rdf:Property ;
+        rdfs:domain :RelativePosition ;
+        rdfs:range  :Position .
+
+###  http://example.org/Situ#hasPredecessor
+:hasPredecessor a rdf:Property ;
+                rdfs:subPropertyOf :hasLongitudinalNeighbour ;
+                rdfs:domain :Lane ;
+                rdfs:range :Lane .
+
+###  http://example.org/Situ#hasRightNeighbour
+:hasRightNeighbour a rdf:Property ;
+                   rdfs:subPropertyOf :hasLateralNeighbour ;
+                   rdfs:domain :Lane ;
+                   rdfs:range :Lane .
+
+###  http://example.org/Situ#hasSuccessor
+:hasSuccessor a rdf:Property ;
+                rdfs:subPropertyOf :hasLongitudinalNeighbour ;
+                rdfs:domain :Lane ;
+                rdfs:range :Lane .
+
+###  http://example.org/Situ#hasPart
+:hasPart a rdf:Property ;
+         rdfs:comment "Mereologische (Teil-)Beziehung" .
+
+:hasPartScenery rdf:type rdf:Property ;
+        rdfs:subPropertyOf :hasPart ;
+        rdfs:domain :Scene ;
+        rdfs:range :Scenery .
+
+:hasPartDynamicObject rdf:type rdf:Property ;
+        rdfs:subPropertyOf :hasPart ;
+        rdfs:domain :Scene ;
+        rdfs:range :DynamicObject .
+
+:hasPartSelf rdf:type rdf:Property ;
+        rdfs:subPropertyOf :hasPart ;
+        rdfs:domain :Scene ;
+        rdfs:range :Self .
+
+:hasPartLocation rdf:type rdf:Property ;
+        rdfs:subPropertyOf :hasPart ;
+        rdfs:domain :PhysicalEntity ;
+        rdfs:range :Loaction .
+
+:hasPartScene rdf:type rdf:Property ;
+        rdfs:subPropertyOf :hasPart ;
+        rdfs:domain :Situation ;
+        rdfs:range :Scene .
+
+:hasPartAction rdf:type rdf:Property ;
+        rdfs:subPropertyOf :hasPart ;
+        rdfs:domain :Situation ;
+        rdfs:range :Action .
+
+:hasPartGoal rdf:type rdf:Property ;
+        rdfs:subPropertyOf :hasPart ;
+        rdfs:domain :Situation ;
+        rdfs:range :Goal .
+
+#################################################################
+#    Data properties
+#################################################################
+
+###  http://example.org/Situ#hasValueD
+:hasValueD a rdf:Property;
+        rdfs:domain :Point ;
+        rdfs:range xsd:float .
+
+###  http://example.org/Situ#hasValueS
+:hasValueS a rdf:Property ;
+        rdfs:domain :Point ;
+        rdfs:range xsd:float .
+
+### Data properties added
+:hasCenterShape a rdf:Property ;
+        rdfs:domain :Line ;
+        rdfs:range rdfs:Literal .
+
+:hasLaneLength a rdf:Property ;
+        rdfs:domain :Lane ;
+        rdfs:range xsd:float .
+
+:hasRange a rdf:Property ;
+          rdfs:domain :RelativePosition ;
+          rdfs:range  xsd:float .
+
+:hasRelD a rdf:Property ;
+        rdfs:domain :RelativePosition ;
+        rdfs:range xsd:float .
+
+:hasRelS a rdf:Property ;
+        rdfs:domain :RelativePosition ;
+        rdfs:range xsd:float .
+
+:hasLaneName a rdf:Property ;
+        rdfs:domain :Lane ;
+        rdfs:range xsd:string .
+
+:hasJunctionName a rdf:Property ;
+        rdfs:domain :Junction ;
+        rdfs:range xsd:string .
+
+#################################################################
+#    Classes
+#################################################################
+
+:Situation a rdfs:Class .
+
+:PhysicalEntity rdf:type rdfs:Class ;
+        rdfs:comment "spatially localizable, material or infrastructural, non-agentive, persistent over time".
+
+
+:Geometry a rdfs:Class .
+
+
+:Location a rdfs:Class ;
+        rdfs:comment "Summarizes what a <place> is (position + relative position)".
+
+
+:Point a rdfs:Class ;
+        rdfs:comment "general geometric point";
+        rdfs:subClassOf :Geometry .
+
+
+:Line a rdfs:Class ;
+      rdfs:subClassOf :Geometry .
+
+
+###  http://example.org/Situ#Position
+:Position a rdfs:Class ;
+        rdfs:subClassOf :Location ;
+        rdfs:comment "semantically specified point (e.g. location)";
+        rdfs:subClassOf :Point.
+
+
+:RelativePosition a rdfs:Class ;
+                  rdfs:subClassOf :Position , :Location .
+
+
+
+###  http://example.org/Situ#Accident
+:Accident a rdfs:Class ;
+          rdfs:subClassOf :Obstacle .
+
+
+###  http://example.org/Situ#Action
+:Action a rdfs:Class .
+
+
+
+###  http://example.org/Situ#Bus
+:Bus a rdfs:Class ;
+     rdfs:subClassOf :VehicleEntity .
+
+
+###  http://example.org/Situ#Car
+:Car a rdfs:Class ;
+     rdfs:subClassOf :VehicleEntity .
+
+
+###  http://example.org/Situ#Driver
+:Driver a rdfs:Class ;
+        rdfs:subClassOf :Human .
+
+
+###  http://example.org/Situ#DynamicObject
+:DynamicObject a rdfs:Class ;
+        rdfs:subClassOf :PhysicalEntity .
+
+
+###  http://example.org/Situ#Ego
+:Ego a rdfs:Class ;
+     rdfs:subClassOf :Self .
+
+
+###  http://example.org/Situ#Goal
+:Goal a rdfs:Class .
+
+
+###  http://example.org/Situ#Human
+:Human a rdfs:Class ;
+       rdfs:subClassOf :RoadUser .
+
+
+###  http://example.org/Situ#Junction
+:Junction a rdfs:Class ;
+          rdfs:subClassOf :Scenery .
+
+
+###  http://example.org/Situ#Lane
+:Lane a rdfs:Class ;
+      rdfs:subClassOf :Scenery .
+
+
+###  http://example.org/Situ#Obstacle
+:Obstacle a rdfs:Class ;
+          rdfs:subClassOf :DynamicObject .
+
+
+###  http://example.org/Situ#Pedestrian
+:Pedestrian a rdfs:Class ;
+            rdfs:subClassOf :Human .
+
+
+###  http://example.org/Situ#Rider
+:Rider a rdfs:Class ;
+       rdfs:subClassOf :Human .
+
+
+
+###  http://example.org/Situ#RoadUser
+:RoadUser a rdfs:Class ;
+          rdfs:subClassOf :DynamicObject .
+
+
+###  http://example.org/Situ#Roadworks
+:Roadworks a rdfs:Class ;
+           rdfs:subClassOf :Obstacle .
+
+
+###  http://example.org/Situ#Scene
+:Scene a rdfs:Class .
+
+
+###  http://example.org/Situ#Scenery
+:Scenery a rdfs:Class ;
+        rdfs:subClassOf :PhysicalEntity .
+
+
+###  http://example.org/Situ#Self
+:Self a rdfs:Class ;
+        rdfs:subClassOf :PhysicalEntity .
+
+
+###  http://example.org/Situ#StationaryVehicle
+:StationaryVehicle a rdfs:Class ;
+                   rdfs:subClassOf :Obstacle .
+
+
+###  http://example.org/Situ#Truck
+:Truck a rdfs:Class ;
+       rdfs:subClassOf :VehicleEntity .
+
+
+###  http://example.org/Situ#VehicleEntity
+:VehicleEntity a rdfs:Class ;
+               rdfs:subClassOf :RoadUser .
+
+
+###  Generated by the OWL API (version 4.5.29.2024-05-13T12:11:03Z) https://github.com/owlcs/owlapi

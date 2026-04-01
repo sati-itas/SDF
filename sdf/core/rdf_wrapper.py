@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import re
 from logging import getLogger
 from typing import TYPE_CHECKING
 from typing import Dict
 from urllib.parse import quote
 
+from rdflib import Dataset
 from rdflib import Graph
 from rdflib import Literal
 from rdflib import Namespace
@@ -15,17 +17,50 @@ from rdflib.namespace import RDF
 from rdflib.namespace import RDFS
 from rdflib.namespace import XSD
 from rdflib.plugins.sparql import prepareQuery
+from rdflib.plugins.sparql.sparql import Query
+from sparql_rdfs_rewriter import RDFSRewriter
 
 from sdf.core.utility.timing_utils import time_tracker
 
 
 logger = getLogger(__name__)
 
-# logger.setLevel(WARNING)  # Set logger to DEBUG level for detailed output 
-
 
 if TYPE_CHECKING:
     from sdf.core.sdf_core import Scene
+
+
+class NameSpaceRegistry:
+    """Registry for commonly used namespaces in RDF graphs."""
+
+    def __init__(self, base='http://example.org/'):
+        self.BASE = base
+        self.KN = Namespace(base + 'knowledge#')
+        self.DATA = Namespace(base + 'data#')
+        self.SCENE = Namespace(base + 'Scene#')
+        self.SITU = Namespace(base + 'Situ#')
+        self.EX = Namespace(base)
+
+        self.RDF = RDF
+        self.RDFS = RDFS
+        self.OWL = OWL
+        self.XSD = XSD
+
+        self.all = {
+            'kn': self.KN,
+            'data': self.DATA,
+            'scene': self.SCENE,
+            'situ': self.SITU,
+            'ex': self.EX,
+            'rdf': self.RDF,
+            'rdfs': self.RDFS,
+            'owl': self.OWL,
+            'xsd': self.XSD,
+        }
+
+    def bind_all(self, graph):
+        for p, ns in self.all.items():
+            graph.bind(p, ns)
 
 
 class RDFWrapper:
@@ -56,22 +91,55 @@ class RDFWrapper:
         self.predicate_mapping_dict = {}
         self.sd_rdf_dict = {}
 
+        ## load Namespaces from NameSpaceRegistry # noqa: E266
+        # initialize base uri and namespace registry (default to example.org)
+        if not base_uri:
+            base_uri = 'http://example.org/'
         self.base_uri = base_uri
-        self.ex_base_uri = 'http://example.org/'
-        if not self.base_uri:
-            self.base_uri = self.ex_base_uri
+        self.nsr = NameSpaceRegistry(base=self.base_uri)
 
-        # Define data_graphs and namespace for data
-        self.data_graph = Graph()
-        self.DATA = Namespace(f'{self.base_uri}data#')
-        self.data_graph.bind('data', self.DATA)
-        # Define knowledge_graph namespac for knowledge
-        self.knowledge_graph = Graph()
-        self.KN = Namespace(f'{self.base_uri}knowledge#')
-        self.knowledge_graph.bind('scene', self.KN)
+        # Dataset for multiple graphs
+        persistent_store = False
+        # create persistent store for dataset
+        if persistent_store:
+            # TODO make the store
+            # https://rdflib.readthedocs.io/en/latest/apidocs/rdflib.plugins.stores.berkeleydb/#rdflib.plugins.stores.berkeleydb.has_bsddb
+            self.dataset = Dataset('BerkeleyDB')
+            self.dataset.open('rdf_store', create=True)
+
+        else:
+            self.dataset = Dataset()
+
+        self.tbox = self.dataset.graph(URIRef(f'{self.base_uri}/graphs/tbox'))
+        self.abox = self.dataset.graph(URIRef(f'{self.base_uri}/graphs/abox'))
+
+        self.knowledge_graph = self.tbox
+
+        ## TODO currently a little hacky, fix later  # noqa: E266
+        # namespace should adopt if you load a different graph with different Namespaces
+        self.KN = self.nsr.SITU  # --> load graph
+        ## testing with SITU loading from file # noqa: E266
+
+        self.nsr.bind_all(self.tbox)
+
+        self.data_graph = self.abox
+        self.DATA = self.nsr.DATA
+        self.nsr.bind_all(self.abox)
+
+    def load_scene(self, scene: Scene):
+        """Loads a new scene into the RDFWrapper.
+
+        Args:
+            scene (Scene): The scene to load.
+        """
+        self.scene = scene
+        self.scene_objects = scene.object_map
+        self.scene_relation_dict = scene.scene_relations
 
     def set_base_uri(self, uri: str):
         self.base_uri = uri
+        if not self.base_uri.endswith(('#', '/')):
+            self.base_uri += '#'
         return self.base_uri
 
     def to_uri(self, value: str) -> URIRef:
@@ -87,18 +155,33 @@ class RDFWrapper:
         if any(loaded_graph.subjects(RDF.type, OWL.Ontology)):
             for s in loaded_graph.subjects(RDF.type, OWL.Ontology):
                 self.base_uri = str(s)
+                if not self.base_uri.endswith(('#', '/')):
+                    self.base_uri += '#'
                 break
         else:
-            print(f'\n no base uri found; wrapper base uri set to {self.base_uri}\n')
+            print(
+                f'[RDFWrapper]: No base uri found; wrapper base uri set to {self.base_uri}\n'
+            )
+            print(
+                f'[RDFWrapper]: You can set base uri manually via rdf_wrapper.set_base_uri(uri:str) method.\n'
+            )
             # self.base_uri = next(iter(loaded_graph.namespaces()))[1]
 
     def get_subclasses(self, loaded_graph: Graph, class_uri: str):
         """get all subclasses of a given class_uri using RDFUtils"""
         return RDFUtils.get_subclasses(loaded_graph, class_uri)
 
+    def get_properties(self, loaded_graph: Graph):
+        """get all properties from graph if they marked with OWL.ObjectProperty"""
+        return RDFUtils.get_properties(loaded_graph)
+
     def get_predicates(self, loaded_graph: Graph):
-        """get all predicates/properties from graph if they are marked with OWL.ObjectProperty"""
+        """get all predicates/properties from graph if they marked with OWL.ObjectProperty or RDF.Property"""
         return RDFUtils.get_predicates(loaded_graph)
+
+    def get_attributes(self, loaded_graph: Graph):
+        """get all data properties from graph if they marked with OWL.DatatypeProperty or RDF.Property, where rdfs:range is an XSD datatype or rdfs:Literal"""
+        return RDFUtils.get_attributes(loaded_graph)
 
     def load_rdf_graph(self, data_graph: str, format_: str):
         """loads RDF graph from file"""
@@ -107,18 +190,98 @@ class RDFWrapper:
         loaded_graph = Graph().parse(f'sdf/data/{data_graph}', format=format_)
         return loaded_graph
 
-    def load_and_prepare_knowledge_graph(self, load_graph: str):
-        """Loads a knowledge graph from file, sets base URI, and binds the namespace."""
-        self.knowledge_graph = self.load_rdf_graph(load_graph, 'ttl')
-        self.get_base_uri(self.knowledge_graph)
-        self.KN = Namespace(f'{self.base_uri}knowledge#')
-        self.knowledge_graph.bind('scene', self.KN)
-        print(self.knowledge_graph.serialize(format='turtle'))
+    def load_knowledge_graph(self, path: str) -> Graph:
+        g = Graph()
+        g.parse(path, format='turtle')
+        self.tbox += g
+        return g
+
+    def get_attrs_and_pred_kg(self):
+        """Everything comes from the loaded knowledge graph in self.tbox (self.knowledge_graph)
+
+        Returns:
+            attributes (set): set of attribute names (data properties)
+            predicates (set): set of predicate names (object properties)
+        """
+
+        # TODO
+        # self.data_graph = self.create_data_graph(self.knowledge_graph)
+
+        # self.merged_graph = self.knowledge_graph + self.data_graph
+        # self.tbox += self.knowledge_graph
+        # self.abox += self.data_graph
+
+        # print(f'[RDFWrapper] Knowledge graph prepared with namespaces:\n')
+        # for prefix, ns in self.knowledge_graph.namespaces():
+        #     print(f'\t{prefix}: {ns}')
+        # print(self.knowledge_graph.serialize(format='turtle'))
+
+        attributes = self.get_attributes(self.knowledge_graph)
+        predicates = self.get_predicates(self.knowledge_graph)
+        return attributes, predicates
+
+    def _ensure_predicate_mapping(self, sd_predicate, KN=None):
+        """Ensure mapping exists for sd_predicate and return its URIRef."""
+        if KN is None:
+            KN = self.KN
+        pred_uri = KN[sd_predicate.name]
+        if sd_predicate not in self.predicate_mapping_dict:
+            self.predicate_mapping_dict[sd_predicate] = pred_uri
+        return pred_uri
+
+    def create_predicate_mapping_dict(self, predicates, KN=None):
+        """Create predicate mapping dict for given predicates. where predicates is a dict with sd_predicates as values.
+        This is useful if you want to create the predicate mapping dict before loading
+        the graph and getting the predicates from the graph."""
+        if KN is None:
+            KN = self.KN
+        for sd_predicate in predicates.values():
+            self._ensure_predicate_mapping(sd_predicate, KN=KN)
+
+    @time_tracker('gen_rdf_datagraph_processing_time')
+    def generate_data_graph(self, object_attributes) -> Graph:
+        """Generates and maps data based on the given ontology"""
+        data_triples = []
+
+        # iterate over all relations in current scene and generate ObjectProperty
+        for sd_predicate, pairs_list in self.scene_relation_dict.items():
+            pred_uri = self._ensure_predicate_mapping(sd_predicate)
+
+            # Tripel hinzufügen
+            for sd_subj, sd_obj in pairs_list:
+                subj_uri = self.obj_uri(sd_subj)
+                obj_uri = self.obj_uri(sd_obj)
+                # add subject and object mapping
+                self.subject_mapping_dict[sd_subj] = subj_uri
+                self.object_mapping_dict[sd_obj] = obj_uri
+
+                # add subject and object to data graph
+                # use object_to_rdf function
+                # to speed up the process comment this out
+                subj_data_triple = self.object_to_rdf(
+                    sd_subj, template=object_attributes
+                )
+                data_triples.extend(subj_data_triple)
+                obj_data_triple = self.object_to_rdf(sd_obj, template=object_attributes)
+                data_triples.extend(obj_data_triple)
+
+                # Add the relation triple
+                data_triples.append((subj_uri, pred_uri, obj_uri))
+        # Batch add all triples
+        for triple in data_triples:
+            self.abox.add(triple)
+
+        # merge all mappings into sd_rdf_dict
+        self.sd_rdf_dict = {
+            **self.predicate_mapping_dict,
+            **self.subject_mapping_dict,
+            **self.object_mapping_dict,
+        }
+        return self.abox
 
     @time_tracker('gen_rdf_graph_processing_time')
     def generate_graph(self, object_template=None, predicates=None) -> Graph:
-        """Generates a knowledge and data graph from the current scene.
-        """
+        """Generates a knowledge and data graph from the current scene."""
         knowledge_triples = []
         data_triples = []
 
@@ -135,17 +298,10 @@ class RDFWrapper:
         # add predicates to knowledge graph
         if predicates is not None:
             for sd_predicate in predicates.values():
-                pred_uri = self.KN[sd_predicate.name]
-                # add predicate mapping
-                if sd_predicate not in self.predicate_mapping_dict:
-                    self.predicate_mapping_dict[sd_predicate] = pred_uri
+                self._ensure_predicate_mapping(sd_predicate)
         # iterate over all relations in current scene and generate ObjectProperty
         for sd_predicate, pairs_list in self.scene_relation_dict.items():
-            pred_uri = self.KN[sd_predicate.name]
-
-            # add predicate mapping
-            if sd_predicate not in self.predicate_mapping_dict:
-                self.predicate_mapping_dict[sd_predicate] = pred_uri
+            pred_uri = self._ensure_predicate_mapping(sd_predicate)
 
             # if predicate is not in knowledge graph, add it
             if (pred_uri, RDF.type, None) not in self.knowledge_graph:
@@ -189,16 +345,12 @@ class RDFWrapper:
             **self.object_mapping_dict,
         }
         # to use the knowledge graph in the data graph by binding the namespace
-        self.data_graph.bind('scene', self.KN)
+        # self.data_graph.bind('scene', self.KN)
 
         # print(self.knowledge_graph.serialize(format="turtle"))
         # print(self.data_graph.serialize(format="turtle"))
         # for key, value in self.sd_rdf_dict.items():
         #     print(f'\tkey (sd object): {key} \n \tvalue (rdf object): {value}\n \n')
-
-        # TODO warmup graph (load graph in memory)
-        # if warmup:
-        #   self.graph.query(("ASK { ?s ?p ?o }"))
 
         return self.data_graph
 
@@ -209,7 +361,7 @@ class RDFWrapper:
         )  # or URIRef(self.DATA + quote(obj.id))
 
     def object_to_rdf(self, obj, template=None, knowledge_ns=None, data_ns=None):
-        # TODO currently: static Template for object to RDF conversion
+        # TODO currently: static Template for object to RDF conversion,
         #  instead of using knowledge graph to get properties of an object type.
         obj_data_triples = []
 
@@ -223,10 +375,10 @@ class RDFWrapper:
 
         object_uri = self.obj_uri(obj)
 
-        # Typ-Tripel hinzufügen (z. B. ex:Vehicle)
-        obj_type = getattr(obj, 'object_type', None)
-        if obj_type:
-            obj_data_triples.append((object_uri, RDF.type, knowledge_ns[obj_type]))
+        # Typ-Tripel hinzufügen (z.B. ex:Vehicle)
+        # obj_type = getattr(obj, 'object_type', None) #TODO
+        # if obj_type:
+        #     obj_data_triples.append((object_uri, RDF.type, knowledge_ns[obj_type]))
 
         # obj_name = getattr(obj, "name", None)
         # if obj_name:
@@ -294,8 +446,18 @@ class RDFWrapper:
             self.data_graph.serialize(f, format='turtle')
 
     def prepare_sparql_query(self, query: str):
-        """Prepares the SPARQL query for the RDF graph using RDFUtils."""
+        """Prepares the SPARQL query for the RDF graph using RDFUtils.
+        RDFUtils will translate the string query into a Query object provided by rdflib."""
         return RDFUtils.prepare_sparql_query(query, self.base_uri)
+
+    def rewrite_sparql_query(self, query: str):
+        """Rewrites the SPARQL query for the RDF graph using RDFSRewriter."""
+        if not hasattr(self, 'tbox') and self.tbox is None:
+            raise Exception(
+                '[RDFWrapper] TBox not found for query rewriting. Please load a knowledge graph first.'
+            )
+        rdfs_rewriter = RDFSRewriter(self.tbox)
+        return rdfs_rewriter.rewrite_query_str(query)
 
     @time_tracker('query_rdf_graph_processing_time')
     def query_rdf_graph(self, graph: Graph, query: str = None, prepared_query=None):
@@ -321,7 +483,9 @@ class RDFWrapper:
         Returns:
             Graph: A new RDF graph that is a copy of the original.
         """
-        return RDFUtils.copy_graph(g)
+        g = RDFUtils.copy_graph(g)
+        self.nsr.bind_all(g)
+        return g
 
     def remove_triplets(self, _graph: Graph, d_list):
         """removes triplets from RDF graph using RDFUtils"""
@@ -335,10 +499,10 @@ class RDFWrapper:
         """Initializes the RDF ruler with predefined rules."""
         self.rules = rules if rules is not None else []
         # Apply initial rules to the data graph
-        self.data_graph = self.apply_rules(self.data_graph)
+        self.abox = self.apply_rules(self.abox)
         logger.info(f'[RDFWrapper] Initialized with {len(self.rules)} rules.')
 
-    def apply_rules(self, graph: Graph) -> Graph:
+    def apply_rules(self, graph: Graph, rules=None) -> Graph:
         """
         Applies predefined rules to the RDF graph.
 
@@ -359,9 +523,13 @@ class RDFWrapper:
                 'query': SPARQL query string ('sparql')
             - The function logs info about each rule application and errors.
         """
+        if rules is not None:
+            self.rules = rules
         if not isinstance(graph, Graph):
             logger.error("[RDFWrapper] Input 'graph' must be an rdflib.Graph instance.")
-            raise TypeError("[RDFWrapper] Input 'graph' must be an rdflib.Graph instance.")
+            raise TypeError(
+                "[RDFWrapper] Input 'graph' must be an rdflib.Graph instance."
+            )
 
         if not self.rules:
             logger.info('[RDFWrapper] No rules to apply.')
@@ -370,25 +538,41 @@ class RDFWrapper:
         try:
             for idx, rule in enumerate(self.rules):
                 if not isinstance(rule, dict) or 'type' not in rule:
-                    logger.error(f"[RDFWrapper] Rule at index {idx} is not a valid dict with a 'type' key.")
-                    raise ValueError(f"[RDFWrapper] Rule at index {idx} is not a valid dict with a 'type' key.")
+                    logger.error(
+                        f"[RDFWrapper] Rule at index {idx} is not a valid dict with a 'type' key."
+                    )
+                    raise ValueError(
+                        f"[RDFWrapper] Rule at index {idx} is not a valid dict with a 'type' key."
+                    )
 
                 if rule['type'] == 'python':
                     if 'function' not in rule or not callable(rule['function']):
-                        logger.error(f"[RDFWrapper] Python rule at index {idx} missing or invalid 'function'.")
-                        raise ValueError(f"[RDFWrapper] Python rule at index {idx} missing or invalid 'function'.")
+                        logger.error(
+                            f"[RDFWrapper] Python rule at index {idx} missing or invalid 'function'."
+                        )
+                        raise ValueError(
+                            f"[RDFWrapper] Python rule at index {idx} missing or invalid 'function'."
+                        )
                     graph = rule['function'](graph)
                 elif rule['type'] == 'sparql':
                     if 'query' not in rule or not isinstance(rule['query'], str):
-                        logger.error(f"[RDFWrapper] SPARQL rule at index {idx} missing or invalid 'query'.")
-                        raise ValueError(f"[RDFWrapper] SPARQL rule at index {idx} missing or invalid 'query'.")
+                        logger.error(
+                            f"[RDFWrapper] SPARQL rule at index {idx} missing or invalid 'query'."
+                        )
+                        raise ValueError(
+                            f"[RDFWrapper] SPARQL rule at index {idx} missing or invalid 'query'."
+                        )
                     prepared_query = self.prepare_sparql_query(rule['query'])
                     graph.update(prepared_query)
                 else:
-                    logger.error(f"[RDFWrapper] Unknown rule type '{rule['type']}' at index {idx}.")
-                    raise ValueError(f"[RDFWrapper] Unknown rule type '{rule['type']}' at index {idx}.")
+                    logger.error(
+                        f"[RDFWrapper] Unknown rule type '{rule['type']}' at index {idx}."
+                    )
+                    raise ValueError(
+                        f"[RDFWrapper] Unknown rule type '{rule['type']}' at index {idx}."
+                    )
         except Exception as e:
-            logger.info(f"[RDFWrapper] Error applying rule {idx + 1}: {e}")
+            logger.info(f'[RDFWrapper] Error applying rule {idx + 1}: {e}')
 
         return graph
 
@@ -402,14 +586,72 @@ class RDFUtils:
         return loaded_graph.serialize(format='turtle')
 
     @staticmethod
-    def get_predicates(loaded_graph: Graph):
-        """get all predicates/properties from graph if they marked with OWL.ObjectProperty"""
-        predicates = set()
-        for pred in loaded_graph.subjects(RDF.type, OWL.ObjectProperty):
-            predicates.add(pred.split('#')[-1])
+    def get_properties(loaded_graph: Graph):
+        """get all properties from graph if they marked with OWL.ObjectProperty"""
+        properties = set()
+        for pred in loaded_graph.subjects(RDF.type, [OWL.ObjectProperty, RDF.Property]):
+            properties.add(pred.split('#')[-1])
             # print("object-property:", pred.split("#")[-1])
+        if properties:
+            return properties
+        else:
+            return None
+
+    @staticmethod
+    def get_predicates(loaded_graph: Graph):
+        """get all object-relations (predicates) from graph if they marked with OWL.ObjectProperty or RDF.Property"""
+        predicates = set()
+
+        for attr in loaded_graph.subjects(RDF.type, OWL.ObjectProperty):
+            predicates.add(attr.split('#')[-1])
+
+        # if RDF.Property is used as object property divide object and datatype properties by inspecting rdfs:range.
+        for pred in loaded_graph.subjects(RDF.type, RDF.Property):
+            ranges = list(loaded_graph.objects(pred, RDFS.range))
+            if not ranges:
+                # no range declared -> treat as object property
+                predicates.add(pred.split('#')[-1])
+                continue
+            # consider it an object property if any range is not an XSD datatype
+            is_object_property = any(
+                not (isinstance(r, URIRef) and str(r).startswith(str(XSD)))
+                for r in ranges
+            )
+            if is_object_property:
+                predicates.add(pred.split('#')[-1])
         if predicates:
             return predicates
+        else:
+            return None
+
+    @staticmethod
+    def get_attributes(loaded_graph: Graph):
+        """get all data properties from graph if they marked with OWL.DatatypeProperty or RDF.Property, where rdfs:range is an XSD datatype or rdfs:Literal"""
+        attributes = set()
+        # first check for OWL.DatatypeProperty
+        for attr in loaded_graph.subjects(RDF.type, OWL.DatatypeProperty):
+            attributes.add(attr.split('#')[-1])
+        # case where only RDF.Property is used as datatype property
+        # Divide object and datatype properties by inspecting rdfs:range.
+        # Treat as datatype property only if rdfs:range is an XSD datatype.
+        for prop in loaded_graph.subjects(RDF.type, RDF.Property):
+            ranges = list(loaded_graph.objects(prop, RDFS.range))
+            if not ranges:
+                # no range declared -> don't treat as datatype property
+                continue
+            # consider it as datatype property if any range is an XSD datatype
+            is_datatype = any(
+                (isinstance(r, URIRef)
+                and str(r).startswith(str(XSD)))
+                or r == RDFS.Literal
+                or isinstance(r, Literal)
+                for r in ranges
+            )
+            if is_datatype:
+                attributes.add(prop.split('#')[-1])
+                # print("datatype-property:", prop.split("#")[-1])
+        if attributes:
+            return attributes
         else:
             return None
 
@@ -461,7 +703,9 @@ class RDFUtils:
         elif isinstance(value, int):
             return Literal(value, datatype=XSD.integer)
         else:
-            raise TypeError(f"Unsupported type for conversion to Literal: {type(value)}")
+            raise TypeError(
+                f'Unsupported type for conversion to Literal: {type(value)}'
+            )
 
     @staticmethod
     def remove_triplets(_graph: Graph, d_list):
@@ -575,11 +819,13 @@ class RDFUtils:
         return graph
 
     @staticmethod
-    def insert_subject(graph: Graph, subject: str):
+    def insert_subject(graph: Graph, subject: str, predicate: str, value: str):
         """Inserts a new subject into the RDF graph. with SPARQL INSERT query.
         Args:
             graph (Graph): The RDF graph to insert the subject into.
             subject (str): The subject to be inserted.
+            predicate (str): The predicate for the triple.
+            value (str): The value for the triple.
         Returns:
             Graph: The updated RDF graph.
         """
@@ -591,7 +837,9 @@ class RDFUtils:
             """
         )
 
-        insert_template.execute(graph=graph, subject=subject)
+        insert_template.execute(
+            graph=graph, subject=subject, predicate=predicate, value=value
+        )
         return graph
 
     @staticmethod
@@ -636,7 +884,7 @@ class RDFUtils:
             return None
 
     @staticmethod
-    def prepare_sparql_query(query: str, base_uri: str) -> str:
+    def prepare_sparql_query(query: str, base_uri: str) -> Query:
         """
         Prepares the SPARQL query for the RDF graph.
         Compiles the SPARQL query once and saves it as bytecode.
@@ -646,7 +894,7 @@ class RDFUtils:
             base_uri (str): Base URI to initialize the namespace.
 
         Returns:
-            str: Prepared query.
+            Query: Prepared query.
         """
         q = prepareQuery(
             query,
@@ -655,6 +903,9 @@ class RDFUtils:
                 'rdf': RDF,
                 'rdfs': RDFS,
                 'ex': Namespace(base_uri),
+                'xsd': XSD,
+                # 'kn': self.KN,
+                # 'data': self.DATA,
             },
         )
         return q
@@ -665,7 +916,12 @@ class SPARQLTemplate:
         self.template = template_str
 
     def render(self, **kwargs):
-        return self.template.format(**kwargs)
+        # return self.template.format(**kwargs)
+        def _repl(match):
+            key = match.group(1)
+            return str(kwargs.get(key, match.group(0)))
+
+        return re.sub(r'\{(\w+)\}', _repl, self.template)
 
     def execute(self, graph, **kwargs):
         query = self.render(**kwargs)

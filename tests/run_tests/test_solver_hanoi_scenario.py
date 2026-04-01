@@ -8,7 +8,7 @@ base_dir = os.path.join(parent_dir, '..')
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
 
-from tests.env_sets.hanoi_predicates_actions import actions_simple, hanoi_predicates, hanoi_heuristic_rdf, hanoi_heuristic_sd
+from tests.env_sets.hanoi_predicates_actions import actions_simple, hanoi_predicates, hanoi_heuristic_rdf
 
 from sdf.core.sdf_solver import Solver
 from tests.env_sets.hanoi_sceanario import hanoi_classic
@@ -26,23 +26,18 @@ def test_hanoi():
     scene_tuple = hanoi_classic(predicates, actions)
 
     heuristic_rdf = hanoi_heuristic_rdf
-    heuristic_sd = hanoi_heuristic_sd
-
 
     solver = Solver()
-    bfs_sdscene = solver.bfs_sdscene
     bfs_rdf = solver.bfs_rdf
-    astar_sdscene = solver.astar_sdscene
+    ucs_rdf =solver.astar_rdf
     astar_rdf = solver.astar_rdf
 
-    solver_list = [astar_rdf, astar_sdscene, bfs_sdscene, bfs_rdf]
+    solver_list = [astar_rdf,ucs_rdf, bfs_rdf]
     
 
     for solver in solver_list:
         if solver == astar_rdf:
             testbase.test_solver(scene_tuple, solver, loops, heuristic_rdf)
-        elif solver == astar_sdscene:
-            testbase.test_solver(scene_tuple, solver, loops, heuristic_sd)
         else:
             testbase.test_solver(scene_tuple, solver, loops)
 

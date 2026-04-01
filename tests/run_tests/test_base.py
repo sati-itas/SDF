@@ -19,8 +19,8 @@ class TestBase:
     def __init__(self):
         pass
 
-    def test_solver(self, scene: tuple, solver: Solver, loops: int, heuristic=None):
-        CurrentScene, GoalScene, action_list = scene
+    def test_solver(self, situation: tuple, solver: Solver, loops: int, heuristic=None):
+        CurrentScene, GoalScene, action_list = situation
         loop_count = 0
         planning_processing_time = []
 

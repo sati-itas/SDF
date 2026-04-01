@@ -35,39 +35,39 @@ def predicates_simple() -> Dict[str, Predicate]:
     }
     return predicate_dict
 
-def actions_simple(predicate_dict, base_uri: str = 'http://example.org/knowledge#'):
+def actions_simple(predicate_dict, base_uri: str = 'http://example.org/Situ#'):
 
     is_on_lane = predicate_dict['is_on_lane']
 
     # SPARQL Query according: https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QueryForms
     # prepared for rdflib in python: https://rdflib.readthedocs.io/en/stable/intro_to_sparql.html
     lc_right_precondition = f"""
-                PREFIX scene: <{base_uri}>
+                PREFIX situ: <{base_uri}>
                 SELECT ?x ?y ?v ?e
                 WHERE {{
-                        ?e scene:is_on_lane ?x .
-                        ?x scene:has_right_neighbour ?y .
-                        FILTER NOT EXISTS {{ ?v scene:is_on ?y}}
+                        ?e situ:is_on_lane ?x .
+                        ?x situ:has_right_neighbour ?y .
+                        FILTER NOT EXISTS {{ ?v situ:is_on ?y}}
                 }}
             """
 
     lc_left_precondition = f"""
-                PREFIX scene:   <{base_uri}>
+                PREFIX situ:   <{base_uri}>
                 SELECT ?y ?x ?v ?e
                 WHERE {{
-                        ?e scene:is_on_lane ?x .
-                        ?x scene:has_left_neighbour ?y .
-                        FILTER NOT EXISTS {{ ?v scene:is_on ?y}}
+                        ?e situ:is_on_lane ?x .
+                        ?x situ:has_left_neighbour ?y .
+                        FILTER NOT EXISTS {{ ?v situ:is_on ?y}}
                 }}
             """
 
     l_keep_precondition = f"""
-                PREFIX scene: <{base_uri}>
+                PREFIX situ: <{base_uri}>
                 SELECT ?y ?x ?v ?e
                 WHERE {{
-                        ?e scene:is_on_lane ?x .
-                        ?x scene:has_successor ?y .
-                        FILTER NOT EXISTS {{ ?v scene:is_on ?y}}
+                        ?e situ:is_on_lane ?x .
+                        ?x situ:has_successor ?y .
+                        FILTER NOT EXISTS {{ ?v situ:is_on ?y}}
                 }}
             """
 
@@ -98,6 +98,248 @@ def actions_simple(predicate_dict, base_uri: str = 'http://example.org/knowledge
 
     return action_list
 
+def actions_light1(predicate_dict):
+    KN_uri = 'http://example.org/Scene#'
+    ego_uri = 'http://example.org/data#ego'
+
+
+    # SPARQL Query according: https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QueryForms
+    # prepared for rdflib in python: https://rdflib.readthedocs.io/en/stable/intro_to_sparql.html
+    lc_right_precondition = f"""
+                PREFIX ex: <{KN_uri}>
+                PREFIX ego: <http://example.org/data#ego>
+                SELECT ?x ?y ?v
+                WHERE {{
+                        ego: ex:has_lane_assignment ?x .
+                        ?x ex:has_right_neighbour ?y .
+                        FILTER NOT EXISTS {{?v ex:has_lane_assignment ?y .}} 
+                }}
+            """
+
+    lc_left_precondition = f"""
+                PREFIX ex: <{KN_uri}>
+                PREFIX ego: <http://example.org/data#ego>
+                SELECT ?x ?y ?v
+                WHERE {{
+                        ego: ex:has_lane_assignment ?x .
+                        ?x ex:has_left_neighbour ?y .
+                        FILTER NOT EXISTS {{ ?v ex:has_lane_assignment ?y.}}
+                }}
+            """
+
+    l_keep_precondition = f"""
+                PREFIX ex: <{KN_uri}>
+                PREFIX ego: <http://example.org/data#ego>
+                SELECT ?x ?y ?v
+                WHERE {{
+                        ego: ex:has_lane_assignment ?x .
+                        ?x ex:has_successor ?y .
+                        FILTER NOT EXISTS {{ ?v ex:has_lane_assignment ?y}}
+                }}
+            """
+    
+    has_lane_assignment = predicate_dict['has_lane_assignment']
+    # Definition of Actions
+    lc_right = Action(
+        'LANE_CHANGE_RIGHT',
+        lc_right_precondition,
+        [{has_lane_assignment: [ego_uri, "y"]}],
+        [{has_lane_assignment: [ego_uri, "x"]}],
+        ["y", "x", "v"],
+    )
+    lc_left = Action(
+        'LANE_CHANGE_LEFT',
+        lc_left_precondition,
+        [{has_lane_assignment: [ego_uri, "y"]}],
+        [{has_lane_assignment: [ego_uri, "x"]}],
+        ["y", "x", "v"],
+    )
+    lc_keep = Action(
+        'LANE_KEEPING',
+        l_keep_precondition,
+        [{has_lane_assignment: [ego_uri, "y"]}],
+        [{has_lane_assignment: [ego_uri, "x"]}],
+        ["y", "x", "v"],
+    )
+
+    action_list = [lc_right, lc_left, lc_keep]
+
+    return action_list
+
+def actions_light(predicate_dict):
+    KN_uri = 'http://example.org/Situ#'
+    ego_uri = 'http://example.org/data#ego'
+
+
+    # SPARQL Query according: https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QueryForms
+    # prepared for rdflib in python: https://rdflib.readthedocs.io/en/stable/intro_to_sparql.html
+    lc_right_precondition = f"""
+                PREFIX ex: <{KN_uri}>
+                PREFIX ego: <http://example.org/data#ego>
+                SELECT ?x ?y ?v
+                WHERE {{
+                        ego: ex:isOnLane ?x .
+                        ?x ex:hasRightNeighbour ?y .
+                        FILTER NOT EXISTS {{?v ex:isOnLane ?y .}} 
+                }}
+            """
+
+    lc_left_precondition = f"""
+                PREFIX ex: <{KN_uri}>
+                PREFIX ego: <http://example.org/data#ego>
+                SELECT ?x ?y ?v
+                WHERE {{
+                        ego: ex:isOnLane ?x .
+                        ?x ex:hasLeftNeighbour ?y .
+                        FILTER NOT EXISTS {{ ?v ex:isOnLane ?y.}}
+                }}
+            """
+
+    l_keep_precondition = f"""
+                PREFIX ex: <{KN_uri}>
+                PREFIX ego: <http://example.org/data#ego>
+                SELECT ?x ?y ?v
+                WHERE {{
+                        ego: ex:isOnLane ?x .
+                        ?x ex:hasSuccessor ?y .
+                        FILTER NOT EXISTS {{ ?v ex:isOnLane ?y}}
+                }}
+            """
+    
+    isOnLane = predicate_dict['isOnLane']
+    # Definition of Actions
+    lc_right = Action(
+        'LANE_CHANGE_RIGHT',
+        lc_right_precondition,
+        [{isOnLane: [ego_uri, "y"]}],
+        [{isOnLane: [ego_uri, "x"]}],
+        ["y", "x", "v"],
+    )
+    lc_left = Action(
+        'LANE_CHANGE_LEFT',
+        lc_left_precondition,
+        [{isOnLane: [ego_uri, "y"]}],
+        [{isOnLane: [ego_uri, "x"]}],
+        ["y", "x", "v"],
+    )
+    lc_keep = Action(
+        'LANE_KEEPING',
+        l_keep_precondition,
+        [{isOnLane: [ego_uri, "y"]}],
+        [{isOnLane: [ego_uri, "x"]}],
+        ["y", "x", "v"],
+    )
+
+    action_list = [lc_right, lc_left, lc_keep]
+
+    return action_list
+
+def actions_rewrite1(predicate_dict):
+    KN_uri = 'http://example.org/Scene#'
+    ego_uri = 'http://example.org/data#ego'
+
+
+    # SPARQL Query according: https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QueryForms
+    # prepared for rdflib in python: https://rdflib.readthedocs.io/en/stable/intro_to_sparql.html
+    lc_precondition = f"""
+                PREFIX ex: <{KN_uri}>
+                PREFIX ego: <http://example.org/data#ego>
+                SELECT ?x ?y ?v
+                WHERE {{
+                        ego: ex:has_lane_assignment ?x .
+                        ?x ex:hasLateralNeighbour ?y .
+                        FILTER NOT EXISTS {{?v ex:has_lane_assignment ?y .}} 
+                }}
+            """
+
+    l_keep_precondition = f"""
+                PREFIX ex: <{KN_uri}>
+                PREFIX ego: <http://example.org/data#ego>
+                SELECT ?x ?y ?v
+                WHERE {{
+                        ego: ex:has_lane_assignment ?x .
+                        ?x ex:has_successor ?y .
+                        FILTER NOT EXISTS {{ ?v ex:has_lane_assignment ?y}}
+                }}
+            """
+    
+    has_lane_assignment = predicate_dict['has_lane_assignment']
+    # Definition of Actions
+    lc = Action(
+        'LANE_CHANGE',
+        lc_precondition,
+        [{has_lane_assignment: [ego_uri, "y"]}],
+        [{has_lane_assignment: [ego_uri, "x"]}],
+        ["y", "x", "v"],
+    )
+
+    keep = Action(
+        'LANE_KEEPING',
+        l_keep_precondition,
+        [{has_lane_assignment: [ego_uri, "y"]}],
+        [{has_lane_assignment: [ego_uri, "x"]}],
+        ["y", "x", "v"],
+    )
+
+    action_list = [lc, keep]
+
+    return action_list
+
+def actions_rewrite(predicate_dict):
+    KN_uri = 'http://example.org/Situ#'
+    ego_uri = 'http://example.org/data#ego'
+
+
+    # SPARQL Query according: https://www.w3.org/TR/2013/REC-sparql11-query-20130321/#QueryForms
+    # prepared for rdflib in python: https://rdflib.readthedocs.io/en/stable/intro_to_sparql.html
+    lc_precondition = f"""
+                PREFIX ex: <{KN_uri}>
+                PREFIX ego: <http://example.org/data#ego>
+                SELECT ?x ?y ?v
+                WHERE {{
+                        ego: ex:isOnLane ?x .
+                        ?x ex:hasLateralNeighbour ?y .
+                        FILTER NOT EXISTS {{?v ex:isOnLane ?y .}} 
+                }}
+            """
+
+    l_keep_precondition = f"""
+                PREFIX ex: <{KN_uri}>
+                PREFIX ego: <http://example.org/data#ego>
+                SELECT ?x ?y ?v
+                WHERE {{
+                        ego: ex:isOnLane ?x .
+                        ?x ex:hasSuccessor ?y .
+                        FILTER NOT EXISTS {{ ?v ex:isOnLane ?y}}
+                }}
+            """
+    
+    isOnLane = predicate_dict['isOnLane']
+    # Definition of Actions
+    lc = Action(
+        'LANE_CHANGE',
+        lc_precondition,
+        [{isOnLane: [ego_uri, "y"]}],
+        [{isOnLane: [ego_uri, "x"]}],
+        ["y", "x", "v"],
+    )
+
+    keep = Action(
+        'LANE_KEEPING',
+        l_keep_precondition,
+        [{isOnLane: [ego_uri, "y"]}],
+        [{isOnLane: [ego_uri, "x"]}],
+        ["y", "x", "v"],
+    )
+
+    action_list = [lc, keep]
+
+    return action_list
+
+######################################################
+### Heuristic function for road scenarios using RDF###
+#######################################################
+
 def manhattan_distance(a: float, b: float) -> float:
     """
     Calculate the Manhattan distance between two points
@@ -110,22 +352,9 @@ def euclidean_distance(a: float, b: float) -> float:
     """
     return sum((x - y) ** 2 for x, y in zip(a, b)) ** 0.5
 
-def make_road_heuristic_sd(predicate_dict):
-    def road_heuristic_sd(goal_scene, state):
-        is_on_lane = predicate_dict['is_on_lane']
-        # calculate the Manhattan distance between the ego vehicle's position in the current state and the goal scene
-        lane_state_ego = state.scene_relations[is_on_lane][0][1]
-        ego_x = lane_state_ego.x
-        ego_y = lane_state_ego.y
-        lane_goal_ego = goal_scene.scene_relations[is_on_lane][0][1]
-        goal_x = lane_goal_ego.x
-        goal_y = lane_goal_ego.y
-        return euclidean_distance((ego_x, ego_y), (goal_x, goal_y))
-    return road_heuristic_sd
-
 def make_road_heuristic_rdf():
     state_query = """
-    PREFIX scene: <http://example.org/knowledge#>
+    PREFIX scene: <http://example.org/Situ#>
     SELECT ?ego_x ?ego_y
     WHERE {
         ?ego scene:is_on_lane ?ego_lane .
@@ -134,7 +363,7 @@ def make_road_heuristic_rdf():
     }
     """
     goal_query = """
-    PREFIX scene: <http://example.org/knowledge#>
+    PREFIX scene: <http://example.org/Situ#>
     SELECT ?goal_x ?goal_y
     WHERE {
         ?goal scene:is_on_lane ?goal_lane .
@@ -142,8 +371,8 @@ def make_road_heuristic_rdf():
         ?goal_lane scene:y ?goal_y .
     }
     """
-    prep_goal_query = RDFUtils.prepare_sparql_query(goal_query, "http://example.org/knowledge#")
-    prep_state_query = RDFUtils.prepare_sparql_query(state_query, "http://example.org/knowledge#")
+    prep_goal_query = RDFUtils.prepare_sparql_query(goal_query, "http://example.org/Situ#")
+    prep_state_query = RDFUtils.prepare_sparql_query(state_query, "http://example.org/Situ#")
 
     def road_heuristic_rdf(goal_scene, state):
         """

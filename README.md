@@ -1,29 +1,52 @@
-## Situation Description Framework -- SDF
+# Situation Description Framework - SDF
+### Overview
+The **Situation Description Framework (SDF)** is a semantic-based framework for situation-aware modeling, representation, and planning in dynamic environments. It combines classical planning approaches with semantic technologies, particularly RDF (Resource Description Framework) and OWL (Web Ontology Language), and follows the approaches for semantic graph-based planning with or without Background Knowledge.
 
-Situation Description Framework (SDF), a framework to describe situations and plan task in context of mobile robotics. This approach includes a class structure to describe dynamic environments (scenes) and actions. It also includes simple planner like BFS and DFS. The knowledge based environment description is modeled via semantic representations and with the abbility of dynamic numeric measurement data. Action templates are inspired by PDDL and preconditions can be queried with SPARQL.
+A central component of the framework is a structured class architecture that describes a situation at a conceptual level. This structure enables domain-independent representation of relevant entities, their properties, and their relationships to one another.
 
-### Basic Usage
+The framework serves as a mapping layer between data and semantic instance graphs while maintaining the underlying background knowledge. This forms the basis for situation-based querying and reasoning using technologies such as:
 
-#### project installation
+* SPARQL for queries over the RDF data model
+* Rules for deriving implicit information
+* Basic RDFS rewriting
 
-The following description gives you a view on how to setup a basic test run. 
+Based on the semantic instance graph, SDF applies classical graph search algorithms (DFS, BFS, UCS, and A*) to RDF data. Actions, their preconditions, and their effects are described semantically and determined at runtime through rule-based or query-based mechanisms.
+
+---
+### Installation
+
+SDF can be installed as a Python Package: ```pip install .```
 
 Creating a virtual environment is recommented, for instance:
 
 ```
-python -m venv .virtenv
+python -m venv .venv
 ```
-
 After the activation of environment, install the requiered packages:
 
 ```
 pip install -r requirements.txt
 ```
+---
 
-#### start a test run
-To start a simple test to solve the hanoi tower:
+### Examples
+#### Solve the Hanoi Tower
+To solve the hanoi tower with simple Graph-based planning, see:
 ```
 python tests/run_tests/test_solver_hanoi_scenario.py
 ```
+
+#### Solve Simple Driving Domain 
+Without Background Knowledge, see the test ```test_scenario20()``` in:
+```
+python tests/run_tests/test_solver_road_scenarios.py
+```
+
+With Background Knowledge, see the test ```test_scenario_KN()``` in: 
+```
+python tests/run_tests/test_solver_road_scenarios.py
+```
+
+---
 ### In the development phase
-This repository is under development and no documentation currently exists. For any questions, remarks or issues feel free to create an [issue](https://github.com/sati-itas/SDF/issues) or open a [discussion](https://github.com/sati-itas/SDF/discussions).
+This repository is under development and no documentation exists. It should be considered experimental. For any questions, remarks or issues feel free to create an [issue](https://github.com/sati-itas/SDF/issues) or open a [discussion](https://github.com/sati-itas/SDF/discussions).

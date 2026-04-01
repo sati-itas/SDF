@@ -7,7 +7,6 @@ base_dir = os.path.join(parent_dir, '..')
 # append parent and base direction
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
-from sdf.core.gen_data import DataGenerator
 from sdf.core.sdf_core import SDObject, Scene
 from sdf.data.otype import OType
 
@@ -15,13 +14,6 @@ from sdf.core.sdf_core import SDUtils #check_subset_scenes, check_identical_scen
 
 from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple
 from tests.env_sets.road_test_scenarios import scenario_10
-
-from tests.env_sets.gen_road_scenario import actions_light, scenario_5gen
-from sdf.data._gen.domain_otypes import DomainTypes
-from sdf.data._gen.domain_scenery import Scenery
-from sdf.data._gen.domain_dyn_object import DynamicObject
-from sdf.data._gen.domain_location import Location
-from sdf.data._gen.domain_self import SelfRepresentation
 
 from tests.env_sets.hanoi_predicates_actions import hanoi_predicates
 from tests.env_sets.hanoi_predicates_actions import actions_simple as hanoi_move
@@ -85,42 +77,7 @@ class SDSceneGoalValidatorTests:
 
         self.goal_checker(CurrentScene, GoalScene1)
 
-    def test_goal_gen_road(self):
-        generator = DataGenerator('test_scene.ttl')
-        predicate_dict = generator.gen_predicates()
-        generator.rdf_wrapper.get_base_uri(generator._graph_datagen)
-        base_uri = generator.rdf_wrapper.base_uri
 
-        #############
-        # instantiate sdf objects
-        Agent = SDObject("ego", SelfRepresentation.EGO)
-        Car1 = SDObject("car1", DynamicObject.ROADUSER)
-        lane1 = SDObject("lane1", Scenery.LANESEGMENT)
-        lane2 = SDObject("lane2", Scenery.LANESEGMENT)
-        lane3 = SDObject("lane3", Scenery.LANESEGMENT)
-        lane4 = SDObject("lane4", Scenery.LANESEGMENT)
-        lane5 = SDObject("lane5", Scenery.LANESEGMENT)
-        lane6 = SDObject("lane6", Scenery.LANESEGMENT)
-
-        object_list = [Agent, Car1, lane1, lane2, lane3, lane4, lane5, lane6]
-
-        goal_rel_is_on = {predicate_dict['has_lane_assignment']: [[Agent, lane1]]}
-        goal_rel_has_successor = {predicate_dict['has_successor']: [[lane1, lane3]]}
-        goal_scene = {**goal_rel_is_on,**goal_rel_has_successor}
-
-
-        GoalScene = Scene(object_list, goal_scene)
-
-        ############
-
-        actions = actions_light(predicate_dict, base_uri)
-
-
-        CurrentScene, Goal_scene, action_list = scenario_5gen(predicate_dict, actions)
-        CurrentScene1, GoalScene1, action_list1 = scenario_5gen(predicate_dict, actions)
-
-        #goal_checker(CurrentScene, CurrentScene1)
-        self.goal_checker(CurrentScene, GoalScene)
 
 
     def goal_checker(self, scene, goal):
@@ -240,7 +197,7 @@ if __name__ == "__main__":
     test_sd_scene = SDSceneGoalValidatorTests()
     test_sd_scene.test_goal_checker_road()
     test_sd_scene.test_goal_checker_hanoi()
-    test_sd_scene.test_goal_gen_road()
+    #test_sd_scene.test_goal_gen_road()
 
     testrdf_scene = GRAPHSceneGoalValidatorTests()
     testrdf_scene.test_goal_checker_road()

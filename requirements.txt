@@ -1,10 +1,16 @@
 ####### requirements.txt #######
 
 rdflib
+git+https://github.com/sati-itas/sparql-rdfs-rewriter.git@main
+
+
+#reasoning
+owlrl
+
+# persistent store
+#sqlalchemy
 
 numpy
-
-pyyaml
 
 matplotlib
 
