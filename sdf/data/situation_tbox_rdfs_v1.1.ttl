@@ -198,32 +198,34 @@
 :Situation a rdfs:Class .
 
 :PhysicalEntity rdf:type rdfs:Class ;
-        rdfs:comment "räumlich lokalisierbar, materiell oder infrastrukturell, nicht handlungsfähig, persistent über Zeit".
+        rdfs:comment "spatially localizable, material or infrastructural, non-agentive, persistent over time".
+
 
 :Geometry a rdfs:Class .
 
+
 :Location a rdfs:Class ;
-        rdfs:comment "Fasst zusammen was ein <Ort> ist (Position + RelativePosition)".
+        rdfs:comment "Summarizes what a <place> is (position + relative position)".
+
 
 :Point a rdfs:Class ;
-        rdfs:comment "allgemeiner geometrischer Punkt";
+        rdfs:comment "general geometric point";
         rdfs:subClassOf :Geometry .
+
 
 :Line a rdfs:Class ;
       rdfs:subClassOf :Geometry .
 
+
 ###  http://example.org/Situ#Position
 :Position a rdfs:Class ;
         rdfs:subClassOf :Location ;
-        rdfs:comment "semantisch spezifizierter Punkt (bspw. Ort)";
+        rdfs:comment "semantically specified point (e.g. location)";
         rdfs:subClassOf :Point.
+
 
 :RelativePosition a rdfs:Class ;
                   rdfs:subClassOf :Position , :Location .
-
-:SpatialRelation a rdfs:Class ;
-        rdfs:comment "nur nötig falls Aussagen über die Beziehung, wie <hasLeftNeighbour> selbst getroffen werden soll, bspw. Zeitpunkte, Wahrscheinlichkeiten, Quellen, Sensoren, Unsicherheit".
-
 
 
 
