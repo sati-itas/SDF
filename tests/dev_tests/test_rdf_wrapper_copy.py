@@ -17,7 +17,8 @@ from sdf.data.otype import OType
 from tests.env_sets.road_test_scenarios import *
 from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple
 
-from tests.env_sets.gen_road_scenario import actions_light, scenario_5gen
+from tests.env_sets.road_test_scenarios import scenario_5gen
+from tests.env_sets.road_test_predicates_actions import actions_light
 
 def ctest_gen_rdf_graph():
 

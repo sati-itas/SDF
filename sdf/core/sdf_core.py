@@ -523,8 +523,6 @@ class Action(Thing):
                             new_graph = self.rdf_wrapper.add_triplets(
                                 new_graph, [triplet]
                             )
-                            # Apply rules to the new graph
-                            new_graph = self.rdf_wrapper.apply_rules(new_graph)
                             # update sd relation action effect,
                             # if sd_sub and sd_obj are not None and mapping exists
                             if sd_sub is None or sd_obj is None:
@@ -538,6 +536,13 @@ class Action(Thing):
                             logger.warning(
                                 f'Error while adding triplet {triplet} to new scene: {e}'
                             )
+            # Apply rules ONCE after the full effect (all removes done in the
+            # d_list pass, all adds done above) — not per-triple. Per-triple
+            # apply_rules ran over intermediate "hole" states (a subject's old
+            # fact removed, new not yet added) where additive forward-rules
+            # (NAF: noVehicleAhead/noLeaderInRange, free_front/left/right) could
+            # derive stale facts that survived the final pass.
+            new_graph = self.rdf_wrapper.apply_rules(new_graph)
             sd_rel_action_effect_list.append(sd_rel_action_effect)
             sd_rel_action_effect = {}
             if logger.isEnabledFor(DEBUG):

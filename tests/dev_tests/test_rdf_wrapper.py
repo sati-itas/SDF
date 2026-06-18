@@ -5,7 +5,8 @@ from sdf.core.rdf_wrapper import RDFWrapper
 from sdf.core.sdf_core import Action, Scene
 from tests.env_sets.road_test_scenarios import scenario_30
 from tests.env_sets.road_test_predicates_actions import actions_simple, predicates_simple, Predicate
-from tests.env_sets.gen_road_scenario import scenario_5gen, actions_light
+from tests.env_sets.road_test_scenarios import scenario_5gen
+from tests.env_sets.road_test_predicates_actions import actions_light
 from rdflib import Graph, URIRef, Literal, Namespace, XSD, RDF
 from sdf.core.rdf_wrapper import RDFUtils, SPARQLTemplate, RDFWrapper
 from urllib.parse import quote
