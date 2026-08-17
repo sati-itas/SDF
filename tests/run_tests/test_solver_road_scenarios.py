@@ -2,7 +2,7 @@ import os
 import sys
 
 from sdf.core.rdf_wrapper import RDFUtils, RDFWrapper
-from sdf.core.sdf_core import Predicate
+from sdf.core.sdf_core import Action, Predicate, SDObject, Scene
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -118,7 +118,93 @@ def test_scenario_KN():
         testbase.test_solver(situation_tuple, solver, loops)
 
 
+def test_forall_vars_advance_all_bound_vehicles():
+    """forall_vars lets a single Action tick advance EVERY vehicle bound by
+    the precondition query into ONE shared successor graph, instead of the
+    default select_dict_list behaviour that branches into one successor
+    graph PER matched row. Uses three independent cars, each on its own
+    lane pair, so the row count (3) is unambiguous evidence of what would
+    otherwise be 3 separate successor states.
+    """
+    predicates = predicates_simple()
+    is_on = predicates['is_on']
+    has_successor = predicates['has_successor']
+
+    car1 = SDObject('car1', 'VEHICLE')
+    car2 = SDObject('car2', 'VEHICLE')
+    car3 = SDObject('car3', 'VEHICLE')
+    lane_a1 = SDObject('lane_a1', 'LANE')
+    lane_a2 = SDObject('lane_a2', 'LANE')
+    lane_b1 = SDObject('lane_b1', 'LANE')
+    lane_b2 = SDObject('lane_b2', 'LANE')
+    lane_c1 = SDObject('lane_c1', 'LANE')
+    lane_c2 = SDObject('lane_c2', 'LANE')
+
+    object_map = {
+        o.name: o
+        for o in (car1, car2, car3, lane_a1, lane_a2, lane_b1, lane_b2, lane_c1, lane_c2)
+    }
+    scene_relations = {
+        is_on: [[car1, lane_a1], [car2, lane_b1], [car3, lane_c1]],
+        has_successor: [[lane_a1, lane_a2], [lane_b1, lane_b2], [lane_c1, lane_c2]],
+    }
+    CurrentScene = Scene(object_map, scene_relations)
+    rdf_wrapper = CurrentScene.init_rdf_wrapper()
+    current_graph = rdf_wrapper.data_graph
+
+    precondition = """
+                PREFIX situ: <http://example.org/Situ#>
+                SELECT ?c ?from ?to
+                WHERE {
+                        ?c situ:is_on ?from .
+                        ?from situ:has_successor ?to .
+                }
+            """
+
+    def make_action(forall):
+        return Action(
+            'ADVANCE_ALL_VEHICLES',
+            precondition,
+            [{is_on: ['c', 'to']}],
+            [{is_on: ['c', 'from']}],
+            ['c', 'from', 'to'],
+            forall_vars=['c', 'from', 'to'] if forall else None,
+        )
+
+    # baseline: default behaviour branches into one successor graph per row
+    branching_action = make_action(forall=False)
+    branching_action.init_action_with_rdf(rdf_wrapper)
+    assert branching_action.check_precondition_on_rdf(current_graph) is True
+    assert len(branching_action.select_dict_list) == 3
+    branching_result = branching_action.execute_action_on_rdf(current_graph)
+    assert len(branching_result) == 3
+
+    # forall_vars: all three matched rows collapse into ONE successor graph
+    forall_action = make_action(forall=True)
+    forall_action.init_action_with_rdf(rdf_wrapper)
+    assert forall_action.check_precondition_on_rdf(current_graph) is True
+    assert len(forall_action.select_dict_list) == 3
+    forall_result = forall_action.execute_action_on_rdf(current_graph)
+    assert len(forall_result) == 1
+
+    new_graph = next(iter(forall_result))
+    for car, old_lane, new_lane in (
+        (car1, lane_a1, lane_a2),
+        (car2, lane_b1, lane_b2),
+        (car3, lane_c1, lane_c2),
+    ):
+        car_uri = rdf_wrapper.sd_rdf_dict[car]
+        is_on_uri = rdf_wrapper.sd_rdf_dict[is_on]
+        old_uri = rdf_wrapper.sd_rdf_dict[old_lane]
+        new_uri = rdf_wrapper.sd_rdf_dict[new_lane]
+        assert (car_uri, is_on_uri, new_uri) in new_graph
+        assert (car_uri, is_on_uri, old_uri) not in new_graph
+        # original scene graph stays untouched
+        assert (car_uri, is_on_uri, old_uri) in current_graph
+
+
 if __name__ == "__main__":
 
     test_scenario20()
     test_scenario_KN()
+    test_forall_vars_advance_all_bound_vehicles()

@@ -312,6 +312,7 @@ class Action(Thing):
         d_list: List,
         select: List[str],
         weight: float = 1.0,
+        forall_vars: List[str] = None,
     ):
         Thing.__init__(self, name=action_name)
         self.precondition = precondition
@@ -320,6 +321,14 @@ class Action(Thing):
         self.select = select
 
         self.weight = weight
+
+        # forall_vars (opt-in, default: unchanged behaviour): select-vars
+        # applied to ONE shared successor graph instead of branching one
+        # graph per select_dict_list row. a_list/d_list entries not
+        # referencing forall_vars run once, on the first row. Use for
+        # actions touching every matched individual in one tick (e.g.
+        # "advance all vehicles") without exploding the search space.
+        self.forall_vars = list(forall_vars) if forall_vars else []
 
         self.rdf_wrapper = None
         self.prep_query = None
@@ -421,6 +430,35 @@ class Action(Thing):
         new_graph_list, sd_rel_action_effect_list = self.add_triplets_to_rdf(new_graph_list)
         return new_graph_list, sd_rel_action_effect_list
 
+    def _references_forall(self, select_parameters) -> bool:
+        """True if select_parameters (an a_list/d_list value, possibly
+        nested, see process_select_parameters) references any name in
+        self.forall_vars."""
+        for item in select_parameters:
+            if isinstance(item, list):
+                if self._references_forall(item):
+                    return True
+            elif isinstance(item, str) and item in self.forall_vars:
+                return True
+        return False
+
+    def _row_fully_bound(self, select_parameters, select_dict) -> bool:
+        """True if every variable name in select_parameters is bound
+        (not None) in select_dict. Skips URI strings and already-nested
+        lists. Guards against an unbound OPTIONAL var (row not fully
+        matched) silently acting as an rdflib wildcard delete/add for a
+        forall entry -- lets forall_vars preconditions safely use OPTIONAL
+        (e.g. "advance every other vehicle if any exist")."""
+        for item in select_parameters:
+            if isinstance(item, list):
+                if not self._row_fully_bound(item, select_dict):
+                    return False
+            elif isinstance(item, str) and not (
+                    item.startswith('http://') or item.startswith('https://')):
+                if select_dict.get(item) is None:
+                    return False
+        return True
+
     def remove_triplets_from_rdf(self, rdf_scene):
         """
         remove the RDF triplet from the graph from self.d_list
@@ -428,7 +466,13 @@ class Action(Thing):
         1. map SELECT parameter to RDF subjects/objects
         2. map RDF subjects/objects to SD_Object instances
         3. remove triplet from graph
+
+        self.forall_vars (opt-in): dispatches to _remove_triplets_forall
+        instead -- see its docstring and the Action.__init__ docstring.
         """
+        if self.forall_vars:
+            return self._remove_triplets_forall(rdf_scene)
+
         new_graph_list = []
         for select_dict in self.select_dict_list:
             new_graph = self.rdf_wrapper.copy_rdf_graph(rdf_scene)
@@ -488,13 +532,60 @@ class Action(Thing):
             new_graph_list.append(new_graph)
         return new_graph_list
 
+    def _remove_triplets_forall(self, rdf_scene):
+        """forall_vars variant of remove_triplets_from_rdf: ONE shared graph
+        copy instead of one per select_dict_list row. d_list entries
+        referencing a forall_vars name run once PER row; all others run
+        ONCE, on the first row."""
+        new_graph = self.rdf_wrapper.copy_rdf_graph(rdf_scene)
+        if not self.select_dict_list:
+            return [new_graph]
+        first_row = self.select_dict_list[0]
+
+        def _apply(select_dict, forall_only):
+            for d_dictonary in self.d_list:
+                for pred, select_parameters in d_dictonary.items():
+                    if self._references_forall(select_parameters) != forall_only:
+                        continue
+                    if forall_only and not self._row_fully_bound(select_parameters, select_dict):
+                        continue
+                    predicate_uri = self.rdf_wrapper.sd_rdf_dict.get(pred)
+                    if not predicate_uri:
+                        raise KeyError(f'Predicate {pred} not found in sd_rdf_dict.')
+                    for item in select_parameters:
+                        if isinstance(item, list):
+                            sub, obj = self.process_select_parameters(item, select_dict)
+                        else:
+                            sub, obj = self.process_select_parameters(
+                                select_parameters, select_dict)
+                        triplet = (sub, predicate_uri, obj)
+                        try:
+                            self.rdf_wrapper.remove_triplets(new_graph, [triplet])
+                            logger.debug(
+                                f'[SDF.ACTION._remove_triplets_forall] Deleted RDF triplet: {triplet}')
+                        except Exception as e:
+                            logger.warning(
+                                f'Error while removing d_list (forall) from current scene: {e}')
+
+        _apply(first_row, forall_only=False)
+        for select_dict in self.select_dict_list:
+            _apply(select_dict, forall_only=True)
+
+        return [new_graph]
+
     def add_triplets_to_rdf(self, new_graph_list):
         """
         add the RDF triplet to the graph from a_list
         1. map SELECT parameter to RDF subjects/objects
         2. map RDF subjects/objects to SD_Object instances
         4. add the triplet to the graph
+
+        self.forall_vars (opt-in): dispatches to _add_triplets_forall
+        instead -- see its docstring and the Action.__init__ docstring.
         """
+        if self.forall_vars:
+            return self._add_triplets_forall(new_graph_list)
+
         sd_rel_action_effect = {}
         sd_rel_action_effect_list = []
         new_graph_list_ = []
@@ -551,6 +642,54 @@ class Action(Thing):
             new_graph_list_.append(new_graph)
 
         return [new_graph_list_, sd_rel_action_effect_list]
+
+    def _add_triplets_forall(self, new_graph_list):
+        """forall_vars variant of add_triplets_to_rdf: applies a_list to the
+        single shared graph from _remove_triplets_forall -- singular entries
+        once (first row), forall entries once per row -- then apply_rules
+        once at the end. Returns one (graph, effect) pair; the effect is a
+        LIST of per-contribution dicts, since forall entries reuse the same
+        predicate key per row and a merged dict would keep only the last."""
+        new_graph = new_graph_list[0]
+        rdf_to_sd_dict = {v: k for k, v in self.rdf_wrapper.sd_rdf_dict.items()}
+        effect_list = []
+
+        def _apply(select_dict, forall_only):
+            sd_rel_action_effect = {}
+            for a_dictonary in self.a_list:
+                for pred, select_parameters in a_dictonary.items():
+                    if self._references_forall(select_parameters) != forall_only:
+                        continue
+                    if forall_only and not self._row_fully_bound(select_parameters, select_dict):
+                        continue
+                    sub, obj = self.process_select_parameters(
+                        select_parameters, select_dict)
+                    sd_sub = rdf_to_sd_dict.get(sub)
+                    sd_obj = rdf_to_sd_dict.get(obj)
+                    predicate_uri = self.rdf_wrapper.sd_rdf_dict[pred]
+                    triplet = (sub, predicate_uri, obj)
+                    try:
+                        self.rdf_wrapper.add_triplets(new_graph, [triplet])
+                        if sd_sub is None or sd_obj is None:
+                            logger.warning(
+                                f'SD Mapping for RDF subject/object not found: '
+                                f'{[sub, obj]} \\ Construct sd_rel anyway, even if '
+                                f'sd_sub({sd_sub}) or sd_obj({sd_obj}) is None ')
+                        sd_rel_action_effect[pred] = [sd_sub, sd_obj]
+                    except Exception as e:
+                        logger.warning(
+                            f'Error while adding triplet (forall) {triplet} to new scene: {e}')
+            if sd_rel_action_effect:
+                effect_list.append(sd_rel_action_effect)
+
+        if self.select_dict_list:
+            first_row = self.select_dict_list[0]
+            _apply(first_row, forall_only=False)
+            for select_dict in self.select_dict_list:
+                _apply(select_dict, forall_only=True)
+
+        new_graph = self.rdf_wrapper.apply_rules(new_graph)
+        return [[new_graph], [effect_list]]
 
     def process_select_parameters(self, select_parameters, select_dict):
         """
