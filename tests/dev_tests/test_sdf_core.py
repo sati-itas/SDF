@@ -237,3 +237,104 @@ def test_sdf_actions_rdfscene_assertions():
     for name, exp in expected.items():
         assert name in results
         assert results[name] is exp
+
+
+def test_partition_by_ego_choice_one_successor_per_ego_choice():
+    """2 ego choices x 2 forall cars = 4 rows: 1 successor without the flag,
+    2 with it (one per ego lane, both cars advanced in each)."""
+    predicates = predicates_simple()
+    is_on = predicates['is_on']
+    is_on_lane = predicates['is_on_lane']
+    has_left = predicates['has_left_neighbour']
+    has_right = predicates['has_right_neighbour']
+    has_successor = predicates['has_successor']
+
+    ego = SDObject('ego', 'VEHICLE')
+    car1 = SDObject('car1', 'VEHICLE')
+    car2 = SDObject('car2', 'VEHICLE')
+    lane_m = SDObject('lane_m', 'LANE')
+    lane_l = SDObject('lane_l', 'LANE')
+    lane_r = SDObject('lane_r', 'LANE')
+    lane_a1 = SDObject('lane_a1', 'LANE')
+    lane_a2 = SDObject('lane_a2', 'LANE')
+    lane_b1 = SDObject('lane_b1', 'LANE')
+    lane_b2 = SDObject('lane_b2', 'LANE')
+
+    object_map = {
+        o.name: o
+        for o in (ego, car1, car2, lane_m, lane_l, lane_r,
+                  lane_a1, lane_a2, lane_b1, lane_b2)
+    }
+    scene_relations = {
+        is_on: [[ego, lane_m]],
+        is_on_lane: [[car1, lane_a1], [car2, lane_b1]],
+        has_left: [[lane_m, lane_l]],
+        has_right: [[lane_m, lane_r]],
+        has_successor: [[lane_a1, lane_a2], [lane_b1, lane_b2]],
+    }
+    CurrentScene = Scene(object_map, scene_relations)
+    rdf_wrapper = CurrentScene.init_rdf_wrapper()
+    current_graph = rdf_wrapper.data_graph
+
+    precondition = """
+                PREFIX situ: <http://example.org/Situ#>
+                SELECT ?e ?e_from ?e_to ?c ?from ?to
+                WHERE {
+                        ?e situ:is_on ?e_from .
+                        { ?e_from situ:has_left_neighbour ?e_to . }
+                        UNION
+                        { ?e_from situ:has_right_neighbour ?e_to . }
+                        ?c situ:is_on_lane ?from .
+                        ?from situ:has_successor ?to .
+                }
+            """
+
+    def make_action(partition):
+        return Action(
+            'LANE_CHANGE_ADVANCE_ALL',
+            precondition,
+            [{is_on: ['e', 'e_to']}, {is_on_lane: ['c', 'to']}],
+            [{is_on: ['e', 'e_from']}, {is_on_lane: ['c', 'from']}],
+            ['e', 'e_from', 'e_to', 'c', 'from', 'to'],
+            forall_vars=['c', 'from', 'to'],
+            partition_by_ego_choice=partition,
+        )
+
+    uri = rdf_wrapper.sd_rdf_dict
+
+    def ego_lanes(graph):
+        return {o for o in graph.objects(uri[ego], uri[is_on])}
+
+    def assert_cars_advanced(graph):
+        for car, old_lane, new_lane in ((car1, lane_a1, lane_a2),
+                                        (car2, lane_b1, lane_b2)):
+            assert (uri[car], uri[is_on_lane], uri[new_lane]) in graph
+            assert (uri[car], uri[is_on_lane], uri[old_lane]) not in graph
+
+    # flag off: one successor (previous behaviour)
+    folded = make_action(partition=False)
+    folded.init_action_with_rdf(rdf_wrapper)
+    assert folded.check_precondition_on_rdf(current_graph) is True
+    assert len(folded.select_dict_list) == 4
+    folded_result = folded.execute_action_on_rdf(current_graph)
+    assert len(folded_result) == 1
+    assert_cars_advanced(next(iter(folded_result)))
+
+    # flag on: one successor per ego choice
+    partitioned = make_action(partition=True)
+    partitioned.init_action_with_rdf(rdf_wrapper)
+    assert partitioned.check_precondition_on_rdf(current_graph) is True
+    assert len(partitioned.select_dict_list) == 4
+    partitioned_result = partitioned.execute_action_on_rdf(current_graph)
+    assert len(partitioned_result) == 2
+
+    seen_ego_lanes = []
+    for graph in partitioned_result:
+        lanes = ego_lanes(graph)
+        assert len(lanes) == 1
+        seen_ego_lanes += lanes
+        assert_cars_advanced(graph)
+    assert set(seen_ego_lanes) == {uri[lane_l], uri[lane_r]}
+
+    # original scene graph stays untouched
+    assert ego_lanes(current_graph) == {uri[lane_m]}

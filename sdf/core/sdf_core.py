@@ -313,6 +313,7 @@ class Action(Thing):
         select: List[str],
         weight: float = 1.0,
         forall_vars: List[str] = None,
+        partition_by_ego_choice: bool = False,
     ):
         Thing.__init__(self, name=action_name)
         self.precondition = precondition
@@ -322,13 +323,16 @@ class Action(Thing):
 
         self.weight = weight
 
-        # forall_vars (opt-in, default: unchanged behaviour): select-vars
-        # applied to ONE shared successor graph instead of branching one
-        # graph per select_dict_list row. a_list/d_list entries not
-        # referencing forall_vars run once, on the first row. Use for
-        # actions touching every matched individual in one tick (e.g.
-        # "advance all vehicles") without exploding the search space.
+        # forall_vars (opt-in): all rows go into ONE shared successor instead
+        # of one per row; entries without forall_vars run once, on row 0
+        # (e.g. "advance all vehicles" in one tick).
         self.forall_vars = list(forall_vars) if forall_vars else []
+
+        # partition_by_ego_choice (opt-in, only with forall_vars): group the
+        # rows by the actor's choice (a_list/d_list vars not referencing
+        # forall_vars) and build one successor per group. Without it, only
+        # row 0's choice survives (e.g. lane change left, right is lost).
+        self.partition_by_ego_choice = bool(partition_by_ego_choice)
 
         self.rdf_wrapper = None
         self.prep_query = None
@@ -426,9 +430,46 @@ class Action(Thing):
 
     @time_tracker('effect_processing_time')
     def action_effect_on_rdf(self, rdf_scene: Graph):
+        if self.forall_vars and self.partition_by_ego_choice:
+            new_graph_list, sd_rel_action_effect_list = [], []
+            for rows in self._rows_by_ego_choice():
+                graphs = self._remove_triplets_forall(rdf_scene, rows)
+                graphs, effects = self._add_triplets_forall(graphs, rows)
+                new_graph_list += graphs
+                sd_rel_action_effect_list += effects
+            return new_graph_list, sd_rel_action_effect_list
         new_graph_list = self.remove_triplets_from_rdf(rdf_scene)
         new_graph_list, sd_rel_action_effect_list = self.add_triplets_to_rdf(new_graph_list)
         return new_graph_list, sd_rel_action_effect_list
+
+    def _singular_vars(self) -> List[str]:
+        """Vars of a_list/d_list entries without forall reference (actor's choice)."""
+        names = set()
+
+        def collect(params):
+            for p in params:
+                if isinstance(p, list):
+                    collect(p)
+                elif isinstance(p, str) and not p.startswith('http'):
+                    names.add(p)
+
+        for entry_list in (self.a_list, self.d_list):
+            for entry in entry_list:
+                for select_parameters in entry.values():
+                    if not self._references_forall(select_parameters):
+                        collect(select_parameters)
+        return sorted(names)
+
+    def _rows_by_ego_choice(self) -> List[List[dict]]:
+        """select_dict_list grouped by the actor's choice, row order kept.
+        No singular var or no rows -> one group (previous behaviour)."""
+        keys = self._singular_vars()
+        if not keys or not self.select_dict_list:
+            return [self.select_dict_list]
+        groups = {}
+        for row in self.select_dict_list:
+            groups.setdefault(tuple(row.get(k) for k in keys), []).append(row)
+        return list(groups.values())
 
     def _references_forall(self, select_parameters) -> bool:
         """True if select_parameters (an a_list/d_list value, possibly
@@ -532,15 +573,17 @@ class Action(Thing):
             new_graph_list.append(new_graph)
         return new_graph_list
 
-    def _remove_triplets_forall(self, rdf_scene):
+    def _remove_triplets_forall(self, rdf_scene, rows=None):
         """forall_vars variant of remove_triplets_from_rdf: ONE shared graph
         copy instead of one per select_dict_list row. d_list entries
         referencing a forall_vars name run once PER row; all others run
-        ONCE, on the first row."""
+        ONCE, on the first row. `rows`: one group from _rows_by_ego_choice
+        (default: all rows)."""
+        rows = self.select_dict_list if rows is None else rows
         new_graph = self.rdf_wrapper.copy_rdf_graph(rdf_scene)
-        if not self.select_dict_list:
+        if not rows:
             return [new_graph]
-        first_row = self.select_dict_list[0]
+        first_row = rows[0]
 
         def _apply(select_dict, forall_only):
             for d_dictonary in self.d_list:
@@ -568,7 +611,7 @@ class Action(Thing):
                                 f'Error while removing d_list (forall) from current scene: {e}')
 
         _apply(first_row, forall_only=False)
-        for select_dict in self.select_dict_list:
+        for select_dict in rows:
             _apply(select_dict, forall_only=True)
 
         return [new_graph]
@@ -643,13 +686,14 @@ class Action(Thing):
 
         return [new_graph_list_, sd_rel_action_effect_list]
 
-    def _add_triplets_forall(self, new_graph_list):
+    def _add_triplets_forall(self, new_graph_list, rows=None):
         """forall_vars variant of add_triplets_to_rdf: applies a_list to the
         single shared graph from _remove_triplets_forall -- singular entries
         once (first row), forall entries once per row -- then apply_rules
         once at the end. Returns one (graph, effect) pair; the effect is a
         LIST of per-contribution dicts, since forall entries reuse the same
         predicate key per row and a merged dict would keep only the last."""
+        rows = self.select_dict_list if rows is None else rows
         new_graph = new_graph_list[0]
         rdf_to_sd_dict = {v: k for k, v in self.rdf_wrapper.sd_rdf_dict.items()}
         effect_list = []
@@ -682,10 +726,10 @@ class Action(Thing):
             if sd_rel_action_effect:
                 effect_list.append(sd_rel_action_effect)
 
-        if self.select_dict_list:
-            first_row = self.select_dict_list[0]
+        if rows:
+            first_row = rows[0]
             _apply(first_row, forall_only=False)
-            for select_dict in self.select_dict_list:
+            for select_dict in rows:
                 _apply(select_dict, forall_only=True)
 
         new_graph = self.rdf_wrapper.apply_rules(new_graph)
