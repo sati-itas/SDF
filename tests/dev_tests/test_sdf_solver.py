@@ -8,6 +8,7 @@ base_dir = os.path.join(parent_dir, '..')
 sys.path.append(parent_dir)
 sys.path.append(base_dir)
 from sdf.core.sdf_core import SDObject, Scene
+from sdf.core.sdf_solver import SearchNode
 from sdf.data.otype import OType
 
 from sdf.core.sdf_core import SDUtils #check_subset_scenes, check_identical_scenes, check_common_keys, check_subset_pair
@@ -192,6 +193,38 @@ class GRAPHSceneGoalValidatorTests:
         print(f' check subset isomorph: \t\n {RDFUtils.is_subset(goal, scene)}')
         print(f' check isomorph equality: \t\n {RDFUtils.is_isomorphic_equal(goal, scene)}')
         
+
+
+def _chain(n):
+    """Parent chain root -> leaf of n SearchNodes, state i, action 'a<i>'."""
+    node = None
+    for i in range(n):
+        node = SearchNode(f'a{i}', i, parent=node)
+    return node
+
+
+def test_search_node_long_chain_no_recursion_error():
+    leaf = _chain(5000)
+    assert len(leaf.path()) == 5000
+    assert len(leaf.act_sequence()) == 5000
+    assert leaf.in_path(0, lambda a, b: a == b) is True
+    assert leaf.in_path(-1, lambda a, b: a == b) is False
+
+
+def test_search_node_path_order_and_in_path():
+    leaf = _chain(4)
+    # order root -> leaf, same as the former recursive version
+    assert leaf.path() == [('a0', 0), ('a1', 1), ('a2', 2), ('a3', 3)]
+    assert leaf.act_sequence() == ['a0', 'a1', 'a2', 'a3']
+    root = leaf.parent.parent.parent
+    assert root.path() == [('a0', 0)]
+    assert root.act_sequence() == ['a0']
+
+    eq = lambda a, b: a == b
+    for state in (0, 2, 3):  # root, middle, leaf
+        assert leaf.in_path(state, eq) is True
+    assert leaf.in_path(99, eq) is False
+
 
 if __name__ == "__main__":
     test_sd_scene = SDSceneGoalValidatorTests()

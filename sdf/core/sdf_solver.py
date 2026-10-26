@@ -339,27 +339,30 @@ class SearchNode:
         This is used to prioritize nodes in a priority queue (e.g., heapq or sorted)."""
         return self.f < other.f
 
+    # iterative, not recursive: long plans would hit the recursion limit
     def path(self):
         """returns a sequence of a 2-tubel with action-state pairs"""
-        if self.parent is None:
-            return [(self.action, self.state)]
-        else:
-            return [*self.parent.path(), (self.action, self.state)]
+        out, node = [], self
+        while node is not None:
+            out.append((node.action, node.state))
+            node = node.parent
+        return out[::-1]
 
     def act_sequence(self):
         """returns a sequence of a action"""
-        if self.parent is None:
-            return [(self.action)]
-        else:
-            return [*self.parent.act_sequence(), self.action]
+        out, node = [], self
+        while node is not None:
+            out.append(node.action)
+            node = node.parent
+        return out[::-1]
 
     def in_path(self, state, equality_check: callable):
         """Checks if a given state exists anywhere in the path from the current node
         back to the root node.
         Pruning reason: do not consider any path that visits the same state twice."""
-        if equality_check(self.state, state):
-            return True
-        elif self.parent is None:
-            return False
-        else:
-            return self.parent.in_path(state, equality_check)
+        node = self
+        while node is not None:
+            if equality_check(node.state, state):
+                return True
+            node = node.parent
+        return False
