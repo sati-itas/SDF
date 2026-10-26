@@ -2,7 +2,7 @@
 name = "sdf"
 version = "0.1"
 description = "SDF project"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 dependencies = [
     'rdflib', 'numpy', 'matplotlib',
     'sparql-rdfs-rewriter @ git+https://github.com/sati-itas/sparql-rdfs-rewriter.git@main'
